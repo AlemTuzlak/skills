@@ -1,15 +1,15 @@
 ---
 name: marketing-pipeline
-description: Use when the user wants to run multiple marketing skills together (brief, blog post, social copy) from a single input, or when they mention "marketing pipeline", "full marketing", or "launch content"
+description: Use when the user wants to run multiple marketing skills together (brief, blog post, social copy, changelog, newsletter, video script) from a single input, or when they mention "marketing pipeline", "full marketing", or "launch content"
 ---
 
 # Marketing Pipeline
 
-Orchestrate `/marketing-brief`, `/blog-post`, and `/social-copy` from a single input. Pick which skills to run and in what order. Each skill's output feeds into the next.
+Orchestrate any combination of `/marketing-brief`, `/changelog`, `/blog-post`, `/newsletter`, `/social-copy`, and `/video-script` from a single input. Pick which skills to run and in what order. Each skill's output feeds into the next.
 
 ## How it works
 
-This skill does NOT duplicate the logic of the three sub-skills. It collects input, asks which skills to run, then invokes them in sequence, passing each output as input to the next.
+This skill does NOT duplicate the logic of the sub-skills. It collects input, asks which skills to run, then invokes them in sequence, passing each output as input to the next.
 
 ## Step 1: Input
 
@@ -29,10 +29,13 @@ Ask the user which skills to run:
 > "Which of these do you want me to generate?"
 >
 > 1. Marketing brief (`/marketing-brief`)
-> 2. Blog post (`/blog-post`)
-> 3. Social copy (`/social-copy`)
+> 2. Changelog (`/changelog`)
+> 3. Blog post (`/blog-post`)
+> 4. Newsletter (`/newsletter`)
+> 5. Social copy (`/social-copy`)
+> 6. Video script (`/video-script`)
 >
-> "Pick any combination (e.g. '1 and 3', 'all', '2 only')."
+> "Pick any combination (e.g. '1, 3, and 5', 'all', '3 only')."
 
 ## Step 2b: Output directory
 
@@ -42,8 +45,11 @@ Ask where to save all generated content:
 
 If the user picks a single directory, override each sub-skill's default output path. All files go into that directory:
 - `brief.md` (marketing brief)
+- `changelog.md` (changelog)
 - `blog-post.md` (blog post)
+- `newsletter.md` (newsletter)
 - `social-copy.md` (social copy)
+- `video-script.md` (video script)
 
 Create the directory if it doesn't exist. When invoking each sub-skill's output phase, provide this path so the sub-skill skips its own "where to save?" question.
 
@@ -54,14 +60,19 @@ If the user declines, let each sub-skill use its own default path.
 Run selected skills in this order (each output feeds the next):
 
 ```
-marketing-brief → blog-post → social-copy
+changelog -> marketing-brief -> blog-post -> newsletter -> social-copy -> video-script
 ```
 
-- If brief is selected, run it first. Its output file becomes the input for subsequent skills.
-- If brief is NOT selected but blog post is, run blog post from the original input. Its output becomes input for social copy.
-- If only social copy is selected, run it from the original input.
-- If only brief is selected, run it and stop.
-- If brief + social copy (no blog), brief output feeds social copy directly.
+The order is designed so that upstream outputs enrich downstream skills:
+
+- **Changelog** runs first because it produces a structured list of changes that all other skills can use
+- **Marketing brief** uses the changelog (or original input) to build strategy, positioning, and key messages
+- **Blog post** uses the brief (or changelog/original input) for a deep content piece
+- **Newsletter** uses the brief or blog post to craft the email announcement
+- **Social copy** uses any upstream output for platform-specific posts
+- **Video script** uses any upstream output for the video narrative
+
+If a skill in the chain is not selected, skip it. The next skill receives whatever the most recent upstream output was. If no upstream skill was selected, use the original input.
 
 The user only goes through discovery (confirming features, flagging sensitive items) once during the first skill. Subsequent skills reuse that context.
 
@@ -69,7 +80,7 @@ The user only goes through discovery (confirming features, flagging sensitive it
 
 For each selected skill, invoke it using the Skill tool:
 
-- Pass the output file from the previous skill as the argument (if available)
+- Pass the output file from the most recent upstream skill as the argument (if available)
 - If it's the first skill in the chain, pass the original input
 - Let each skill run its full process (configuration, writing, output)
 
@@ -85,14 +96,17 @@ After all selected skills are complete, present a summary:
 
 > "Here's everything that was generated:"
 >
+> - Changelog: `<path>/changelog.md`
 > - Marketing brief: `<path>/brief.md`
 > - Blog post: `<path>/blog-post.md`
+> - Newsletter: `<path>/newsletter.md`
 > - Social copy: `<path>/social-copy.md`
+> - Video script: `<path>/video-script.md`
 >
 > (Only list the skills that were actually run. Show actual paths used.)
 
 ## What this skill does NOT do
 
 - Replace the individual skills. Each sub-skill handles its own configuration, writing, and output.
-- Force all three skills. The user picks which ones to run.
+- Force all skills. The user picks which ones to run.
 - Skip the sub-skills' own question flows. Each skill still asks its own configuration questions.
