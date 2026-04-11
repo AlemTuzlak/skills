@@ -24,14 +24,19 @@ digraph architecture_impact {
     rankdir=TB;
     "Resolve PR" [shape=box];
     "Phase 1: Analyze" [shape=box];
+    "Architectural?" [shape=diamond];
     "Phase 2: Diagram" [shape=box];
     "Phase 3: Write" [shape=box];
     "Phase 4: Review" [shape=box];
     "Approved?" [shape=diamond];
     "Phase 5: Output" [shape=box];
+    "Brief note" [shape=box];
 
     "Resolve PR" -> "Phase 1: Analyze";
-    "Phase 1: Analyze" -> "Phase 2: Diagram";
+    "Phase 1: Analyze" -> "Architectural?";
+    "Architectural?" -> "Phase 2: Diagram" [label="yes"];
+    "Architectural?" -> "Brief note" [label="no"];
+    "Brief note" -> "Phase 5: Output";
     "Phase 2: Diagram" -> "Phase 3: Write";
     "Phase 3: Write" -> "Phase 4: Review";
     "Phase 4: Review" -> "Approved?";
@@ -48,16 +53,14 @@ If the user says "just pick defaults" or similar, pick reasonable defaults, stat
 
 ### Step 1 - Read the PR
 
-Read via `gh pr view` and `gh pr diff`:
+First, check the PR size using `gh pr view --json files,title,body,comments,reviews`. Use the structured JSON to understand file count and scope before reading the diff.
+
 - PR title and description
-- Full diff
-- Review comments
+- Review comments (use these for architectural context, decision rationale, and "I chose this approach because..." insights)
 - Commit messages
 - Files changed (list and count)
 
-For large PRs (20+ files), focus on structural changes: new files/directories, deleted files, renamed files, changed interfaces/APIs, new dependencies.
-
-**User-facing changes** include: new features, UI changes, API changes, performance improvements, bug fixes, and documentation updates. **Internal changes** include: refactors, test additions, CI changes, and dependency bumps. Both matter for architecture analysis.
+**For the diff:** if the PR has fewer than 20 changed files, read the full diff with `gh pr diff`. If 20+ files, selectively read only files that represent structural changes: new files, deleted files, renamed files, changed interfaces/APIs, config files, dependency files (package.json, go.mod, etc.). Skip test files and minor edits.
 
 **Error handling:**
 - `gh` not available -> inform user, suggest `gh auth login`. This skill cannot proceed without `gh`.
@@ -65,7 +68,12 @@ For large PRs (20+ files), focus on structural changes: new files/directories, d
 
 ### Step 2 - Read broader codebase context
 
-Read if they exist: README, docs/, package.json (or equivalent), any architecture docs, existing diagrams.
+Start by reading the directory tree structure (names only, not contents) to understand the overall shape. Then read:
+- README and any architecture docs (if they exist)
+- package.json or equivalent (for dependency context)
+- Key files within the modules the PR touches and their direct dependencies only
+
+For monorepos, scope to the packages the PR touches. Do not attempt to read the entire repo. If the PR references changes in other repos, note those references but stay within the current repo.
 
 Goal: understand the current architecture before the PR. Look for:
 - Directory structure and module boundaries
@@ -73,14 +81,13 @@ Goal: understand the current architecture before the PR. Look for:
 - Dependency graph (imports, package dependencies)
 - Data flow patterns
 
-If the codebase is too large to read fully, focus on the modules/directories affected by the PR and their immediate neighbors.
-
 ### Step 3 - Identify the architectural changes
 
 Classify the PR's changes:
 
 **Structural changes** (new modules, moved boundaries, new layers):
 - New files/directories that introduce new components
+- Removed or deleted components/modules
 - Files moved between modules (boundary changes)
 - New abstractions or interfaces introduced
 
@@ -98,9 +105,24 @@ Classify the PR's changes:
 - New design patterns introduced (plugin system, event bus, middleware, etc.)
 - Existing patterns replaced or evolved
 
+**Architectural vs implementation detail:**
+- Architectural: "switched from REST to GraphQL", "added a Redis cache layer", "introduced a plugin system", "split the monolith into two services"
+- Implementation: "refactored a function into smaller helpers", "renamed variables", "added error handling to an endpoint", "updated a dependency version"
+- Rule of thumb: if it changes how components relate to each other, it's architectural. If it changes what happens inside a component, it's implementation.
+
+### Decision point: Is this PR architectural?
+
+After Step 3, determine whether the PR introduces any structural, dependency, data flow, or pattern changes. If it does (even partially, e.g. a bug fix PR that also introduces a new module), proceed to Step 4.
+
+If the PR has no architectural changes at all, produce a brief note:
+
+> "This PR doesn't introduce architectural changes. It's a [bug fix / config change / etc.]. No architecture impact analysis needed."
+
+Ask the user if they still want a full analysis. If no, skip to Phase 5 (output the brief note). If yes, proceed.
+
 ### Step 4 - Sensitive content check
 
-Scan for security patches, credentials, internal pricing, or confidential architecture details that shouldn't be documented publicly. Flag anything questionable to the user.
+Scan for security patches, credentials, internal pricing, or confidential architecture details that shouldn't be documented publicly. If found, flag each item and ask the user: include it, redact it, or stop the analysis. Proceed based on their answer.
 
 ### Step 5 - Present understanding
 
@@ -113,34 +135,67 @@ Scan for security patches, credentials, internal pricing, or confidential archit
 >
 > "Does this capture the intent of the PR? Anything I'm missing or misunderstanding?"
 
-Do NOT proceed until the user confirms.
+Do NOT proceed until the user confirms. If the user provides corrections or additions, incorporate them, re-present the updated summary, and wait for confirmation again.
 
 ## Phase 2: Diagrams
 
-Generate before/after mermaid diagrams when the change is architectural (new components, changed data flow, new dependencies). Skip diagrams for small changes (bug fixes, config tweaks, copy changes).
+Generate before/after mermaid diagrams when the PR contains architectural changes. If the PR is a mix (mostly bug fixes but one new module), generate diagrams only for the architectural parts.
 
 ### When to generate diagrams
 
 | Change type | Diagram type |
 |---|---|
-| New components or modules | Component diagram (before/after) |
+| New, removed, or restructured components/modules | Component diagram (before/after) |
+| Changed module boundaries (files moved between modules) | Component diagram (before/after) |
 | Changed data flow or API paths | Data flow diagram (before/after) |
 | New or changed dependencies between modules | Dependency graph (before/after) |
+| Replaced or evolved patterns | Component or data flow diagram showing the pattern change (before/after) |
 | New sequence of operations | Sequence diagram (after only) |
 
-Generate as mermaid code blocks. Use `before` and `after` as separate diagrams side by side, not a single combined diagram.
+### Diagram format
 
-If the change is not architectural (bug fix, config change, copy edit), skip diagrams entirely and note: "No architectural diagrams needed for this change."
+Generate as mermaid code blocks. Use separate `before` and `after` diagrams (two sequential code blocks), clearly labeled:
+
+````
+**Before:**
+```mermaid
+graph LR
+    A[Client] --> B[API Gateway]
+    B --> C[Auth Service]
+    B --> D[Data Service]
+    C --> D
+```
+
+**After:**
+```mermaid
+graph LR
+    A[Client] --> B[API Gateway]
+    B --> C[Auth Service]
+    B --> D[Data Service]
+    B --> E[Cache Layer]
+    E --> D
+```
+````
+
+Keep diagrams focused. Show only the components relevant to the change, not the entire system.
+
+If no architectural changes warrant diagrams, note: "No architectural diagrams needed for this change."
 
 Present the diagrams to the user:
 
 > "Here are the before/after diagrams. Do they accurately represent the change?"
 
-Wait for confirmation before proceeding.
+Wait for confirmation. If the user provides corrections, update the diagrams and re-present.
 
 ## Phase 3: Write
 
-Produce a high-level analysis document with these sections:
+Produce a high-level analysis document. Start with a header:
+
+```
+# Architecture Impact: PR #<number> - <PR title>
+**Repo:** <owner/repo>
+**Date:** <today's date>
+```
 
 ### 1. Summary
 
@@ -189,7 +244,7 @@ Include the mermaid diagrams from Phase 2 (if generated).
 ### Writing rules
 
 - High-level, readable by anyone on the team (PMs, leads, engineers)
-- No implementation details unless they matter architecturally
+- No implementation details unless they matter architecturally (see examples in Step 3)
 - **Never use em-dashes** in the generated content. No "---" characters. Use commas, colons, periods, or parentheses instead.
 - Short paragraphs, scannable
 - Use concrete examples, not abstract descriptions
@@ -210,7 +265,7 @@ Wait for approval. Only proceed to output once the user confirms.
 
 Always print the final analysis to terminal.
 
-Then ask: "Want me to save this to a file? If so, where?"
+Then ask: "Want me to save this to `docs/architecture/PR-<number>-impact.md`? Or somewhere else?"
 
 If the user confirms, save to the specified path. Create the directory if it doesn't exist. If file already exists, ask whether to overwrite or create a versioned copy.
 
@@ -219,7 +274,6 @@ If the user confirms, save to the specified path. Create the directory if it doe
 - `gh` not available -> cannot proceed, inform user
 - Invalid PR -> ask user to verify
 - PR too large to analyze fully -> focus on structural changes, note what was skipped
-- No architectural changes detected -> produce a brief note: "This PR doesn't introduce architectural changes. It's a [bug fix / config change / etc.]." and ask if the user still wants a full analysis.
 
 ## What this skill does NOT do
 
