@@ -96,6 +96,8 @@ Then determine the email format based on the number of updates:
 
 Confirm the format with the user.
 
+If no user-facing changes are found in the input, tell the user and stop: "No user-facing changes found in this input. Nothing to write a newsletter about."
+
 Do NOT proceed until the user confirms scope and format.
 
 ## Phase 2: Configuration
@@ -107,9 +109,14 @@ Ask these questions:
 **Q2 - Output format:** "What format do you want the email in?"
 - **Copy only** - subject line, preview text, body text, CTA text (drop into your email tool)
 - **Markdown** - formatted markdown that most email tools can import
-- **HTML** - basic HTML email template with inline styles, ready to send
 
-**Q3 - CTA:** Infer the most appropriate call to action from context:
+**Q3 - Tone:** Read existing repo content (README, docs, blog posts) to detect the product's voice. Then confirm:
+
+> "Based on your existing content, the tone seems [e.g. conversational and developer-friendly]. Should I match that or go a different direction?"
+
+If no existing content to analyze, ask directly what tone the user wants.
+
+**Q4 - CTA:** Infer the most appropriate call to action from context:
 - New feature -> "Try it now", "See what's new"
 - Improvement -> "Check it out", "See the difference"
 - Open source -> "Update now", "See the release"
@@ -168,6 +175,7 @@ Rules:
 - **Never use em-dashes** in the generated content. No "---" characters. Use commas, colons, periods, or parentheses instead.
 - No jargon. "Reports load faster" beats "Optimized SQL query execution plan"
 - Bold key phrases for scannability
+- Keep it scannable. Shorter is better. If the email takes more than 60 seconds to read, it's too long.
 
 ### Segment variants
 
@@ -183,8 +191,11 @@ Present the complete email:
 
 > "Here's the newsletter:"
 >
-> **Subject line options:** (with recommendation)
-> **Preview text:** (matching recommended subject)
+> **Subject line options:** (with recommendation and preview text for each)
+> 1. Subject: "..." / Preview: "..."
+> 2. Subject: "..." / Preview: "..."
+> 3. Subject: "..." / Preview: "..."
+>
 > **Body:**
 > [full email content]
 >

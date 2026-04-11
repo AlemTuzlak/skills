@@ -13,7 +13,7 @@ The primary input is a git ref range. Resolve the argument (if provided):
 
 1. Contains `...` or `..` -> **git ref range** (e.g. `v1.0.0...v1.1.0`)
 2. Matches a single tag/ref -> **from that ref to HEAD**
-3. Matches GitHub URL or `#\d+` pattern -> **PR** (extract changes from that PR only)
+3. Matches GitHub URL or `#\d+` pattern -> **PR** (extract changes from that PR only). For single PR input: read the PR diff and description, categorize changes, use the PR title as the entry. Skip the version header. Ask the user if they want to append these entries to an existing changelog version or create a new one.
 4. No argument -> ask: "What range should the changelog cover? You can provide a git ref range (e.g. v1.0.0...v1.1.0), a tag (changes since that tag), or a PR number."
 
 ## Process Flow
@@ -74,8 +74,9 @@ If no existing changelog:
 
 ## Phase 2: Categorize
 
-Sort all changes into Keep a Changelog categories:
+Sort all changes into Keep a Changelog categories. **Breaking Changes** get a dedicated section at the top:
 
+- **Breaking Changes** - any change that breaks existing behavior, APIs, or requires user action to upgrade. Include migration notes for each. Detect from `feat!:`, `fix!:`, `BREAKING CHANGE:` footers, or removed/renamed APIs in the diff.
 - **Added** - new features
 - **Changed** - changes to existing functionality
 - **Deprecated** - features that will be removed
@@ -88,6 +89,7 @@ Sort all changes into Keep a Changelog categories:
 - If not, analyze the diff and commit message to determine the category
 - Skip internal-only changes (refactors, test additions, CI changes, dependency bumps) unless they affect user-facing behavior
 - When uncertain whether a change is user-facing, include it and let the user remove it in review
+- For ranges with 50+ commits, group related changes into higher-level entries (e.g. instead of listing 12 individual API fixes, write "Improved API error handling across multiple endpoints"). Present the grouped version and let the user expand any group if they want detail.
 
 Present the categorized list:
 
@@ -120,9 +122,9 @@ Rewrite each entry into human-friendly language:
 
 Format: `## [version] - YYYY-MM-DD`
 
-If the version is not obvious from the ref range, ask: "What version number should this changelog use?"
+If the upper bound of the range is a version tag (e.g. `v1.2.0`), use that as the version. If the upper bound is HEAD or a branch name, ask: "What version number should this changelog use?"
 
-Use ISO date format (YYYY-MM-DD).
+Use the date of the most recent commit in the range, in ISO format (YYYY-MM-DD).
 
 ### Technical appendix
 
@@ -164,7 +166,7 @@ Wait for approval. Only proceed to output once the user confirms.
 
 ### CHANGELOG.md
 
-Detect existing `CHANGELOG.md` in the repo root. If found, prepend the new entry at the top (below the file header). If not found, create one with a standard header:
+Detect existing `CHANGELOG.md` in the repo root. If found, read the entire file, identify the insertion point (before the first `## [` line), present the proposed insertion point to the user, and confirm before writing. If not found, create one with a standard header:
 
 ```
 # Changelog

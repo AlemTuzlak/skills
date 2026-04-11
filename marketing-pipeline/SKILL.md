@@ -9,7 +9,7 @@ Orchestrate any combination of `/marketing-brief`, `/changelog`, `/blog-post`, `
 
 ## How it works
 
-This skill does NOT duplicate the logic of the sub-skills. It collects input, asks which skills to run, then invokes them in sequence, passing each output as input to the next.
+This skill does NOT duplicate the logic of the sub-skills. It collects input, asks which skills to run, then invokes them in sequence, passing each output as input to the next. Each skill runs its full process including its own discovery, configuration, writing, and output phases.
 
 ## Step 1: Input
 
@@ -37,13 +37,21 @@ Ask the user which skills to run:
 >
 > "Pick any combination (e.g. '1, 3, and 5', 'all', '3 only')."
 
+`"all"` means skills 1 through 6.
+
+### Input compatibility check
+
+After selection, check if the original input is compatible with each selected skill:
+
+- **Changelog** requires a git ref range or PR. If the original input is freeform text or a file path, skip changelog and tell the user: "Skipping changelog because it needs a git ref range or PR. The other skills will proceed from the original input."
+
 ## Step 2b: Output directory
 
 Ask where to save all generated content:
 
 > "Want all content saved to a single directory? (e.g. `marketing/launch-<feature>/`). Otherwise each skill will use its own default location."
 
-If the user picks a single directory, override each sub-skill's default output path. All files go into that directory:
+If the user picks a single directory, all files go into that directory:
 - `brief.md` (marketing brief)
 - `changelog.md` (changelog)
 - `blog-post.md` (blog post)
@@ -51,9 +59,9 @@ If the user picks a single directory, override each sub-skill's default output p
 - `social-copy.md` (social copy)
 - `video-script.md` (video script)
 
-Create the directory if it doesn't exist. When invoking each sub-skill's output phase, provide this path so the sub-skill skips its own "where to save?" question.
+Create the directory if it doesn't exist. When each sub-skill asks "where to save?", respond with the shared path and filename on behalf of the user.
 
-If the user declines, let each sub-skill use its own default path.
+If the user declines, let each sub-skill use its own default path. Track the actual output paths for the summary.
 
 ## Step 3: Determine execution order
 
@@ -74,7 +82,9 @@ The order is designed so that upstream outputs enrich downstream skills:
 
 If a skill in the chain is not selected, skip it. The next skill receives whatever the most recent upstream output was. If no upstream skill was selected, use the original input.
 
-The user only goes through discovery (confirming features, flagging sensitive items) once during the first skill. Subsequent skills reuse that context.
+### Feeding non-adjacent selections
+
+When feeding output from one skill to a non-adjacent skill (e.g. changelog directly to social-copy), explicitly tell the downstream skill what the input represents: "This is a changelog. Treat it as a structured list of feature descriptions and changes."
 
 ## Step 4: Run each skill
 
@@ -82,13 +92,18 @@ For each selected skill, invoke it using the Skill tool:
 
 - Pass the output file from the most recent upstream skill as the argument (if available)
 - If it's the first skill in the chain, pass the original input
-- Let each skill run its full process (configuration, writing, output)
+- Let each skill run its full process (discovery, configuration, writing, output)
+- If a sub-skill asks about tone or audience and the user already answered this for a previous skill in the chain, suggest the same answer as default and let the user confirm or change
 
 Between skills, confirm with the user before proceeding:
 
 > "[Skill] is done. Ready to move on to [next skill]?"
 
 This gives the user a chance to adjust, take a break, or stop early.
+
+### Error recovery
+
+If a sub-skill fails or the user cancels mid-process, ask: "Want to skip this skill and continue to the next one, or stop the pipeline here?" List what was already completed.
 
 ## Step 5: Summary
 

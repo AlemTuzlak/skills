@@ -95,6 +95,10 @@ If nothing found, ask: "Can you briefly describe the product and who it's for?"
 
 Do NOT proceed until the user confirms scope.
 
+### Step 4 - Sensitive content check
+
+Before proceeding, scan for potentially sensitive content: security patches, internal pricing, credentials, unreleased roadmap items, or content marked confidential. Flag anything questionable to the user.
+
 ## Phase 2: Configuration
 
 Ask these questions:
@@ -123,7 +127,9 @@ If no content to analyze, ask directly.
 
 ## Phase 3: Outline
 
-Generate a structured outline with timing:
+Generate a structured outline with timing. Use the appropriate template based on video length:
+
+**Short-form (30-90 seconds) - 3-4 sections:**
 
 ```
 ## [Working title] - [total duration]
@@ -146,6 +152,43 @@ Generate a structured outline with timing:
 
 Estimated total: ~X words (~Y seconds at 135 WPM)
 ```
+
+**Medium-form (3-5 minutes) - 5-8 sections:**
+
+```
+## [Working title] - [total duration]
+
+1. **Hook** (0:00-0:10) - [approach]
+   - Visual: [what to show]
+
+2. **Problem** (0:10-0:30) - [pain point, context, why this matters]
+   - Visual: [what to show]
+
+3. **Solution overview** (0:30-1:00) - [high-level what you built]
+   - Visual: [what to show]
+
+4. **Deep-dive: [Feature A]** (1:00-2:00) - [walkthrough]
+   - Key points
+   - Visual: [screen recording steps]
+
+5. **Deep-dive: [Feature B]** (2:00-3:00) - [walkthrough]
+   - Key points
+   - Visual: [screen recording steps]
+
+6. **Deep-dive: [Feature C]** (3:00-3:45) - [walkthrough]
+   - Key points
+   - Visual: [screen recording steps]
+
+7. **Recap** (3:45-4:30) - [summarize key benefits]
+   - Visual: [summary slide or side-by-side]
+
+8. **CTA** (4:30-5:00) - [action to take]
+   - Visual: [end screen]
+
+Estimated total: ~X words (~Y seconds at 135 WPM)
+```
+
+Scale the number of deep-dive segments to match the features being covered.
 
 Present the outline and wait for approval before writing.
 
@@ -240,7 +283,7 @@ Include estimated duration and word count for every section:
 - Active voice always.
 - **Never use em-dashes** in the generated content. No "---" characters. Use commas, colons, periods, or parentheses instead.
 - Show, don't tell. "Watch how fast this loads" > "It loads very quickly"
-- Use the rule of three for key points: three benefits, three features, three examples
+- For medium-form videos, use the rule of three: three benefits, three features, three examples. For short-form, focus on a single key benefit.
 
 ### CTA
 
