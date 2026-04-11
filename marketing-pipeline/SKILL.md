@@ -34,6 +34,21 @@ Ask the user which skills to run:
 >
 > "Pick any combination (e.g. '1 and 3', 'all', '2 only')."
 
+## Step 2b: Output directory
+
+Ask where to save all generated content:
+
+> "Want all content saved to a single directory? (e.g. `marketing/launch-<feature>/`). Otherwise each skill will use its own default location."
+
+If the user picks a single directory, override each sub-skill's default output path. All files go into that directory:
+- `brief.md` (marketing brief)
+- `blog-post.md` (blog post)
+- `social-copy.md` (social copy)
+
+Create the directory if it doesn't exist. When invoking each sub-skill's output phase, provide this path so the sub-skill skips its own "where to save?" question.
+
+If the user declines, let each sub-skill use its own default path.
+
 ## Step 3: Determine execution order
 
 Run selected skills in this order (each output feeds the next):
@@ -70,11 +85,11 @@ After all selected skills are complete, present a summary:
 
 > "Here's everything that was generated:"
 >
-> - Marketing brief: `docs/marketing/brief-<slug>.md`
-> - Blog post: `blog/posts/<slug>.md`
-> - Social copy: `social/launch-<slug>.md`
+> - Marketing brief: `<path>/brief.md`
+> - Blog post: `<path>/blog-post.md`
+> - Social copy: `<path>/social-copy.md`
 >
-> (Only list the skills that were actually run)
+> (Only list the skills that were actually run. Show actual paths used.)
 
 ## What this skill does NOT do
 
