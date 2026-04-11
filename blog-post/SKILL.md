@@ -46,7 +46,11 @@ digraph blog_post {
 }
 ```
 
-**One question per message.** If the user answers multiple questions at once, accept their bundled answers and skip ahead. Never make assumptions without confirming.
+**Do NOT skip phases.** Ask questions at a natural pace. Don't overwhelm, but don't artificially slow things down either. If the user answers multiple questions at once, accept their bundled answers and skip ahead.
+
+If the user says "just pick defaults", "you choose", or similar, pick reasonable defaults based on context, state what you chose, and ask for a single confirmation before proceeding.
+
+Never make assumptions without confirming.
 
 ## Phase 1: Discovery
 
@@ -55,10 +59,12 @@ digraph blog_post {
 | Input type | What to read |
 |---|---|
 | Marketing brief | Read the brief - extract problem statement, value prop, audience, key messages, competitive positioning. Still do Step 2 if the brief lacks product context, then proceed to Step 3. |
-| PR | Diff, PR description, review comments, commit messages (`gh pr view`, `gh pr diff`). For large PRs, focus on user-facing changes. |
+| PR | Diff, PR description, review comments, commit messages (`gh pr view`, `gh pr diff`). For large PRs (20+ files), focus on user-facing changes. |
 | Git refs | `git diff` and `git log` between the refs. For large ranges, prioritize commit messages and user-facing changes. |
 | Codebase feature | Read the specified files/directories. |
-| Freeform text | Parse the user's description. |
+| Freeform text | Parse the user's description. If it lacks specifics (no feature name, no value prop, no context), ask the user to provide more detail or point to a specific file/PR. Fall back to open-ended questions only if they can't. |
+
+**User-facing changes** include: new features, UI changes, API changes, performance improvements, bug fixes, and documentation updates. **Internal changes** include: refactors, test additions, CI changes, and dependency bumps. When uncertain, list what you found and ask the user which are relevant.
 
 **Error handling:**
 - `gh` not installed/authenticated → inform user, suggest `gh auth login`, offer alternative input
@@ -112,7 +118,7 @@ Present a brief summary to the user:
 
 ## Phase 3: Configuration
 
-Ask these one at a time:
+Ask these questions:
 
 **Q1 - Audience:** "Who is this blog post for?" (developers, end users, technical decision-makers, general audience, other)
 
@@ -139,7 +145,7 @@ If no existing content to analyze, ask directly what tone the user wants.
 > "I'd suggest the CTA be: [inferred CTA]. Want to go with that or something different?"
 
 **Q5 - Involvement level:** "How involved do you want to be in the writing process?"
-- **A) Just write it** - I'll handle everything and show you the final result
+- **A) Just write it** - I'll handle everything, pick the best headline, and save the final post. You can request changes after.
 - **B) Show me the outline first** - approve the structure, then I'll write the full post
 - **C) Walk me through it** - outline approval, then section-by-section with confirmation
 
@@ -199,7 +205,7 @@ After the body is complete, generate **3-5 headline options** using different fo
 
 For involvement levels B and C, present the options and get the user's selection before proceeding. For level A, use your recommendation.
 
-Target: 6-12 words for the headline. Punchy and clear.
+Prioritize readability over SEO constraints. Write the best headline first. If it doesn't fit the 50-60 char SEO title limit, craft a separate shorter title tag for the frontmatter.
 
 ### SEO Frontmatter
 
@@ -265,17 +271,19 @@ Keep the intro to 3-5 short paragraphs. No walls of text.
 
 Use visuals wherever they help comprehension - after explaining a complex concept, when comparing options, or when showing UI changes.
 
+### Code examples
+
+For developer audiences, include at least one code example showing the feature in action. Prefer minimal, runnable snippets (5-15 lines). Show before/after when demonstrating an improvement.
+
 ## Phase 5b: Full Draft Review
 
 After all sections are written and the headline is selected, assemble the complete post (frontmatter + body).
 
-- **Level A:** Present the full draft to the user for review before saving.
-- **Level B:** Present the full draft to the user for review before saving.
-- **Level C:** The user has seen each section individually, but still present the assembled draft for a final review.
+- **Level A:** Skip review. Proceed directly to output. Present the final post and save it. The user can request changes after.
+- **Level B:** Present the full draft to the user for review before saving. "Here's the complete post. Want any changes before I save it?"
+- **Level C:** The user has seen each section individually, but still present the assembled draft for a final review. "Here's the complete post. Want any changes before I save it?"
 
-> "Here's the complete post. Want any changes before I save it?"
-
-If the user requests revisions, make them and present again. Only proceed to output once the user approves.
+For B and C, if the user requests revisions, make them and present again. Only proceed to output once the user approves.
 
 ## Phase 6: Output
 

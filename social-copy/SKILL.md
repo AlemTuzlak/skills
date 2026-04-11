@@ -45,7 +45,11 @@ digraph social_copy {
 }
 ```
 
-**One question per message.** If the user answers multiple questions at once, accept bundled answers and skip ahead. Never assume without confirming.
+**Do NOT skip phases.** Ask questions at a natural pace. Don't overwhelm, but don't artificially slow things down either. If the user answers multiple questions at once, accept bundled answers and skip ahead.
+
+If the user says "just pick defaults", "you choose", or similar, pick reasonable defaults based on context, state what you chose, and ask for a single confirmation before proceeding.
+
+Never assume without confirming.
 
 ## Phase 1: Discovery
 
@@ -55,10 +59,12 @@ digraph social_copy {
 |---|---|
 | Marketing brief | Extract problem statement, value prop, audience, key messages, competitive positioning. Skip to Step 3. Still do Step 2 if brief lacks product context. |
 | Blog post | Extract headline, key points, audience, CTA. Skip to Step 3. Still do Step 2 if blog post lacks product context. |
-| PR | Diff, PR description, review comments, commit messages (`gh pr view`, `gh pr diff`). Focus on user-facing changes. |
-| Git refs | `git diff` and `git log` between refs. Prioritize commit messages and user-facing changes. |
+| PR | Diff, PR description, review comments, commit messages (`gh pr view`, `gh pr diff`). For large PRs (20+ files), focus on user-facing changes. |
+| Git refs | `git diff` and `git log` between refs. For large ranges, prioritize commit messages and user-facing changes. |
 | Codebase feature | Read the specified files/directories. |
-| Freeform text | Parse the user's description. |
+| Freeform text | Parse the user's description. If it lacks specifics (no feature name, no value prop, no context), ask the user to provide more detail or point to a specific file/PR. Fall back to open-ended questions only if they can't. |
+
+**User-facing changes** include: new features, UI changes, API changes, performance improvements, bug fixes, and documentation updates. **Internal changes** include: refactors, test additions, CI changes, and dependency bumps. When uncertain, list what you found and ask the user which are relevant.
 
 **Error handling:**
 - `gh` not available → inform user, suggest `gh auth login`, offer alternative input
@@ -84,7 +90,7 @@ Do NOT proceed until the user confirms scope.
 
 ## Phase 2: Configuration
 
-Ask these one at a time:
+Ask these questions:
 
 **Q1 - Platforms:** "I'll generate copy for Twitter/X and LinkedIn by default. Want to add any other platforms?" (Reddit, Hacker News, Discord, Mastodon, Bluesky, etc.)
 
@@ -115,9 +121,11 @@ If no existing content to analyze, present the presets directly.
 
 ## Phase 3: Write
 
-Read the platform reference files before writing. Platform rules are in `platforms/` directory alongside this skill file:
+Read the platform reference files before writing. Platform rules are in the `platforms/` directory relative to this skill file. The skill-loading system should inject these files into context alongside SKILL.md:
 - `platforms/twitter-x.md` - Twitter/X rules, format, constraints
 - `platforms/linkedin.md` - LinkedIn rules, format, constraints
+
+If the platform files are not available in context, use your knowledge of each platform's conventions instead.
 
 For any additional platforms the user requested, use your knowledge of that platform's conventions.
 
@@ -125,7 +133,9 @@ For any additional platforms the user requested, use your knowledge of that plat
 
 For each platform, generate **2-3 variants of the announcement post** with different hook styles. For each variant, note which hook formula it uses (question, bold statement, statistic, narrative, contrarian, etc.).
 
-If the user chose a launch sequence, generate one teaser and one follow-up per platform (no variants needed for those), plus 2-3 variants for the announcement post.
+**If user chose single post:** generate only the 2-3 announcement variants per platform. Skip teaser and follow-up entirely.
+
+**If user chose launch sequence:** generate one teaser and one follow-up per platform (no variants needed for those), plus 2-3 variants for the announcement post.
 
 ### Writing principles
 
@@ -135,6 +145,7 @@ If the user chose a launch sequence, generate one teaser and one follow-up per p
 - **Platform-native.** Each platform's copy should feel like it was written specifically for that platform, not adapted from a template.
 - **Character-count aware.** Verify output fits within platform character limits (280 for Twitter/X free tier, 3000 for LinkedIn). If a tweet exceeds 280 chars, trim or restructure - do not deliver over-limit copy.
 - **Never use em-dashes** in the generated content. No "—" characters. Use commas, colons, periods, or parentheses instead.
+- **Links:** Use `[link]` placeholders unless the user provides a specific URL. Twitter counts all URLs as 23 characters regardless of actual length (account for this in character count). For LinkedIn, suggest putting links in comments to avoid algorithm penalty.
 
 ### Copywriting frameworks
 
@@ -186,7 +197,16 @@ For each platform, generate all three phases:
 
 ### Suggested posting schedule
 
-Always include a timing recommendation section:
+Always include a timing recommendation.
+
+**For single post:**
+
+| Platform | Suggested timing |
+|---|---|
+| Twitter/X | Tuesday-Thursday, 12-6 PM local |
+| LinkedIn | Tuesday-Thursday, 10 AM-4 PM local |
+
+**For launch sequence:**
 
 | Phase | Platform | Suggested timing |
 |---|---|---|
@@ -196,6 +216,10 @@ Always include a timing recommendation section:
 | Follow-up | All | 2-3 days after launch |
 
 Adapt timing to the user's audience if known. Note: LinkedIn's golden hour (first 90 minutes) determines 70% of reach - post when the audience is most active.
+
+### Sensitive content check
+
+Before presenting copy, scan for potentially sensitive content: internal codenames, security details, unpublished pricing, competitor references from code comments, internal metrics, or unreleased roadmap items. Flag anything questionable to the user before proceeding.
 
 ## Phase 4: Review
 

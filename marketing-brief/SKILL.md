@@ -46,7 +46,9 @@ digraph marketing_brief {
 }
 ```
 
-**Do NOT skip phases. Do NOT batch questions. One question per message.** However, if the user answers multiple questions at once, accept their bundled answers and skip ahead — do not re-ask what they already answered.
+**Do NOT skip phases.** Ask questions at a natural pace. Don't overwhelm, but don't artificially slow things down either. If the user answers multiple questions at once, accept their bundled answers and skip ahead.
+
+If the user says "just pick defaults", "you choose", or similar, pick reasonable defaults based on context, state what you chose, and ask for a single confirmation before proceeding.
 
 Never make assumptions without confirming with the user. Be conversational and guide them through the process.
 
@@ -56,10 +58,12 @@ Never make assumptions without confirming with the user. Be conversational and g
 
 | Input type | What to read |
 |---|---|
-| PR | Diff, PR description, review comments, commit messages (`gh pr view`, `gh pr diff`). For large PRs, focus on user-facing changes — skip test files unless they reveal intent. |
-| Git refs | `git diff` and `git log` between the two refs. For large ranges, prioritize commit messages and user-facing file changes over exhaustive diff reading. |
-| Codebase feature | Read the specified files/directories |
-| Freeform text | Parse the user's description |
+| PR | Diff, PR description, review comments, commit messages (`gh pr view`, `gh pr diff`). For large PRs (20+ files), focus on user-facing changes. |
+| Git refs | `git diff` and `git log` between the two refs. For large ranges, prioritize commit messages and user-facing changes. |
+| Codebase feature | Read the specified files/directories. |
+| Freeform text | Parse the user's description. If it lacks specifics (no feature name, no value prop, no context), ask the user to provide more detail or point to a specific file/PR. Fall back to open-ended questions only if they can't. |
+
+**User-facing changes** include: new features, UI changes, API changes, performance improvements, bug fixes, and documentation updates. **Internal changes** include: refactors, test additions, CI changes, and dependency bumps. When uncertain, list what you found and ask the user which are relevant.
 
 **Error handling:**
 - `gh` not installed/authenticated → inform user, suggest `gh auth login`, offer alternative input type
@@ -105,14 +109,11 @@ Do NOT proceed to Phase 2 until framing is agreed upon for every sensitive item.
 
 ## Phase 2: Brief Configuration
 
-Ask these one at a time:
+Ask these questions:
 
 **Q1 — Audience:** "Who will read this brief?" (you personally, marketing team, designer, stakeholders, other)
 
-**Q2 — Detail level:** "How detailed should the brief be?"
-- Concise/scannable (~500-800 words)
-- Moderate (~1000-1500 words)
-- Detailed/prose (~2000-3000 words)
+**Q2 — Detail level:** "How detailed should the brief be?" (concise/scannable, moderate, or detailed/prose). The detail level influences depth and tone, not hard word limits. Concise means short punchy sections. Detailed means full prose with depth.
 
 **Q3 — Competitors:** "Are there any competitors you want me to position against? I'll also do my own web research."
 
@@ -144,7 +145,7 @@ Write all of these in order:
 4. **Technical Summary** — what was built, how it works (technical detail). If audience is non-technical, shorten to key implementation details only.
 5. **Target Audience** — who benefits, persona descriptions tailored to the product
 6. **Value Proposition** — why the audience should care, the key benefit
-7. **Competitive Positioning** — comparison to alternatives. Combine user-named competitors with independent web research (use WebSearch). If WebSearch is unavailable, rely on user-provided competitors and your own knowledge. If no competitors found by either source, ask the user: replace with a Market Landscape section describing the category, or omit entirely for internal-only features.
+7. **Competitive Positioning** — comparison to alternatives. Combine user-named competitors with independent web research (use WebSearch). If WebSearch is unavailable, rely on user-provided competitors and your own knowledge. If no competitors found by either source, ask the user: replace with a Market Landscape section describing the category, or omit entirely for internal-only features. If the feature is clearly internal (CI pipeline, admin tool, dev tooling, infrastructure), ask the user: "This looks like an internal change. Skip competitive positioning?" and omit if they confirm.
 8. **Key Messages** — 3-5 punchy, ready-to-use talking points
 9. **Suggested Channels** — where to distribute (blog, social media, newsletter, documentation, etc.)
 10. **Call to Action** — what the reader should do after learning about this

@@ -8,10 +8,10 @@
 
 ## Post Structure
 
-Follow the 3-2-1 rule:
-- **3** hooks drafted, pick the strongest to lead
-- **2** concrete insights or actionable takeaways
-- **1** clear call-to-action
+Follow the 3-2-1 rule within each variant:
+- The 2-3 variants from SKILL.md satisfy the "try multiple hooks" part (each variant uses a different hook style)
+- **2** concrete insights or actionable takeaways per variant
+- **1** clear call-to-action per variant
 
 ```
 [Hook - first 2-3 lines must compel "see more" click]
