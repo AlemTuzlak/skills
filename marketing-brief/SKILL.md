@@ -86,7 +86,7 @@ Present a structured summary:
 >
 > "Please confirm, correct, add, or remove items. Which of these should be included in the brief?"
 
-Ask clarifying questions for anything ambiguous (at most 2-3 per round). Do NOT proceed until the user confirms the feature scope.
+Ask clarifying questions for anything ambiguous. Do NOT proceed until the user confirms the feature scope.
 
 ### Step 4 — Flag sensitive items
 

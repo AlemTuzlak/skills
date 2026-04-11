@@ -15,11 +15,11 @@
 ## Post Structure (Default Format)
 
 ```
-[Hook — bold claim, question, or surprising stat] [emoji]
+[Hook - bold claim, question, or surprising stat] [emoji]
 
-[What's new / what's happening — 1-2 sentences explaining the value] [emoji]
+[What's new / what's happening - 1-2 sentences explaining the value] [emoji]
 
-[CTA — single clear action] [emoji]
+[CTA - single clear action] [emoji]
 ```
 
 Each of the three sections carries 1-2 emojis. This structure catches attention during scroll.
@@ -29,7 +29,7 @@ Each of the three sections carries 1-2 emojis. This structure catches attention 
 Threads get 3x more engagement than single long tweets. Offer a thread alternative when the content is too rich for a single tweet.
 
 Thread structure:
-- Tweet 1: Hook — must stand alone and compel "Show thread" clicks
+- Tweet 1: Hook - must stand alone and compel "Show thread" clicks
 - Each tweet: one clear point, concise
 - Number tweets explicitly (1/N, 2/N, etc.)
 - Final tweet: CTA + link
@@ -56,7 +56,7 @@ Do NOT include hashtags on Twitter/X. They no longer meaningfully drive discover
 
 ## Emojis
 
-1-2 per section (3 sections = up to 6 total). Use structural emojis that catch the eye during scroll — arrows, checkmarks, indicators. Avoid decorative emoji spam.
+1-2 per section (3 sections = up to 6 total). Use structural emojis that catch the eye during scroll - arrows, checkmarks, indicators. Avoid decorative emoji spam.
 
 ## CTAs
 

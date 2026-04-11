@@ -1,6 +1,6 @@
 ---
 name: social-copy
-description: Use when the user wants to create social media posts or launch copy for a feature, product change, PR, or announcement — generates platform-specific copy for Twitter/X, LinkedIn, and other platforms
+description: Use when the user wants to create social media posts or launch copy for a feature, product change, PR, or announcement - generates platform-specific copy for Twitter/X, LinkedIn, and other platforms
 ---
 
 # Social Copy Writer
@@ -49,7 +49,7 @@ digraph social_copy {
 
 ## Phase 1: Discovery
 
-### Step 1 — Analyze the input
+### Step 1 - Analyze the input
 
 | Input type | What to read |
 |---|---|
@@ -65,18 +65,18 @@ digraph social_copy {
 - Invalid PR/ref → ask user to verify
 - File not found → ask for correct path
 
-### Step 2 — Read broader product context
+### Step 2 - Read broader product context
 
 Read if they exist: README, docs/, package.json (or equivalent).
 
 If nothing found, ask: "I couldn't find product context in the repo. Can you briefly describe the product and who it's for?"
 
-### Step 3 — Present understanding
+### Step 3 - Present understanding
 
 > "Here's what I'll base the social copy on:"
 >
-> - Feature A — short description
-> - Feature B — short description
+> - Feature A - short description
+> - Feature B - short description
 >
 > "Anything to add, remove, or correct?"
 
@@ -86,11 +86,11 @@ Do NOT proceed until the user confirms scope.
 
 Ask these one at a time:
 
-**Q1 — Platforms:** "I'll generate copy for Twitter/X and LinkedIn by default. Want to add any other platforms?" (Reddit, Hacker News, Discord, Mastodon, Bluesky, etc.)
+**Q1 - Platforms:** "I'll generate copy for Twitter/X and LinkedIn by default. Want to add any other platforms?" (Reddit, Hacker News, Discord, Mastodon, Bluesky, etc.)
 
 If the user adds platforms not covered by existing platform reference files, adapt the copy using your knowledge of that platform's conventions.
 
-**Q2 — Tone:** Read existing repo content (README, docs, blog posts, social links) to detect the product's voice. Then confirm with presets:
+**Q2 - Tone:** Read existing repo content (README, docs, blog posts, social links) to detect the product's voice. Then confirm with presets:
 
 > "Based on your existing content, the tone seems [e.g. conversational and developer-focused]. Should I match that, or would you prefer a different direction? Some common options:"
 > - Professional/thought-leadership
@@ -101,11 +101,11 @@ If the user adds platforms not covered by existing platform reference files, ada
 
 If no existing content to analyze, present the presets directly.
 
-**Q3 — Launch format:** "Do you want a single post per platform or a full launch sequence?"
-- **Single post** — one post per platform
-- **Launch sequence** — teaser (pre-launch), announcement (launch day), follow-up (post-launch)
+**Q3 - Launch format:** "Do you want a single post per platform or a full launch sequence?"
+- **Single post** - one post per platform
+- **Launch sequence** - teaser (pre-launch), announcement (launch day), follow-up (post-launch)
 
-**Q4 — CTA:** Infer the most appropriate call to action from context:
+**Q4 - CTA:** Infer the most appropriate call to action from context:
 - Open source → star the repo, contribute, try it out
 - SaaS → sign up, start free trial
 - Feature update → try the new feature, read the docs
@@ -116,8 +116,8 @@ If no existing content to analyze, present the presets directly.
 ## Phase 3: Write
 
 Read the platform reference files before writing. Platform rules are in `platforms/` directory alongside this skill file:
-- `platforms/twitter-x.md` — Twitter/X rules, format, constraints
-- `platforms/linkedin.md` — LinkedIn rules, format, constraints
+- `platforms/twitter-x.md` - Twitter/X rules, format, constraints
+- `platforms/linkedin.md` - LinkedIn rules, format, constraints
 
 For any additional platforms the user requested, use your knowledge of that platform's conventions.
 
@@ -133,15 +133,16 @@ If the user chose a launch sequence, generate one teaser and one follow-up per p
 - **Problem-first.** Lead with why the reader should care, not "We're excited to announce."
 - **One CTA per post.** Single, clear, soft.
 - **Platform-native.** Each platform's copy should feel like it was written specifically for that platform, not adapted from a template.
-- **Character-count aware.** Verify output fits within platform character limits (280 for Twitter/X free tier, 3000 for LinkedIn). If a tweet exceeds 280 chars, trim or restructure — do not deliver over-limit copy.
+- **Character-count aware.** Verify output fits within platform character limits (280 for Twitter/X free tier, 3000 for LinkedIn). If a tweet exceeds 280 chars, trim or restructure - do not deliver over-limit copy.
+- **Never use em-dashes** in the generated content. No "—" characters. Use commas, colons, periods, or parentheses instead.
 
 ### Copywriting frameworks
 
-Use these internally to structure the copy — don't label them in the output:
+Use these internally to structure the copy - don't label them in the output:
 
-- **PAS** (Problem → Agitate → Solution) — best for empathy-first posts
-- **AIDA** (Attention → Interest → Desire → Action) — best for conversion-focused posts
-- **HVC** (Hook → Value → CTA) — reliable default structure
+- **PAS** (Problem → Agitate → Solution) - best for empathy-first posts
+- **AIDA** (Attention → Interest → Desire → Action) - best for conversion-focused posts
+- **HVC** (Hook → Value → CTA) - reliable default structure
 
 ### Twitter/X specifics
 
@@ -149,7 +150,7 @@ Follow the format from `platforms/twitter-x.md`:
 ```
 [Hook] [emoji]
 
-[What's new — 1-2 sentences] [emoji]
+[What's new - 1-2 sentences] [emoji]
 
 [CTA] [emoji]
 ```
@@ -159,11 +160,11 @@ No hashtags. 1-2 emojis per section. If content is too rich for a single tweet, 
 ### LinkedIn specifics
 
 Follow the format from `platforms/linkedin.md`. Key rules:
-- First 2-3 lines (before "see more" fold) are everything — spend disproportionate effort on the hook
+- First 2-3 lines (before "see more" fold) are everything - spend disproportionate effort on the hook
 - Short paragraphs (2-3 sentences), generous line breaks
 - 1-3 hashtags at the end (topic-relevant, not vanity)
 - Restrained emoji use (structural only: ✅ → 📌), 1-3 total per post
-- Consider suggesting carousel or video format if content suits it (comparisons, step-by-step, lists) — note these are format recommendations only; the user creates the visual assets separately
+- Consider suggesting carousel or video format if content suits it (comparisons, step-by-step, lists) - note these are format recommendations only; the user creates the visual assets separately
 
 ### Launch sequence structure (if selected)
 
@@ -175,7 +176,7 @@ For each platform, generate all three phases:
 - "Something big is coming" energy without being vague
 
 **Announcement (launch day):**
-- Full reveal — what it is, why it matters, how to try it
+- Full reveal - what it is, why it matters, how to try it
 - This is the primary post, gets the most effort
 
 **Follow-up (post-launch):**
@@ -194,7 +195,7 @@ Always include a timing recommendation section:
 | Announcement | LinkedIn | Tuesday-Thursday, 10 AM-4 PM local |
 | Follow-up | All | 2-3 days after launch |
 
-Adapt timing to the user's audience if known. Note: LinkedIn's golden hour (first 90 minutes) determines 70% of reach — post when the audience is most active.
+Adapt timing to the user's audience if known. Note: LinkedIn's golden hour (first 90 minutes) determines 70% of reach - post when the audience is most active.
 
 ## Phase 4: Review
 
@@ -213,7 +214,7 @@ Present all generated copy grouped by platform, with variants labeled.
 >
 > "Pick your favorites or tell me what to adjust."
 
-Wait for the user to select variants and/or request revisions. Revise only the requested variants — keep others unchanged. Only proceed to output once approved.
+Wait for the user to select variants and/or request revisions. Revise only the requested variants - keep others unchanged. Only proceed to output once approved.
 
 ## Phase 5: Output
 
