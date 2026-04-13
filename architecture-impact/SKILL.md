@@ -5,17 +5,24 @@ description: Use when the user wants to understand the before/after architectura
 
 # Architecture Impact Analysis
 
-Analyze a PR's impact on overall architecture. Produces a high-level before/after summary with mermaid diagrams showing what changed, what the change enables, and what risks or trade-offs it introduces.
+Analyze a PR's architectural impact. Produces a decision-maker-friendly document with visual before/after diagrams, business impact framing, and honest risk assessment.
 
-## Audience
+## Audience and Principles
 
-The output targets **decision makers**: engineering leads, PMs, and stakeholders who need to understand what changed and why it matters, not how it was implemented. Write and diagram at the level of **components, layers, and data flows**, not files, functions, or internal module structure.
+The output targets **decision makers**: engineering leads, PMs, and stakeholders.
+
+**Core principles:**
+
+- **Outcomes over implementation.** Lead with what changes for users, teams, and the roadmap, not what was refactored internally.
+- **"So what?" test.** Every section must answer: why should a PM care about this?
+- **Progressive disclosure.** TL;DR first. Technical details exist for those who want them, but aren't required to understand the impact.
+- **Newspaper test.** If a PM read only the title, would they understand why it matters? "Enable independent deployments per framework" passes. "Extract fetch handler into core module" fails.
+- **One diagram = one question.** Write the question as the diagram title. If it answers multiple questions, split it.
+- **Honest tradeoffs.** PMs respect acknowledged risks far more than false reassurance. Always present what was rejected and why.
 
 ## Input
 
 This skill accepts PRs only.
-
-Resolve the argument:
 
 1. Matches GitHub URL or `#\d+` pattern -> **PR**
 2. No argument -> ask: "Which PR should I analyze? Provide a PR URL or number."
@@ -29,7 +36,7 @@ digraph architecture_impact {
     "Resolve PR" [shape=box];
     "Phase 1: Analyze" [shape=box];
     "Architectural?" [shape=diamond];
-    "Phase 2: Diagram" [shape=box];
+    "Phase 2: Visualize" [shape=box];
     "Phase 3: Write" [shape=box];
     "Phase 4: Review" [shape=box];
     "Approved?" [shape=diamond];
@@ -38,10 +45,10 @@ digraph architecture_impact {
 
     "Resolve PR" -> "Phase 1: Analyze";
     "Phase 1: Analyze" -> "Architectural?";
-    "Architectural?" -> "Phase 2: Diagram" [label="yes"];
+    "Architectural?" -> "Phase 2: Visualize" [label="yes"];
     "Architectural?" -> "Brief note" [label="no"];
     "Brief note" -> "Phase 5: Output";
-    "Phase 2: Diagram" -> "Phase 3: Write";
+    "Phase 2: Visualize" -> "Phase 3: Write";
     "Phase 3: Write" -> "Phase 4: Review";
     "Phase 4: Review" -> "Approved?";
     "Approved?" -> "Phase 3: Write" [label="revisions"];
@@ -49,263 +56,249 @@ digraph architecture_impact {
 }
 ```
 
-**Do NOT skip phases.** Ask questions at a natural pace. If the user answers multiple at once, accept bundled answers and skip ahead.
-
-If the user says "just pick defaults" or similar, pick reasonable defaults, state what you chose, and ask for a single confirmation.
+**Do NOT skip phases.** If the user bundles multiple answers, accept them and skip ahead.
 
 ## Phase 1: Analyze
 
 ### Step 1 - Read the PR
 
-First, check the PR size using `gh pr view --json files,title,body,comments,reviews`. Use the structured JSON to understand file count and scope before reading the diff.
+Check PR size first with `gh pr view --json files,title,body,comments,reviews`.
 
-- PR title and description
-- Review comments (use these for architectural context, decision rationale, and "I chose this approach because..." insights)
-- Commit messages
-- Files changed (list and count)
+Read: title, description, review comments (for decision rationale), commit messages, files changed.
 
-**For the diff:** if the PR has fewer than 20 changed files, read the full diff with `gh pr diff`. If 20+ files, selectively read only files that represent structural changes: new files, deleted files, renamed files, changed interfaces/APIs, config files, dependency files (package.json, go.mod, etc.). Skip test files and minor edits.
-
-**Error handling:**
-- `gh` not available -> inform user, suggest `gh auth login`. This skill cannot proceed without `gh`.
-- Invalid PR number -> ask user to verify
+**For the diff:** <20 files: read full diff. 20+ files: selectively read structural changes only (new/deleted/renamed files, changed interfaces, config, dependency files). Skip test files and minor edits.
 
 ### Step 2 - Read broader codebase context
 
-Start by reading the directory tree structure (names only, not contents) to understand the overall shape. Then read:
-- README and any architecture docs (if they exist)
-- package.json or equivalent (for dependency context)
-- Key files within the modules the PR touches and their direct dependencies only
+Scope to packages the PR touches. Read directory tree (names only), README/architecture docs, dependency files. Goal: understand the architecture before the PR.
 
-For monorepos, scope to the packages the PR touches. Do not attempt to read the entire repo. If the PR references changes in other repos, note those references but stay within the current repo.
+### Step 3 - Classify the changes
 
-Goal: understand the current architecture before the PR. Look for:
-- Directory structure and module boundaries
-- Key abstractions and patterns
-- Dependency graph (imports, package dependencies)
-- Data flow patterns
+**Architectural** (changes how components relate to each other):
+- New modules, moved boundaries, new layers
+- New/removed connections between modules
+- Changed data flow paths or API surfaces
+- New design patterns introduced or replaced
 
-### Step 3 - Identify the architectural changes
+**Implementation** (changes what happens inside a component):
+- Refactored helpers, renamed variables, added error handling, updated dependencies
 
-Classify the PR's changes:
+### Step 4 - "So what?" framing
 
-**Structural changes** (new modules, moved boundaries, new layers):
-- New files/directories that introduce new components
-- Removed or deleted components/modules
-- Files moved between modules (boundary changes)
-- New abstractions or interfaces introduced
+Before proceeding, complete this sentence:
 
-**Dependency changes** (new connections, removed connections):
-- New imports between modules
-- New external dependencies
-- Removed dependencies or decoupled modules
+> "We are doing [technical change] so that [business outcome], which matters because [strategic goal]."
 
-**Data flow changes** (new paths, changed paths):
-- New API endpoints or changed signatures
-- New data models or schema changes
-- Changed event/message flows
-
-**Pattern changes** (new patterns, replaced patterns):
-- New design patterns introduced (plugin system, event bus, middleware, etc.)
-- Existing patterns replaced or evolved
-
-**Architectural vs implementation detail:**
-- Architectural: "switched from REST to GraphQL", "added a Redis cache layer", "introduced a plugin system", "split the monolith into two services"
-- Implementation: "refactored a function into smaller helpers", "renamed variables", "added error handling to an endpoint", "updated a dependency version"
-- Rule of thumb: if it changes how components relate to each other, it's architectural. If it changes what happens inside a component, it's implementation.
-
-### Decision point: Is this PR architectural?
-
-After Step 3, determine whether the PR introduces any structural, dependency, data flow, or pattern changes. If it does (even partially, e.g. a bug fix PR that also introduces a new module), proceed to Step 4.
-
-If the PR has no architectural changes at all, produce a brief note:
-
-> "This PR doesn't introduce architectural changes. It's a [bug fix / config change / etc.]. No architecture impact analysis needed."
-
-Ask the user if they still want a full analysis. If no, skip to Phase 5 (output the brief note). If yes, proceed.
-
-### Step 4 - Sensitive content check
-
-Scan for security patches, credentials, internal pricing, or confidential architecture details that shouldn't be documented publicly. If found, flag each item and ask the user: include it, redact it, or stop the analysis. Proceed based on their answer.
+If you cannot complete this sentence, dig deeper into the PR description and review comments until you can. This sentence becomes the spine of the entire analysis.
 
 ### Step 5 - Present understanding
 
-> "Here's what I see in this PR:"
+Present in business language, not implementation language:
+
+> **What changed:** [one sentence, outcome-focused]
+> **Why it matters:** [business impact]
+> **What it enables:** [new capabilities]
+> **What it costs:** [tradeoffs, risks, migration burden]
 >
-> **Structural:** [summary]
-> **Dependencies:** [summary]
-> **Data flow:** [summary]
-> **Patterns:** [summary]
->
-> "Does this capture the intent of the PR? Anything I'm missing or misunderstanding?"
+> "Does this capture the intent? Anything I'm missing?"
 
-Do NOT proceed until the user confirms. If the user provides corrections or additions, incorporate them, re-present the updated summary, and wait for confirmation again.
+Wait for confirmation before proceeding.
 
-## Phase 2: Diagrams
+## Phase 2: Visualize
 
-Generate before/after mermaid diagrams when the PR contains architectural changes. If the PR is a mix (mostly bug fixes but one new module), generate diagrams only for the architectural parts.
+### Diagram selection
 
-### When to generate diagrams
+Pick the diagram type that matches the question the audience is asking:
 
-| Change type | Diagram type |
-|---|---|
-| New, removed, or restructured components/modules | Component diagram (before/after) |
-| Changed module boundaries (files moved between modules) | Component diagram (before/after) |
-| Changed data flow or API paths | Data flow diagram (before/after) |
-| New or changed dependencies between modules | Dependency graph (before/after) |
-| Replaced or evolved patterns | Component or data flow diagram showing the pattern change (before/after) |
-| New sequence of operations | Sequence diagram (after only) |
+| Audience question | Diagram type | Zoom level |
+|---|---|---|
+| "What does this system connect to?" | System context (C4 Level 1) | Highest |
+| "What are the major components?" | Container diagram (C4 Level 2) | High |
+| "How does data flow through the system?" | Sequence / flow diagram | Medium |
+| "What changed between before and after?" | Before/after comparison | Medium |
+| "What's the blast radius of this change?" | Impact radius diagram | Medium |
+| "What's the migration timeline?" | Phase / timeline diagram | High |
+
+For most PRs, generate 2-3 diagrams: a **before/after comparison** (always) and one of the others based on what best communicates the change.
 
 ### Abstraction level
 
-Diagrams are for decision makers, not implementors. Show **how pieces talk to each other**, not internal structure.
+Diagrams are for decision makers. Show how pieces talk to each other, not internal structure.
 
 | Do | Don't |
 |---|---|
-| Name components by role: "Runtime Core", "Express Adapter", "Agent Runner" | Name files: "fetch-handler.ts", "express.ts" |
-| Name layers: "Routing Layer", "Auth Layer" | Name functions: "matchRoute()", "dispatchRoute()" |
-| Show communication: "Client -> Runtime -> Agent" | Show imports or internal module wiring |
-| Label arrows with what flows: "SSE stream", "REST", "JSON envelope" | Label arrows with function calls or variable names |
-| Use subgraphs for logical boundaries: "Framework Adapters", "Core" | Use subgraphs for directories: "src/v2/runtime/core/" |
+| Name by role: "Runtime Core", "Express Adapter" | Name files: "fetch-handler.ts" |
+| Name layers: "Routing Layer", "Auth Layer" | Name functions: "matchRoute()" |
+| Label arrows with what flows: "SSE stream", "REST" | Label with function calls or variable names |
+| Use subgraphs for logical boundaries | Use subgraphs for directories |
+| Max 8-12 elements per diagram | Cram the entire system into one view |
 
-**Rule of thumb:** if a non-technical person can't understand the node label, it's too detailed. "Request Handler" is clear. "createCopilotRuntimeHandler" is not.
+**5-second test:** Show the diagram to someone for 5 seconds. Can they tell you what the system is, who uses it, and roughly what it does? If not, simplify.
 
-### Diagram format
+### Semantic color system
 
-Generate as mermaid code blocks. Use separate `before` and `after` diagrams (two sequential code blocks), clearly labeled:
+Use consistently across all diagrams. Always include a legend.
 
-````
-**Before:**
-```mermaid
-graph LR
-    A[Client] --> B[API Gateway]
-    B --> C[Auth Service]
-    B --> D[Data Service]
-    C --> D
+```
+classDef added fill:#C8E6C9,stroke:#2E7D32,stroke-width:3px,color:#1B5E20
+classDef removed fill:#FFCDD2,stroke:#C62828,stroke-width:2px,stroke-dasharray:5 5,color:#B71C1C
+classDef modified fill:#FFF3E0,stroke:#E65100,stroke-width:2px,color:#BF360C
+classDef unchanged fill:#FAFAFA,stroke:#BDBDBD,stroke-width:1px,color:#616161
+classDef focus fill:#E3F2FD,stroke:#1565C0,stroke-width:3px,color:#0D47A1
 ```
 
-**After:**
-```mermaid
-graph LR
-    A[Client] --> B[API Gateway]
-    B --> C[Auth Service]
-    B --> D[Data Service]
-    B --> E[Cache Layer]
-    E --> D
+Always pair color with a secondary signal (dashed border for removed, thick border for added) so the diagram works for color-blind readers.
+
+### Before/after technique
+
+The most effective technique for communicating architectural change:
+
+1. Draw the current state as a clean diagram
+2. Duplicate it with **identical element positioning**
+3. On the duplicate, make only the actual changes
+4. Use the semantic colors: gray (unchanged), green (added), red+dashed (removed)
+5. Place side-by-side or sequential with labels "Current" and "After this PR"
+
+**Critical:** Keep layout identical between before and after. If you rearrange elements, the viewer wastes cognitive effort mapping old positions to new instead of understanding the change.
+
+### Impact radius diagram (SVG)
+
+For changes with broad blast radius, generate a concentric-circle SVG showing what's directly affected vs transitively affected. Save as a separate `.svg` file and link from the markdown.
+
+```xml
+<svg viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    text { font-family: system-ui, sans-serif; text-anchor: middle; }
+    .ring { fill-opacity: 0.15; stroke-width: 2; }
+    .label { font-size: 13px; fill: #424242; }
+    .center-label { font-size: 15px; font-weight: bold; fill: #1B5E20; }
+    .ring-label { font-size: 11px; fill: #757575; font-style: italic; }
+  </style>
+  <!-- Outer ring: transitively affected -->
+  <ellipse cx="250" cy="200" rx="230" ry="180" class="ring"
+           fill="#FFF3E0" stroke="#E65100"/>
+  <!-- Inner ring: directly affected -->
+  <ellipse cx="250" cy="200" rx="150" ry="120" class="ring"
+           fill="#E3F2FD" stroke="#1565C0"/>
+  <!-- Center: the change -->
+  <ellipse cx="250" cy="200" rx="70" ry="55" class="ring"
+           fill="#C8E6C9" stroke="#2E7D32"/>
+  <text x="250" y="205" class="center-label">Changed Component</text>
+  <!-- Labels positioned around the rings -->
+  <text x="250" y="45" class="ring-label">Transitively affected</text>
+  <text x="250" y="110" class="ring-label">Directly affected</text>
+</svg>
 ```
-````
 
-Keep diagrams focused. Show only the components relevant to the change, not the entire system.
+Populate with actual component names. This diagram type has no good Mermaid equivalent, so always use SVG.
 
-If no architectural changes warrant diagrams, note: "No architectural diagrams needed for this change."
+### Format and rendering
 
-### Writing diagrams to file
+**Primary format: Mermaid** in fenced code blocks. Renders natively in VS Code, GitHub, Notion, GitLab, and most doc platforms.
 
-Mermaid diagrams are not visually renderable in the terminal. Always write diagrams to a markdown file so the user can view them in a tool that renders mermaid (VS Code preview, GitHub, browser extensions, etc.).
+**Secondary format: SVG files** for custom visuals (impact radius, custom layouts). Reference with `![description](./diagram.svg)`.
 
-Write the diagrams to a working draft file at the output path (see Phase 5 for path resolution). This file will be incrementally built through Phases 2-3.
+### Writing to file
 
-After writing the file, tell the user:
+Diagrams don't render visually in the terminal. Write them to the output file (see Phase 5 for path). After writing:
 
-> "I've written the before/after diagrams to `<path>`. Open it in a markdown previewer to see the rendered diagrams. Do they accurately represent the change?"
+> "I've written the diagrams to `<path>`. Open in a markdown previewer to see them rendered. Do they accurately represent the change?"
 
-Wait for confirmation. If the user provides corrections, update the file and re-present.
+Wait for confirmation.
 
 ## Phase 3: Write
 
-Write the full analysis into the output file (the same file started in Phase 2, or a new file if Phase 2 was skipped). If diagrams were already written in Phase 2, prepend/append the analysis sections around them. Start with a header:
+Write the full analysis into the output file. Structure follows progressive disclosure: a PM who reads only the TL;DR and impact summary can make planning decisions. Technical details are available but not required.
+
+### Document structure
 
 ```
-# Architecture Impact: PR #<number> - <PR title>
-**Repo:** <owner/repo>
-**Date:** <today's date>
+# Architecture Impact: PR #<number> - <business-outcome title>
+**Repo:** <owner/repo>  |  **Date:** <today>  |  **PR:** <link>
+
+## TL;DR
+- [What's changing, in outcome terms]
+- [Why now / what triggered this]
+- [What it costs: time, coordination, risk]
+
+## Business Context
+[One paragraph: what problem this solves and why it matters.
+Complete the "so what" sentence from Phase 1 Step 4.]
+
+## Before
+[How the affected area was structured and what the pain points were.
+Use an analogy if it helps: "Currently every framework adapter is its
+own kitchen -- each one independently manages routing, CORS, and
+dispatch, so adding a new recipe means updating every kitchen."]
+
+## After
+[What changed and how it's structured now.
+Ground the analogy: "Now there's one shared kitchen (the core handler)
+and the adapters just serve the food in different dining rooms."]
+
+## What This Enables
+[Concrete capabilities unlocked. Use bullets. Each bullet should
+pass the newspaper test -- would a PM nod?]
+
+## Impact Assessment
+
+### Six Questions
+
+| Question | Answer |
+|---|---|
+| **Will this break anything?** | [Honest risk + mitigation] |
+| **Timeline impact?** | [What slows down, for how long] |
+| **New capabilities?** | [What's possible now that wasn't] |
+| **Velocity impact?** | [Short-term cost vs long-term gain] |
+| **Other teams affected?** | [Who needs to do what] |
+| **Reversible?** | [Rollback plan and time to execute] |
+
+### Tradeoffs
+
+| What we gain | What it costs |
+|---|---|
+| [Concrete gain] | [Concrete cost] |
+
+## Diagrams
+
+[Before/after comparison -- always included]
+[Additional diagrams as selected in Phase 2]
+[Impact radius SVG if applicable]
+
+[Legend -- always included when using color coding]
 ```
-
-### 1. Summary
-
-One paragraph: what the PR does and why it matters architecturally. Readable by anyone on the team.
-
-### 2. Before
-
-Describe the architecture before the PR:
-- How the affected area was structured
-- What the constraints, limitations, or pain points were
-- How data flowed through the affected components
-
-Keep it brief. Only describe what's relevant to understanding the change.
-
-### 3. After
-
-Describe the architecture after the PR:
-- What changed structurally
-- How the affected area is now structured
-- How data flows now
-
-### 4. What this enables
-
-What future possibilities does this change unlock? Examples:
-- "The new plugin system means we can now support third-party extensions without modifying core code"
-- "Decoupling the auth module means it can be deployed independently"
-- "The new event bus allows any module to react to user actions without direct coupling"
-
-Always include this section. Even incremental changes enable something, even if it's just "easier to test" or "simpler to extend."
-
-### 5. Risks and trade-offs
-
-What risks or trade-offs does this change introduce? Always include this section. Examples:
-- New network hop increases latency
-- New abstraction layer adds complexity
-- Circular dependency introduced
-- Migration required for existing consumers
-- Performance implications of new pattern
-
-If genuinely no risks, state: "No significant risks identified" with a brief explanation of why (e.g. "the change is additive and doesn't modify existing behavior").
-
-### 6. Diagrams
-
-Include the mermaid diagrams from Phase 2 (if generated).
 
 ### Writing rules
 
-- **Audience is decision makers.** PMs, leads, stakeholders. They understand "the runtime now has a shared core that all frameworks use" but not "createCopilotRuntimeHandler delegates to dispatchRoute via a discriminated RouteInfo union."
-- **Name components by role, not by file or function.** Say "the request handler", "the Express adapter", "the routing layer", not "fetch-handler.ts", "createCopilotRuntimeHandler()", "matchRoute()". File names and function names belong in code review, not architecture impact.
-- **Describe how pieces talk to each other**, not what happens inside them. "All framework adapters now delegate to a shared core handler" is architectural. "The handler calls matchRoute which returns a RouteInfo discriminated union" is implementation.
-- No implementation details unless they matter architecturally (see examples in Step 3)
-- **Never use em-dashes** in the generated content. No "---" characters. Use commas, colons, periods, or parentheses instead.
-- Short paragraphs, scannable
-- Use concrete examples, not abstract descriptions
+- **Lead with outcomes, not implementation.** The first paragraph should contain zero jargon.
+- **Name by role, not by file.** "The request handler", "the Express adapter", not "fetch-handler.ts".
+- **Describe how pieces talk, not what happens inside.** "All adapters now delegate to a shared core" is architectural. "The handler calls matchRoute which returns a discriminated union" is implementation.
+- **Use one analogy**, then ground it in specifics. State where it breaks down.
+- **Quantify where possible.** "Velocity dips ~30% for 3 weeks" beats "might slow things down."
+- **Never use em-dashes** in the generated content. Use commas, colons, periods, or parentheses.
+- **Short paragraphs, scannable.** No wall of text.
+- **Include the baseline.** What happens if we do nothing?
 
 ## Phase 4: Review
 
-The full analysis document should already be written to the output file (built incrementally through Phases 2-3). Tell the user:
+> "The complete analysis is at `<path>`. Open in a markdown previewer to review with rendered diagrams. Want any changes?"
 
-> "The complete architecture impact analysis is at `<path>`. Open it in a markdown previewer to review the full document with rendered diagrams. Want any changes?"
-
-Wait for approval. Only proceed to output once the user confirms. Apply any requested changes by editing the file.
+Wait for approval. Apply changes by editing the file.
 
 ## Phase 5: Output
 
 ### Path resolution
 
-Default output path: `docs/architecture/PR-<number>-impact.md`
+Default: `docs/architecture/PR-<number>-impact.md`
 
-At the start of Phase 2 (or Phase 3 if no diagrams), ask the user:
+Ask early (start of Phase 2): "I'll write the analysis to `docs/architecture/PR-<number>-impact.md`. Want a different location?"
 
-> "I'll write the analysis to `docs/architecture/PR-<number>-impact.md`. Want a different location?"
+If SVG diagrams were generated, place them alongside: `docs/architecture/PR-<number>-impact-radius.svg`
 
-If the user specifies a different path, use that. Create the directory if it doesn't exist. If file already exists, ask whether to overwrite or create a versioned copy.
-
-The file should already exist from Phases 2-3. Print a brief terminal summary (title, one-line summary, path to file) so the user knows where to find the full document. Do NOT print the full analysis to terminal.
+Print a brief terminal summary (title + one-line + path). Do NOT print the full document to terminal.
 
 ## Error Handling
 
 - `gh` not available -> cannot proceed, inform user
 - Invalid PR -> ask user to verify
-- PR too large to analyze fully -> focus on structural changes, note what was skipped
-
-## What this skill does NOT do
-
-- Code review (use code review tools for that)
-- Generate marketing content (use `/marketing-pipeline` for that)
-- Make architectural recommendations (it documents what changed, not what should change)
-- Analyze multiple PRs at once (run the skill once per PR)
+- PR too large -> focus on structural changes, note what was skipped
