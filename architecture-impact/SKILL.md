@@ -91,7 +91,18 @@ Before proceeding, complete this sentence:
 
 If you cannot complete this sentence, dig deeper into the PR description and review comments until you can. This sentence becomes the spine of the entire analysis.
 
-### Step 5 - Present understanding
+### Step 5 - Market impact
+
+Go beyond internal engineering impact. Ask:
+
+- **New users:** What user segments were blocked before that are unblocked now? Who couldn't use the product that can now? Be specific about communities, ecosystems, and their approximate size.
+- **New partners:** What companies, platforms, or ecosystems can the product now integrate with? What would those partnerships look like (templates, marketplace listings, co-marketing, ecosystem features)?
+- **Reduced adoption friction:** How does this change the adoption conversation? What did prospects have to do before vs now? (e.g., "migrate your backend" vs "add 3 lines to your existing server")
+- **Competitive positioning:** Does this close a gap with competitors, or open a lead?
+
+Not every PR has market impact. Skip this step for internal-only changes. But for platform expansion, new integrations, or API surface changes, this is often the most valuable part of the analysis.
+
+### Step 6 - Present understanding
 
 Present in business language, not implementation language:
 
@@ -99,6 +110,7 @@ Present in business language, not implementation language:
 > **Why it matters:** [business impact]
 > **What it enables:** [new capabilities]
 > **What it costs:** [tradeoffs, risks, migration burden]
+> **Who this unlocks:** [new user segments, new partners] (if applicable)
 >
 > "Does this capture the intent? Anything I'm missing?"
 
@@ -120,6 +132,11 @@ Pick the diagram type that matches the question the audience is asking:
 | "What's the migration timeline?" | Phase / timeline diagram | High |
 
 For most PRs, generate 2-3 diagrams: a **before/after comparison** (always) and one of the others based on what best communicates the change.
+
+For **customer-facing** output, prefer:
+- **Fan-out diagram:** Product at center, supported targets radiating out. Communicates "one integration, many platforms." This is the headline visual.
+- **Before/after as value table**, not architecture diagram. Show what changed for the user (supported platforms, adoption effort, lock-in), not internal module structure.
+- **3-step code snippets** as visual proof: Install, Create, Mount on your server. Show the same product code with different one-line server wrappers.
 
 ### Abstraction level
 
@@ -208,9 +225,57 @@ Wait for confirmation.
 
 ## Phase 3: Write
 
-Write the full analysis into the output file. Structure follows progressive disclosure: a PM who reads only the TL;DR and impact summary can make planning decisions. Technical details are available but not required.
+Write the full analysis into the output file. Pick the document structure based on the audience. If the PR has market impact (Step 5 produced new users/partners), default to the **customer-facing** structure. For internal-only changes, use the **internal** structure.
 
-### Document structure
+Ask the user if unclear: "This PR has market impact. Should I frame it for external stakeholders (customers, partners) or internal team?"
+
+### Customer-facing structure
+
+Use when the change expands who can use the product, unlocks new platforms/ecosystems, or changes the adoption story. The focus is value, market expansion, and adoption friction, not internal engineering tradeoffs.
+
+```
+# <Value-first title, no PR number>
+(e.g., "Run Anywhere: New Users, New Partners, No Lock-in")
+
+## The One-Liner
+[One sentence: what changed and why anyone should care.
+Zero jargon. A developer browsing the website would nod.]
+
+## Why This Matters
+[The "so what" paragraph. Frame as market expansion, not
+technical achievement. Use an analogy if it helps.
+State where the analogy breaks down.]
+
+[Fan-out diagram: the product at center, new targets radiating out.
+This is the headline visual.]
+
+## New Users This Opens Up
+[Table: Segment | Why they were blocked | Opportunity size.
+Be specific about communities and ecosystems.]
+
+## New Partner Opportunities
+[Table: Partner | What the partnership looks like.
+Concrete: templates, marketplace listings, co-marketing.]
+
+## How Adoption Works Now
+[3-step pattern: Install, Create, Mount.
+Show the same product code with different one-line server mounts.
+The message: "Your stack doesn't change. You just add [product]."]
+
+## Before and After
+[Comparison table framed as value, not architecture:
+Supported platforms, adoption requirement, lock-in, etc.
+No file names, no internal module structure.]
+
+## The Value in One Sentence
+[One bold sentence that captures the market impact.
+e.g., "Every developer with a JS backend is now a potential
+customer, with zero migration cost."]
+```
+
+### Internal structure
+
+Use for changes that matter to the team but don't change the external story (refactors, internal tooling, CI improvements, performance work).
 
 ```
 # Architecture Impact: PR #<number> - <business-outcome title>
@@ -227,14 +292,11 @@ Complete the "so what" sentence from Phase 1 Step 4.]
 
 ## Before
 [How the affected area was structured and what the pain points were.
-Use an analogy if it helps: "Currently every framework adapter is its
-own kitchen -- each one independently manages routing, CORS, and
-dispatch, so adding a new recipe means updating every kitchen."]
+Use an analogy if it helps.]
 
 ## After
 [What changed and how it's structured now.
-Ground the analogy: "Now there's one shared kitchen (the core handler)
-and the adapters just serve the food in different dining rooms."]
+Ground the analogy.]
 
 ## What This Enables
 [Concrete capabilities unlocked. Use bullets. Each bullet should
