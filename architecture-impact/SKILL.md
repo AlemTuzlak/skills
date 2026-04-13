@@ -7,6 +7,10 @@ description: Use when the user wants to understand the before/after architectura
 
 Analyze a PR's impact on overall architecture. Produces a high-level before/after summary with mermaid diagrams showing what changed, what the change enables, and what risks or trade-offs it introduces.
 
+## Audience
+
+The output targets **decision makers**: engineering leads, PMs, and stakeholders who need to understand what changed and why it matters, not how it was implemented. Write and diagram at the level of **components, layers, and data flows**, not files, functions, or internal module structure.
+
 ## Input
 
 This skill accepts PRs only.
@@ -152,6 +156,20 @@ Generate before/after mermaid diagrams when the PR contains architectural change
 | Replaced or evolved patterns | Component or data flow diagram showing the pattern change (before/after) |
 | New sequence of operations | Sequence diagram (after only) |
 
+### Abstraction level
+
+Diagrams are for decision makers, not implementors. Show **how pieces talk to each other**, not internal structure.
+
+| Do | Don't |
+|---|---|
+| Name components by role: "Runtime Core", "Express Adapter", "Agent Runner" | Name files: "fetch-handler.ts", "express.ts" |
+| Name layers: "Routing Layer", "Auth Layer" | Name functions: "matchRoute()", "dispatchRoute()" |
+| Show communication: "Client -> Runtime -> Agent" | Show imports or internal module wiring |
+| Label arrows with what flows: "SSE stream", "REST", "JSON envelope" | Label arrows with function calls or variable names |
+| Use subgraphs for logical boundaries: "Framework Adapters", "Core" | Use subgraphs for directories: "src/v2/runtime/core/" |
+
+**Rule of thumb:** if a non-technical person can't understand the node label, it's too detailed. "Request Handler" is clear. "createCopilotRuntimeHandler" is not.
+
 ### Diagram format
 
 Generate as mermaid code blocks. Use separate `before` and `after` diagrams (two sequential code blocks), clearly labeled:
@@ -181,15 +199,21 @@ Keep diagrams focused. Show only the components relevant to the change, not the 
 
 If no architectural changes warrant diagrams, note: "No architectural diagrams needed for this change."
 
-Present the diagrams to the user:
+### Writing diagrams to file
 
-> "Here are the before/after diagrams. Do they accurately represent the change?"
+Mermaid diagrams are not visually renderable in the terminal. Always write diagrams to a markdown file so the user can view them in a tool that renders mermaid (VS Code preview, GitHub, browser extensions, etc.).
 
-Wait for confirmation. If the user provides corrections, update the diagrams and re-present.
+Write the diagrams to a working draft file at the output path (see Phase 5 for path resolution). This file will be incrementally built through Phases 2-3.
+
+After writing the file, tell the user:
+
+> "I've written the before/after diagrams to `<path>`. Open it in a markdown previewer to see the rendered diagrams. Do they accurately represent the change?"
+
+Wait for confirmation. If the user provides corrections, update the file and re-present.
 
 ## Phase 3: Write
 
-Produce a high-level analysis document. Start with a header:
+Write the full analysis into the output file (the same file started in Phase 2, or a new file if Phase 2 was skipped). If diagrams were already written in Phase 2, prepend/append the analysis sections around them. Start with a header:
 
 ```
 # Architecture Impact: PR #<number> - <PR title>
@@ -243,7 +267,9 @@ Include the mermaid diagrams from Phase 2 (if generated).
 
 ### Writing rules
 
-- High-level, readable by anyone on the team (PMs, leads, engineers)
+- **Audience is decision makers.** PMs, leads, stakeholders. They understand "the runtime now has a shared core that all frameworks use" but not "createCopilotRuntimeHandler delegates to dispatchRoute via a discriminated RouteInfo union."
+- **Name components by role, not by file or function.** Say "the request handler", "the Express adapter", "the routing layer", not "fetch-handler.ts", "createCopilotRuntimeHandler()", "matchRoute()". File names and function names belong in code review, not architecture impact.
+- **Describe how pieces talk to each other**, not what happens inside them. "All framework adapters now delegate to a shared core handler" is architectural. "The handler calls matchRoute which returns a RouteInfo discriminated union" is implementation.
 - No implementation details unless they matter architecturally (see examples in Step 3)
 - **Never use em-dashes** in the generated content. No "---" characters. Use commas, colons, periods, or parentheses instead.
 - Short paragraphs, scannable
@@ -251,23 +277,25 @@ Include the mermaid diagrams from Phase 2 (if generated).
 
 ## Phase 4: Review
 
-Present the complete analysis:
+The full analysis document should already be written to the output file (built incrementally through Phases 2-3). Tell the user:
 
-> "Here's the architecture impact analysis:"
->
-> [Full document]
->
-> "Want any changes?"
+> "The complete architecture impact analysis is at `<path>`. Open it in a markdown previewer to review the full document with rendered diagrams. Want any changes?"
 
-Wait for approval. Only proceed to output once the user confirms.
+Wait for approval. Only proceed to output once the user confirms. Apply any requested changes by editing the file.
 
 ## Phase 5: Output
 
-Always print the final analysis to terminal.
+### Path resolution
 
-Then ask: "Want me to save this to `docs/architecture/PR-<number>-impact.md`? Or somewhere else?"
+Default output path: `docs/architecture/PR-<number>-impact.md`
 
-If the user confirms, save to the specified path. Create the directory if it doesn't exist. If file already exists, ask whether to overwrite or create a versioned copy.
+At the start of Phase 2 (or Phase 3 if no diagrams), ask the user:
+
+> "I'll write the analysis to `docs/architecture/PR-<number>-impact.md`. Want a different location?"
+
+If the user specifies a different path, use that. Create the directory if it doesn't exist. If file already exists, ask whether to overwrite or create a versioned copy.
+
+The file should already exist from Phases 2-3. Print a brief terminal summary (title, one-line summary, path to file) so the user knows where to find the full document. Do NOT print the full analysis to terminal.
 
 ## Error Handling
 
