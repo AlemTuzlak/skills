@@ -1,0 +1,10 @@
+{
+  "name": "alemtuzlak-skills",
+  "description": "Marketing and content generation skills for PRs - changelog, marketing brief, blog post, social copy, newsletter, video script",
+  "version": "1.0.0",
+  "author": {
+    "name": "Alem Tuzlak"
+  },
+  "repository": "https://github.com/alemtuzlak/skills",
+  "license": "MIT"
+}
