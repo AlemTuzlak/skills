@@ -22,9 +22,9 @@ export type Brand = {
 export const brand: Brand = {
   logoPath: null,
   colors: {
-    primary: "#EC008B",
-    accent: "#7C3AED",
-    background: "#0A0A0A",
+    primary: "#3B82F6",   // neutral blue
+    accent: "#8B5CF6",    // neutral violet
+    background: "#0A0A0A", // near-black
     text: "#FFFFFF",
     muted: "#9CA3AF",
     success: "#22C55E",

@@ -81,8 +81,8 @@ When auto-detection finds nothing:
 {
   "logoPath": null,
   "colors": {
-    "primary": "#EC008B",
-    "accent": "#7C3AED",
+    "primary": "#3B82F6",
+    "accent": "#8B5CF6",
     "background": "#0A0A0A",
     "text": "#FFFFFF",
     "muted": "#9CA3AF",

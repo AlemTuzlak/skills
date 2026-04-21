@@ -145,9 +145,9 @@ Auto-detect using the heuristics documented in `brand-detection.md`. Present fin
 
 > "I loaded brand settings from `.marketing/brand.json`. Use saved, or re-detect?"
 
-**Fallback when nothing detected:** ask explicitly with these sensible defaults:
-- Primary: `#EC008B` (hot pink)
-- Accent: `#7C3AED` (purple)
+**Fallback when nothing detected:** ask explicitly with these neutral defaults. These are intentionally neutral — auto-detection of the project's actual brand is always preferred, and these values should only appear when detection turns up nothing.
+- Primary: `#3B82F6` (neutral blue)
+- Accent: `#8B5CF6` (neutral violet)
 - Background: `#0A0A0A` (near-black, dark mode)
 - Text: `#FFFFFF` (white)
 - Muted: `#9CA3AF`
