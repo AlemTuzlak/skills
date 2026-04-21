@@ -16,14 +16,34 @@ const hexToRgba = (hex: string, alpha: number) => {
 export const CodeSnippet: React.FC<SceneProps<"CodeSnippet">> = ({
   language,
   code,
-  highlightLines,
+  emphasizedLines,
   caption,
+  chapters,
 }) => {
   const frame = useCurrentFrame();
   const fadeIn = interpolate(frame, [0, 12], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
+
+  // Resolve which lines to emphasize + which caption to show.
+  // If chapters provided, walk through them based on frame; extra frames hold
+  // on the last chapter. Otherwise fall back to the static `emphasizedLines`.
+  let activeEmphasis: readonly number[] | undefined = emphasizedLines;
+  let activeCaption = caption;
+  if (chapters && chapters.length > 0) {
+    let elapsed = 0;
+    let active = chapters[chapters.length - 1]; // default: hold on last
+    for (const ch of chapters) {
+      if (frame < elapsed + ch.durationFrames) {
+        active = ch;
+        break;
+      }
+      elapsed += ch.durationFrames;
+    }
+    activeEmphasis = active.lines;
+    activeCaption = active.caption ?? caption;
+  }
 
   return (
     <SceneBackground variant="diagonal">
@@ -34,8 +54,9 @@ export const CodeSnippet: React.FC<SceneProps<"CodeSnippet">> = ({
           alignItems: "center",
         }}
       >
-      {caption && (
+      {activeCaption && (
         <div
+          key={activeCaption}
           style={{
             fontFamily: brand.font.family,
             fontSize: 56,
@@ -44,9 +65,10 @@ export const CodeSnippet: React.FC<SceneProps<"CodeSnippet">> = ({
             marginBottom: 40,
             opacity: fadeIn,
             textAlign: "center",
+            transition: "opacity 300ms ease",
           }}
         >
-          <Highlight text={caption} />
+          <Highlight text={activeCaption} />
         </div>
       )}
       <div
@@ -90,7 +112,7 @@ export const CodeSnippet: React.FC<SceneProps<"CodeSnippet">> = ({
           <HighlightedCode
             code={code}
             lang={language}
-            highlightLines={highlightLines}
+            emphasizedLines={activeEmphasis}
           />
         </div>
       </div>

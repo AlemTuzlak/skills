@@ -19,12 +19,24 @@ const Panel: React.FC<{
   icon: string;
   slideFrom: number;
   frame: number;
-}> = ({ side, accent, icon, slideFrom, frame }) => {
+  focusOpacity: number;
+  emphasizedLines?: readonly number[];
+  errorColor?: string;
+}> = ({
+  side,
+  accent,
+  icon,
+  slideFrom,
+  frame,
+  focusOpacity,
+  emphasizedLines,
+  errorColor,
+}) => {
   const x = interpolate(frame, [0, 18], [slideFrom, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const opacity = interpolate(frame, [0, 18], [0, 1], {
+  const enterOpacity = interpolate(frame, [0, 18], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -33,9 +45,12 @@ const Panel: React.FC<{
     <div
       style={{
         flex: 1,
-        transform: `translateX(${x}px)`,
-        opacity,
-        padding: 32,
+        minWidth: 0,
+        transform: `translateX(${x}px) scale(${0.97 + focusOpacity * 0.03})`,
+        opacity: enterOpacity * (0.35 + focusOpacity * 0.65),
+        filter: `blur(${(1 - focusOpacity) * 1.5}px)`,
+        transition: "opacity 600ms ease, filter 600ms ease, transform 600ms ease",
+        padding: 24,
         background: "rgba(255, 255, 255, 0.04)",
         border: "1px solid rgba(255, 255, 255, 0.08)",
         borderRadius: 20,
@@ -47,10 +62,10 @@ const Panel: React.FC<{
       <div
         style={{
           fontFamily: brand.font.family,
-          fontSize: 36,
+          fontSize: 32,
           fontWeight: 800,
           color: accent,
-          marginBottom: 20,
+          marginBottom: 16,
           textTransform: "uppercase",
           letterSpacing: "0.1em",
           display: "flex",
@@ -62,22 +77,30 @@ const Panel: React.FC<{
         <span>{icon}</span>
         <span>{side.label}</span>
       </div>
-      {side.code ? (
+      {side.code && side.language ? (
         <div
           style={{
-            fontSize: 28,
+            fontSize: 20,
+            lineHeight: 1.55,
             fontFamily: "'Fira Code', monospace",
             color: brand.colors.text,
             textAlign: "left",
+            overflow: "hidden",
           }}
         >
-          <HighlightedCode code={side.code} lang={side.language} />
+          <HighlightedCode
+            code={side.code}
+            lang={side.language}
+            emphasizedLines={emphasizedLines}
+            errorLines={side.errorLines}
+            errorColor={errorColor}
+          />
         </div>
       ) : (
         <div
           style={{
             fontFamily: brand.font.family,
-            fontSize: 36,
+            fontSize: 32,
             color: brand.colors.text,
             textAlign: "left",
           }}
@@ -93,12 +116,41 @@ export const BeforeAfter: React.FC<SceneProps<"BeforeAfter">> = ({
   before,
   after,
   caption,
+  chapters,
 }) => {
   const frame = useCurrentFrame();
   const captionOpacity = interpolate(frame, [0, 10], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
+
+  // Resolve the active chapter from the current frame.
+  // `focus` fades the non-focused panel down and blurs it; `beforeLines` /
+  // `afterLines` drive per-line emphasis inside the focused panel.
+  let activeFocus: "before" | "after" | "both" = "both";
+  let activeCaption = caption;
+  let beforeLines: readonly number[] | undefined;
+  let afterLines: readonly number[] | undefined;
+  if (chapters && chapters.length > 0) {
+    let elapsed = 0;
+    let active = chapters[chapters.length - 1];
+    for (const ch of chapters) {
+      if (frame < elapsed + ch.durationFrames) {
+        active = ch;
+        break;
+      }
+      elapsed += ch.durationFrames;
+    }
+    activeFocus = active.focus;
+    activeCaption = active.caption ?? caption;
+    beforeLines = active.beforeLines;
+    afterLines = active.afterLines;
+  }
+
+  const beforeFocus =
+    activeFocus === "before" ? 1 : activeFocus === "both" ? 1 : 0;
+  const afterFocus =
+    activeFocus === "after" ? 1 : activeFocus === "both" ? 1 : 0;
 
   return (
     <SceneBackground variant="primary-glow">
@@ -108,8 +160,9 @@ export const BeforeAfter: React.FC<SceneProps<"BeforeAfter">> = ({
           justifyContent: "center",
         }}
       >
-        {caption && (
+        {activeCaption && (
           <div
+            key={activeCaption}
             style={{
               fontFamily: brand.font.family,
               fontSize: 56,
@@ -118,18 +171,22 @@ export const BeforeAfter: React.FC<SceneProps<"BeforeAfter">> = ({
               marginBottom: 40,
               textAlign: "center",
               opacity: captionOpacity,
+              transition: "opacity 300ms ease",
             }}
           >
-            <Highlight text={caption} />
+            <Highlight text={activeCaption} />
           </div>
         )}
-        <div style={{ display: "flex", gap: 40 }}>
+        <div style={{ display: "flex", gap: 40, alignItems: "stretch" }}>
           <Panel
             side={before}
             accent={brand.colors.danger}
             icon="❌"
             slideFrom={-60}
             frame={frame}
+            focusOpacity={beforeFocus}
+            emphasizedLines={beforeLines}
+            errorColor={brand.colors.danger}
           />
           <Panel
             side={after}
@@ -137,6 +194,9 @@ export const BeforeAfter: React.FC<SceneProps<"BeforeAfter">> = ({
             icon="✅"
             slideFrom={60}
             frame={frame}
+            focusOpacity={afterFocus}
+            emphasizedLines={afterLines}
+            errorColor={brand.colors.danger}
           />
         </div>
       </AbsoluteFill>

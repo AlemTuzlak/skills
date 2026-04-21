@@ -1,24 +1,42 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { cancelRender, continueRender, delayRender } from "remotion";
 import { codeToHtml, type BundledLanguage, type BundledTheme } from "shiki";
 
 /**
- * Renders syntax-highlighted code using `shiki`.
+ * Renders syntax-highlighted code with optional per-line emphasis and
+ * error-line coloring.
  *
- * Shiki's `codeToHtml` is async, so we wrap the load in Remotion's
- * `delayRender` / `continueRender` to ensure rendering waits for highlight
- * output before capturing frames.
+ * `emphasizedLines` (1-indexed): the lines the viewer should focus on. All
+ * other lines render at 0.22 opacity with a slight blur, and opacity/filter
+ * transitions animate at 700ms so swapping `emphasizedLines` at runtime
+ * produces a smooth chapter-style focus change (imports → usage → result).
  *
- * Shiki's HTML output is trusted, generated-on-server content (not user
- * input), so injecting it via `dangerouslySetInnerHTML` is the standard
- * Remotion + shiki pattern.
+ * `errorLines` (1-indexed): forces those lines to render in `errorColor`
+ * regardless of Shiki's theme. Use for TypeScript diagnostic comments
+ * (`// TS2322 ...`, squiggle lines) so the error reads as an error instead
+ * of as a muted-gray comment.
+ *
+ * Shiki's `codeToHtml` is async; we wrap the load in Remotion's
+ * `delayRender` / `continueRender` so frame capture waits for highlight
+ * output. The HTML is trusted, server-generated content (not user input),
+ * so injecting via `dangerouslySetInnerHTML` is the standard Remotion +
+ * shiki pattern.
  */
 export const HighlightedCode: React.FC<{
   code: string;
   lang: BundledLanguage | (string & {});
   theme?: BundledTheme | (string & {});
-  highlightLines?: number[];
-}> = ({ code, lang, theme = "vitesse-dark", highlightLines }) => {
+  emphasizedLines?: readonly number[];
+  errorLines?: readonly number[];
+  errorColor?: string;
+}> = ({
+  code,
+  lang,
+  theme = "vitesse-dark",
+  emphasizedLines,
+  errorLines,
+  errorColor = "#EF4444",
+}) => {
   const [html, setHtml] = useState<string | null>(null);
   const [handle] = useState(() => delayRender(`shiki: ${lang}`));
 
@@ -27,22 +45,17 @@ export const HighlightedCode: React.FC<{
     codeToHtml(code, {
       lang: lang as BundledLanguage,
       theme: theme as BundledTheme,
-      transformers: highlightLines
-        ? [
-            {
-              line(node, line) {
-                if (highlightLines.includes(line)) {
-                  const props = (node.properties ?? {}) as Record<string, unknown>;
-                  const existing = typeof props.class === "string" ? props.class : "";
-                  node.properties = {
-                    ...props,
-                    class: (existing + " remotion-highlight-line").trim(),
-                  };
-                }
-              },
-            },
-          ]
-        : undefined,
+      transformers: [
+        {
+          line(node, line) {
+            const props = (node.properties ?? {}) as Record<string, unknown>;
+            node.properties = {
+              ...props,
+              "data-line": String(line),
+            };
+          },
+        },
+      ],
     })
       .then((out) => {
         if (cancelled) return;
@@ -73,14 +86,53 @@ export const HighlightedCode: React.FC<{
     return () => {
       cancelled = true;
     };
-  }, [code, lang, theme, highlightLines, handle]);
+  }, [code, lang, theme, handle]);
+
+  const emphasisStyle = useMemo(() => {
+    const parts: string[] = [];
+    if (emphasizedLines && emphasizedLines.length > 0) {
+      const selectors = emphasizedLines
+        .map((n) => `.remotion-code-block [data-line="${n}"]`)
+        .join(", ");
+      parts.push(`
+        .remotion-code-block [data-line] {
+          transition: opacity 700ms ease, filter 700ms ease;
+          opacity: 0.22;
+          filter: blur(0.5px);
+        }
+        ${selectors} {
+          opacity: 1;
+          filter: none;
+        }
+      `);
+    }
+    if (errorLines && errorLines.length > 0) {
+      const errorSelectors = errorLines
+        .flatMap((n) => [
+          `.remotion-code-block [data-line="${n}"]`,
+          `.remotion-code-block [data-line="${n}"] span`,
+        ])
+        .join(", ");
+      parts.push(`
+        ${errorSelectors} {
+          color: ${errorColor} !important;
+        }
+      `);
+    }
+    return parts.join("\n");
+  }, [emphasizedLines, errorLines, errorColor]);
 
   if (html === null) {
     return null;
   }
 
-  // eslint-disable-next-line react/no-danger -- shiki output is trusted, server-generated
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <div className="remotion-code-block">
+      {emphasisStyle && <style>{emphasisStyle}</style>}
+      {/* eslint-disable-next-line react/no-danger -- shiki output is trusted, server-generated */}
+      <div dangerouslySetInnerHTML={{ __html: html }} />
+    </div>
+  );
 };
 
 export default HighlightedCode;
