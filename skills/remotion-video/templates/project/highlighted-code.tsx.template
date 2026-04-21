@@ -46,10 +46,20 @@ export const HighlightedCode: React.FC<{
     })
       .then((out) => {
         if (cancelled) return;
+        if (typeof out !== "string" || out.trim() === "") {
+          const preview = code.length > 60 ? code.slice(0, 60) + "..." : code;
+          cancelRender(
+            new Error(
+              `HighlightedCode: shiki returned empty output for lang="${lang}". Code preview: ${preview}`,
+            ),
+          );
+          return;
+        }
         setHtml(out);
         continueRender(handle);
       })
       .catch((err) => {
+        if (cancelled) return;
         cancelRender(err instanceof Error ? err : new Error(String(err)));
       });
     return () => {
