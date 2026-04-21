@@ -18,7 +18,7 @@ export const HighlightedCode: React.FC<{
   lang: BundledLanguage | (string & {});
   theme?: BundledTheme | (string & {});
   highlightLines?: number[];
-}> = ({ code, lang, theme = "github-dark", highlightLines }) => {
+}> = ({ code, lang, theme = "vitesse-dark", highlightLines }) => {
   const [html, setHtml] = useState<string | null>(null);
   const [handle] = useState(() => delayRender(`shiki: ${lang}`));
 
@@ -55,7 +55,15 @@ export const HighlightedCode: React.FC<{
           );
           return;
         }
-        setHtml(out);
+        // Strip the theme's opaque background so the surrounding container
+        // owns the look (brand-tinted overlay, blur, border, etc.). Shiki
+        // bakes `background-color:#…;` directly into the root <pre style="…">
+        // and sometimes the inner <code style="…">, so match both.
+        const transparent = out.replace(
+          /background-color:[^;"']+;?/g,
+          "background-color:transparent;",
+        );
+        setHtml(transparent);
         continueRender(handle);
       })
       .catch((err) => {

@@ -3,6 +3,14 @@ import { brand } from "../brand";
 import { Highlight } from "../highlight";
 import type { SceneProps } from "../story-types";
 
+const hexToRgba = (hex: string, alpha: number) => {
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 export const BulletList: React.FC<SceneProps<"BulletList">> = ({
   items,
   caption,
@@ -88,7 +96,7 @@ export const BulletList: React.FC<SceneProps<"BulletList">> = ({
                   fontSize: 48,
                   fontWeight: 900,
                   lineHeight: 1,
-                  boxShadow: "0 0 24px rgba(236, 0, 139, 0.5)",
+                  boxShadow: `0 0 24px ${hexToRgba(brand.colors.primary, 0.5)}`,
                 }}
               >
                 •

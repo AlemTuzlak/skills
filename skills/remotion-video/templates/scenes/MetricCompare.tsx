@@ -25,12 +25,14 @@ const Card: React.FC<{ metric: Metric; accent: string; delayFrames: number }> = 
     <div
       style={{
         flex: 1,
-        background: "#0d1117",
+        background: "rgba(255, 255, 255, 0.04)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
         borderRadius: 24,
         padding: 56,
         transform: `scale(${scale})`,
         opacity,
         borderBottom: `8px solid ${accent}`,
+        backdropFilter: "blur(2px)",
       }}
     >
       <div

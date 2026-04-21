@@ -35,9 +35,11 @@ const Panel: React.FC<{
         transform: `translateX(${x}px)`,
         opacity,
         padding: 32,
-        background: "#0d1117",
+        background: "rgba(255, 255, 255, 0.04)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
         borderRadius: 20,
         borderTop: `6px solid ${accent}`,
+        backdropFilter: "blur(2px)",
         boxShadow: `0 0 0 1px ${hexToRgba(accent, 0.3)}, 0 20px 60px ${hexToRgba(accent, 0.15)}`,
       }}
     >
@@ -53,21 +55,30 @@ const Panel: React.FC<{
           display: "flex",
           alignItems: "center",
           gap: 12,
+          textAlign: "left",
         }}
       >
         <span>{icon}</span>
         <span>{side.label}</span>
       </div>
       {side.code ? (
-        <div style={{ fontSize: 28, fontFamily: "'Fira Code', monospace", color: "#e6edf3" }}>
-          <HighlightedCode code={side.code} lang={side.language} theme="github-dark" />
+        <div
+          style={{
+            fontSize: 28,
+            fontFamily: "'Fira Code', monospace",
+            color: brand.colors.text,
+            textAlign: "left",
+          }}
+        >
+          <HighlightedCode code={side.code} lang={side.language} />
         </div>
       ) : (
         <div
           style={{
             fontFamily: brand.font.family,
             fontSize: 36,
-            color: "#e6edf3",
+            color: brand.colors.text,
+            textAlign: "left",
           }}
         >
           {side.label}

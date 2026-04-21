@@ -4,6 +4,14 @@ import { brand } from "../brand";
 import { Highlight } from "../highlight";
 import type { SceneProps } from "../story-types";
 
+const hexToRgba = (hex: string, alpha: number) => {
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 export const LibrarySwap: React.FC<SceneProps<"LibrarySwap">> = ({
   sharedCode,
   libraries,
@@ -69,17 +77,17 @@ export const LibrarySwap: React.FC<SceneProps<"LibrarySwap">> = ({
         style={{
           fontSize: 36,
           lineHeight: 1.5,
-          background: "#0d1117",
-          color: "#e6edf3",
+          background: "rgba(255, 255, 255, 0.04)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
           borderRadius: 20,
           padding: 40,
           minWidth: "60%",
           fontFamily: "'Fira Code', 'JetBrains Mono', monospace",
-          boxShadow:
-            "0 0 0 1px rgba(236, 0, 139, 0.3), 0 20px 60px rgba(236, 0, 139, 0.15)",
+          backdropFilter: "blur(2px)",
+          boxShadow: `0 0 0 1px ${hexToRgba(brand.colors.primary, 0.25)}, 0 20px 60px ${hexToRgba(brand.colors.primary, 0.12)}`,
         }}
       >
-        <HighlightedCode code={sharedCode} lang="ts" theme="github-dark" />
+        <HighlightedCode code={sharedCode} lang="ts" />
       </div>
 
       <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
