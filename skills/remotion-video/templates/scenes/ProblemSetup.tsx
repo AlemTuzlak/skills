@@ -8,7 +8,17 @@ export const ProblemSetup: React.FC<SceneProps<"ProblemSetup">> = ({
   durationFrames,
 }) => {
   const frame = useCurrentFrame();
-  const headerOpacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
+
+  if (visualBeats.length === 0) {
+    throw new Error(
+      "ProblemSetup: visualBeats array is empty. The scene needs at least one beat to render.",
+    );
+  }
+
+  const headerOpacity = interpolate(frame, [0, 10], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   const beatInterval = Math.floor(durationFrames / (visualBeats.length + 1));
 

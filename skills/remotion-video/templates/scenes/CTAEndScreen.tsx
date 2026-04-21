@@ -11,14 +11,29 @@ export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
   const { fps } = useVideoConfig();
 
   const headlineEnter = spring({ frame, fps, config: { damping: 14 } });
-  const headlineScale = interpolate(headlineEnter, [0, 1], [0.85, 1]);
-  const headlineOpacity = interpolate(headlineEnter, [0, 1], [0, 1]);
+  const headlineScale = interpolate(headlineEnter, [0, 1], [0.85, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const headlineOpacity = interpolate(headlineEnter, [0, 1], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   const ctaEnter = spring({ frame: Math.max(0, frame - 12), fps, config: { damping: 14 } });
-  const ctaScale = interpolate(ctaEnter, [0, 1], [0.8, 1]);
-  const ctaOpacity = interpolate(ctaEnter, [0, 1], [0, 1]);
+  const ctaScale = interpolate(ctaEnter, [0, 1], [0.8, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const ctaOpacity = interpolate(ctaEnter, [0, 1], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
-  const urlOpacity = interpolate(frame, [fps * 0.66, fps], [0, 1], { extrapolateRight: "clamp" });
+  const urlOpacity = interpolate(frame, [fps * 0.66, fps], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <AbsoluteFill

@@ -10,7 +10,16 @@ export const BulletList: React.FC<SceneProps<"BulletList">> = ({
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const captionOpacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
+  if (items.length === 0) {
+    throw new Error(
+      "BulletList: items array is empty. The scene needs at least one item to render.",
+    );
+  }
+
+  const captionOpacity = interpolate(frame, [0, 10], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   const stagger = Math.floor(durationFrames / (items.length + 2));
 

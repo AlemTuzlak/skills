@@ -9,8 +9,14 @@ const Panel: React.FC<{ side: SceneContent; accent: string; slideFrom: number; f
   slideFrom,
   frame,
 }) => {
-  const x = interpolate(frame, [0, 18], [slideFrom, 0], { extrapolateRight: "clamp" });
-  const opacity = interpolate(frame, [0, 18], [0, 1], { extrapolateRight: "clamp" });
+  const x = interpolate(frame, [0, 18], [slideFrom, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const opacity = interpolate(frame, [0, 18], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <div
@@ -62,7 +68,10 @@ export const BeforeAfter: React.FC<SceneProps<"BeforeAfter">> = ({
   caption,
 }) => {
   const frame = useCurrentFrame();
-  const captionOpacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
+  const captionOpacity = interpolate(frame, [0, 10], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <AbsoluteFill

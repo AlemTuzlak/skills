@@ -10,7 +10,10 @@ export const CodeSnippet: React.FC<SceneProps<"CodeSnippet">> = ({
   caption,
 }) => {
   const frame = useCurrentFrame();
-  const fadeIn = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
+  const fadeIn = interpolate(frame, [0, 12], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <AbsoluteFill

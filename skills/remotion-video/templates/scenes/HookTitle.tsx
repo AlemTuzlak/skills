@@ -7,8 +7,14 @@ export const HookTitle: React.FC<SceneProps<"HookTitle">> = ({ text, visual }) =
   const { fps } = useVideoConfig();
 
   const enter = spring({ frame, fps, config: { damping: 12, stiffness: 120, mass: 0.6 } });
-  const scale = interpolate(enter, [0, 1], [0.85, 1]);
-  const opacity = interpolate(enter, [0, 1], [0, 1]);
+  const scale = interpolate(enter, [0, 1], [0.85, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const opacity = interpolate(enter, [0, 1], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   const emphasisColor =
     visual === "pattern-interrupt"

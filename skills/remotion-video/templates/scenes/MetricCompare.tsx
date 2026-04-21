@@ -11,8 +11,14 @@ const Card: React.FC<{ metric: Metric; accent: string; delayFrames: number }> = 
   const { fps } = useVideoConfig();
   const localFrame = Math.max(0, frame - delayFrames);
   const enter = spring({ frame: localFrame, fps, config: { damping: 14, stiffness: 110 } });
-  const scale = interpolate(enter, [0, 1], [0.7, 1]);
-  const opacity = interpolate(enter, [0, 1], [0, 1]);
+  const scale = interpolate(enter, [0, 1], [0.7, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const opacity = interpolate(enter, [0, 1], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <div
@@ -61,7 +67,10 @@ export const MetricCompare: React.FC<SceneProps<"MetricCompare">> = ({
   caption,
 }) => {
   const frame = useCurrentFrame();
-  const captionOpacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
+  const captionOpacity = interpolate(frame, [0, 10], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <AbsoluteFill

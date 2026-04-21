@@ -10,7 +10,11 @@ export const LibrarySwap: React.FC<SceneProps<"LibrarySwap">> = ({
   durationFrames,
 }) => {
   const frame = useCurrentFrame();
-  if (libraries.length === 0) return null;
+  if (libraries.length === 0) {
+    throw new Error(
+      "LibrarySwap: libraries array is empty. The scene needs at least one library to showcase.",
+    );
+  }
   const segment = Math.floor(durationFrames / libraries.length);
   const currentIndex = Math.min(Math.floor(frame / segment), libraries.length - 1);
   const current = libraries[currentIndex];
