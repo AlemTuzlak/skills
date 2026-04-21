@@ -215,9 +215,7 @@ Example output:
 
 See `patterns/README.md` for how patterns map to scene plans.
 
-### Caption / text highlight syntax
-
-> In any `text`, `caption`, `headline`, or other string field passed to a scene, wrap key words with `**word**` to render them in the brand primary color via the `<Highlight>` component. Use sparingly — 1-2 emphasized runs per line maximum. Example: `"Mix providers wrong — **ship a landmine**."`
+(Caption emphasis syntax, text alignment, background variants, and code-block theming are governed by the **Layout and Typography Rules** section below.)
 
 ## Phase 4: Scaffold
 
@@ -430,6 +428,18 @@ Hard rules applied whenever the skill writes or edits HookTitle scene text. See 
 5. **Anti-clickbait check** — before render, verify the hook's promise is delivered by at least one non-hook scene. If not, refuse to render and ask the user to adjust.
 
 If any rule fails, the skill proposes up to 3 alternative hooks that comply.
+
+### Layout and Typography Rules
+
+Applied whenever the skill generates or edits any scene.
+
+1. **Backgrounds**: every scene uses `<SceneBackground variant="…">`. Flat background fills are banned — if a scene absolutely needs one, document why in a code comment and pass `variant="flat"` explicitly. Variants: `primary-glow` (radial glow of the brand primary at top-left), `vignette` (dark vignette around the edges for focus scenes), `diagonal` (subtle accent→primary linear gradient), `flat` (no overlay).
+2. **Text alignment**:
+   - **Centered**: hooks, titles, CTAs, emphatic one-liners
+   - **Left-aligned**: lists, prose paragraphs, side-by-side panel labels, code captions
+   - Justify only when there's a strong reason; otherwise left or center
+3. **Emphasis**: in any `text`, `caption`, `headline`, or other string field passed to a scene, wrap key words in `**word**` so `<Highlight>` renders them in `brand.colors.primary`. Limit 1–2 emphasized runs per caption. Example: `"Mix providers wrong — **ship a landmine**."`
+4. **Code blocks**: always render with `<HighlightedCode>`, default `theme="vitesse-dark"`. Container background = `rgba(255,255,255,0.04)` (light overlay on dark bg) with `1px solid rgba(255,255,255,0.08)` border and a brand-primary-tinted `boxShadow`. Never hardcode `#0d1117` or any GitHub-dark-derived color.
 
 ## Error Handling
 
