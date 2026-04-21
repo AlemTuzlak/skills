@@ -441,6 +441,65 @@ Applied whenever the skill generates or edits any scene.
 3. **Emphasis**: in any `text`, `caption`, `headline`, or other string field passed to a scene, wrap key words in `**word**` so `<Highlight>` renders them in `brand.colors.primary`. Limit 1–2 emphasized runs per caption. Example: `"Mix providers wrong — **ship a landmine**."`
 4. **Code blocks**: always render with `<HighlightedCode>`, default `theme="vitesse-dark"`. Container background = `rgba(255,255,255,0.04)` (light overlay on dark bg) with `1px solid rgba(255,255,255,0.08)` border and a brand-primary-tinted `boxShadow`. Never hardcode `#0d1117` or any GitHub-dark-derived color.
 
+### Code Scene Rules
+
+#### Tell a story with chapters
+
+Code scenes (`CodeSnippet`, `BeforeAfter`) should walk the viewer through the code over time, not dump everything at once. Use the `chapters` array on the scene to sequence emphasis:
+
+1. **Imports arrive** — highlight all imports (~3s)
+2. **The new import** — zoom to the key import line (~3s)
+3. **The usage site** — shift focus to where the import is consumed (~3–4s)
+4. **Victory beat** — full clarity, all lines visible (~1–2s)
+
+Non-focused lines dim to ~0.22 opacity with a slight blur; 700ms CSS transitions animate the change. On `BeforeAfter`, the non-focused panel additionally fades (to ~0.35 effective opacity), blurs 1.5px, and scales down slightly, via 600ms transitions.
+
+Rules:
+- Give viewers ~3s per chapter (90 frames at 30fps). 1–2s feels rushed — they haven't finished reading before the focus shifts.
+- Sum of chapter `durationFrames` should match the scene's `durationFrames`. Extra frames hold on the last chapter; missing frames truncate.
+- Each chapter may override the scene's `caption` for a per-beat narration. The caption cross-fades (300ms) when it changes.
+- `chapters` is preferred over the static `emphasizedLines` for anything longer than ~3s.
+
+#### Make code fit the slide
+
+- **Single-panel `CodeSnippet`** (full width): lines up to ~75 chars fit comfortably at 36px.
+- **Side-by-side `BeforeAfter`** (half width each): lines must stay under **~45–50 chars** at 20px. Long imports and long JSX lines overflow at the original 28px — the template uses 20px with tighter padding (24) as the floor.
+- **Break long imports** in side-by-side contexts across two lines — it reads naturally at 20px:
+  ```ts
+  import { webSearchTool }
+    from '@tanstack/ai-anthropic/tools'
+  ```
+- The `BeforeAfter` Panel ships with `minWidth: 0` on the flex child and `overflow: hidden` on the code container as a safety net, but you should still keep lines short rather than relying on truncation.
+
+#### Render errors as errors
+
+TypeScript diagnostic comments (`// TS2322 ...`, `// ~~~~~~~~~~~~~`, `// TS2345 ...`) are the visual punchline of "wrong provider" / "broken code" scenes. Shiki's default `vitesse-dark` theme renders comments in muted gray, which destroys the signal.
+
+Mark error lines in `story.ts` via `side.errorLines` on a `BeforeAfter` panel — the Panel automatically renders those lines in `brand.colors.danger`, overriding Shiki:
+
+```ts
+before: {
+  label: "Wrong provider",
+  language: "ts",
+  code: `...
+  //      ~~~~~~~~~~~~~ TS2322
+  // Anthropic tool ≠ OpenAI adapter`,
+  errorLines: [9, 10],
+},
+```
+
+Rule of thumb: any line whose comment starts with `TS\d+`, contains squiggle indicators (`~~~~`), or explains why the preceding line is wrong should be an error line.
+
+#### CTA slide rule
+
+The end-screen CTA is the last frame viewers see. It must match the deck's visual language — no outlier treatment.
+
+- Use `<SceneBackground variant="primary-glow">` (same as most other scenes).
+- **NO** full-bleed solid-color or gradient backgrounds — they break visual cohesion with every other scene in the deck.
+- Headline in `brand.colors.text` (white) with pink/primary `<Highlight>` accents on the key words.
+- Action verb in solid `brand.colors.primary` at large weight (160px, 900) with a `textShadow` glow derived from the primary — the primary is the star *against* the dark bg, not fighting a colored background.
+- URL pill: translucent white bg (`rgba(255,255,255,0.06)`) + thin primary-tinted border (`hexToRgba(primary, 0.5)`) + subtle primary outer glow (`boxShadow: 0 0 40px hexToRgba(primary, 0.2)`).
+
 ## Error Handling
 
 | Failure | Response |
