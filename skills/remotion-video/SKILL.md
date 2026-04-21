@@ -132,15 +132,7 @@ Frame rate is fixed at 30fps (users who need 60fps can edit `remotion.config.ts`
 
 ### Q2.4 — Brand assets (auto-detect → confirm)
 
-**Auto-detection sequence:**
-
-1. **Logo:** glob `public/logo.{svg,png}`, `assets/logo.*`, `static/logo.*`, `apps/*/public/logo.*`, favicon
-2. **Primary color:** search `tailwind.config.{js,ts,mjs}` for `primary`, CSS files for `--primary`, any `brand.json` / `design-tokens.json`
-3. **Accent / background / text colors:** same sources
-4. **Font family:** `package.json` dependencies for font packages (`@fontsource/*`, `next/font`), Tailwind `fontFamily`, Google Fonts imports
-5. **Intro/outro clips:** glob `marketing/intro.*`, `marketing/outro.*`, `assets/intro.*`, `assets/outro.*`
-
-**Present findings:**
+Auto-detect using the heuristics documented in `brand-detection.md`. Present findings as:
 
 > "I found:
 > - Logo: `public/logo.svg`
@@ -155,23 +147,13 @@ Frame rate is fixed at 30fps (users who need 60fps can edit `remotion.config.ts`
 
 **Fallback when nothing detected:** ask explicitly with sensible defaults (black `#000` text, white `#fff` background, system font, no logo).
 
-See `brand-detection.md` for full heuristics.
-
 **Note on fonts:** `brand.font.family` is used as a CSS `font-family` string. The skill does **not** auto-load Google Fonts — if the user picks a font that isn't system-installed, they must install and wire it manually (e.g. via `@remotion/google-fonts`) post-scaffold. `brand.font.googleFont` is advisory metadata only.
 
 ## Phase 3: Narrative Planning
 
 ### Step 3.1 — Detect story pattern
 
-Scan the PR/input for signals and pick one of 5 patterns:
-
-| Signal | Pattern |
-|---|---|
-| Public API / types / exports change | `api-library-feature` |
-| UI component files, Storybook updates, CSS changes | `ui-feature` |
-| Perf keywords in title (ms, throughput, speedup, faster), benchmark files | `performance-win` |
-| "fix" in title, bug labels, issue links | `bug-fix` |
-| None of the above | `generic-fallback` |
+Scan the PR/input for signals and pick one of 5 patterns. See the detection signals table in `patterns/README.md` — that file is the single source of truth.
 
 Load the matching pattern spec from `patterns/<pattern>.md`.
 
@@ -259,42 +241,7 @@ pnpm --dir marketing/<feature-slug>/remotion install
 
 ### Step 4.3 — Write `story.ts`
 
-Populate from the approved scene plan. The `Story` type is defined in `src/story-types.ts`:
-
-```ts
-export type Story = {
-  meta: {
-    durationSeconds: number;
-    aspectRatio: "16:9" | "1:1" | "9:16";
-    fps: 30;
-    slug: string;
-  };
-  brand: Brand;
-  scenes: Scene[];
-};
-
-export type Brand = {
-  logoPath?: string;
-  colors: { primary: string; accent: string; background: string; text: string };
-  font: { family: string; googleFont?: string };
-  introPath?: string;
-  outroPath?: string;
-};
-
-export type SceneContent = { label: string; code?: string; language?: string };
-export type Metric = { label: string; value: string };
-
-export type Scene =
-  | { type: "HookTitle"; durationFrames: number; text: string; visual: "pattern-interrupt" | "curiosity-gap" | "social-proof"; }
-  | { type: "ProblemSetup"; durationFrames: number; text: string; visualBeats: string[]; }
-  | { type: "CodeSnippet"; durationFrames: number; language: string; code: string; highlightLines?: number[]; caption?: string; }
-  | { type: "LibrarySwap"; durationFrames: number; sharedCode: string; libraries: { name: string; importLine: string }[]; caption?: string; }
-  | { type: "BeforeAfter"; durationFrames: number; before: SceneContent; after: SceneContent; caption?: string; }
-  | { type: "MetricCompare"; durationFrames: number; before: Metric; after: Metric; caption?: string; }
-  | { type: "BulletList"; durationFrames: number; items: string[]; caption?: string; }
-  | { type: "CTAEndScreen"; durationFrames: number; headline: string; actionVerb: string; url?: string; }
-  | { type: "Custom"; durationFrames: number; componentName: string; props: Record<string, unknown>; };
-```
+Populate from the approved scene plan. The `Story` and `Scene` types are defined in `src/story-types.ts` (copied from `templates/project/story-types.ts.template`). See that file for the full type definitions.
 
 ### Step 4.3b — Extend `src/Main.tsx` for Custom scenes
 
@@ -329,7 +276,7 @@ Use `remotion-best-practices` skill when available for guidance. Fallback to bas
 
 ### Step 5.1 — Start Remotion Studio
 
-Run as a background process (from the scaffolded project directory):
+Run as a background process, invoking the scaffolded project via `--dir`:
 
 ```bash
 pnpm --dir marketing/<feature-slug>/remotion exec remotion studio --port 3000
@@ -387,7 +334,7 @@ If the user picks (1), show a numbered list of snapshot summaries (hook text of 
 Before rendering, all of these must pass. If any fail, report exactly what and where, and do not render.
 
 - [ ] `pnpm exec tsc --noEmit` passes
-- [ ] Sum of `scenes[].durationFrames / meta.fps` is within ±15% of `meta.durationSeconds` (unless the user explicitly set a different length — then use that as the target)
+- [ ] Sum of `scenes[].durationFrames / meta.fps` is within ±15% of `meta.durationSeconds`
 - [ ] Every scene with `code` renders without `shiki` errors (test by invoking the shiki highlighter on each snippet)
 - [ ] Every brand asset referenced in `src/brand.ts` exists on disk
 - [ ] Hook enforcement rules (see `hooks/hook-rules.md`) pass on the HookTitle scene's `text`
@@ -442,10 +389,10 @@ Execute the chosen action. End.
 Hard rules applied whenever the skill writes or edits HookTitle scene text. See `hooks/hook-rules.md` and `hooks/hook-patterns.md` for details.
 
 1. **Max 7 words** on the hook caption (string length check)
-2. **Blocked openings** — reject if the hook starts with any of: `"In this video"`, `"I'm excited to"`, `"Today we're launching"`, the company/product name as the first token, `"Announcing"`, `"Introducing"`
+2. **Blocked openings** — reject if the hook starts with any blocked phrase. See the full list in `hooks/hook-rules.md` (Rule 2).
 3. **Required pattern** — the hook must match one of: Result, Mistake, Secret, Comparison, Pattern-interrupt, or Curiosity-gap (see `hooks/hook-patterns.md`)
 4. **Visual reinforces text** — the HookTitle scene's `visual` field (`pattern-interrupt` / `curiosity-gap` / `social-proof`) must align with the text (checked at scene-plan approval in Phase 3.3)
-5. **Anti-clickbait check** — before render, verify the hook's promise is delivered by at least one later scene's content. If not, refuse to render and ask the user to adjust.
+5. **Anti-clickbait check** — before render, verify the hook's promise is delivered by at least one non-hook scene. If not, refuse to render and ask the user to adjust.
 
 If any rule fails, the skill proposes up to 3 alternative hooks that comply.
 

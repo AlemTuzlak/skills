@@ -38,6 +38,8 @@ Ask the user which skills to run:
 >
 > "Pick any combination (e.g. '1, 3, and 5', 'all', '3 only')."
 
+(Menu numbering is for selection only; execution follows the chain in Step 3.)
+
 `"all"` means skills 1 through 7.
 
 ### Input compatibility check
