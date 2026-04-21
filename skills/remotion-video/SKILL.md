@@ -224,6 +224,7 @@ At the location chosen in Q2.3 (default `marketing/<feature-slug>/remotion/`):
 │   ├── story.ts              # Typed story JSON (written by skill from scene plan)
 │   ├── story-types.ts        # Scene union type (source of truth)
 │   ├── brand.ts              # Brand tokens (written by skill from Q2.4)
+│   ├── highlighted-code.tsx  # Shiki-based highlighter used by code scenes
 │   ├── scenes/               # Copied from templates/scenes/
 │   └── assets/               # Copied logo, intro/outro if any
 ```
@@ -235,6 +236,7 @@ Copy files from `skills/remotion-video/templates/project/` (stripping the `.temp
 - `Root.tsx.template` → `src/Root.tsx`
 - `brand.ts.template` → `src/brand.ts` (then populate with Q2.4 values)
 - `story-types.ts.template` → `src/story-types.ts` (scene union type — single source of truth)
+- `highlighted-code.tsx.template` → `src/highlighted-code.tsx` (wraps `shiki` for Remotion async frame capture)
 
 Copy all `.tsx` files from `skills/remotion-video/templates/scenes/` into `<project-root>/src/scenes/`.
 
