@@ -87,3 +87,8 @@ export type Scene =
       componentName: string;
       props: Record<string, unknown>;
     };
+
+export type SceneOfType<T extends Scene["type"]> = Extract<Scene, { type: T }>;
+export type SceneProps<T extends Scene["type"]> = Omit<SceneOfType<T>, "type">;
+
+export type { Brand } from "./brand";
