@@ -1,6 +1,7 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand";
 import { Highlight } from "../highlight";
+import { SceneBackground } from "../scene-background";
 import type { Metric, SceneProps } from "../story-types";
 
 const Card: React.FC<{ metric: Metric; accent: string; delayFrames: number }> = ({
@@ -76,33 +77,34 @@ export const MetricCompare: React.FC<SceneProps<"MetricCompare">> = ({
   });
 
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: brand.colors.background,
-        padding: 80,
-        justifyContent: "center",
-      }}
-    >
-      {caption && (
-        <div
-          style={{
-            fontFamily: brand.font.family,
-            fontSize: 56,
-            fontWeight: 800,
-            color: brand.colors.text,
-            marginBottom: 40,
-            textAlign: "center",
-            opacity: captionOpacity,
-          }}
-        >
-          <Highlight text={caption} />
+    <SceneBackground variant="primary-glow">
+      <AbsoluteFill
+        style={{
+          padding: 80,
+          justifyContent: "center",
+        }}
+      >
+        {caption && (
+          <div
+            style={{
+              fontFamily: brand.font.family,
+              fontSize: 56,
+              fontWeight: 800,
+              color: brand.colors.text,
+              marginBottom: 40,
+              textAlign: "center",
+              opacity: captionOpacity,
+            }}
+          >
+            <Highlight text={caption} />
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 40 }}>
+          <Card metric={before} accent={brand.colors.accent} delayFrames={0} />
+          <Card metric={after} accent={brand.colors.primary} delayFrames={18} />
         </div>
-      )}
-      <div style={{ display: "flex", gap: 40 }}>
-        <Card metric={before} accent={brand.colors.accent} delayFrames={0} />
-        <Card metric={after} accent={brand.colors.primary} delayFrames={18} />
-      </div>
-    </AbsoluteFill>
+      </AbsoluteFill>
+    </SceneBackground>
   );
 };
 

@@ -2,6 +2,7 @@ import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { HighlightedCode } from "../highlighted-code";
 import { brand } from "../brand";
 import { Highlight } from "../highlight";
+import { SceneBackground } from "../scene-background";
 import type { SceneProps } from "../story-types";
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -25,14 +26,14 @@ export const CodeSnippet: React.FC<SceneProps<"CodeSnippet">> = ({
   });
 
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: brand.colors.background,
-        padding: 80,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
+    <SceneBackground variant="diagonal">
+      <AbsoluteFill
+        style={{
+          padding: 80,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
       {caption && (
         <div
           style={{
@@ -93,7 +94,8 @@ export const CodeSnippet: React.FC<SceneProps<"CodeSnippet">> = ({
           />
         </div>
       </div>
-    </AbsoluteFill>
+      </AbsoluteFill>
+    </SceneBackground>
   );
 };
 

@@ -1,7 +1,20 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand";
 import { Highlight } from "../highlight";
+import { SceneBackground } from "../scene-background";
 import type { SceneProps } from "../story-types";
+
+// Derive a darker shade of the brand primary for the CTA gradient foot.
+// Drops each channel by ~30% to keep the original bright-to-deep vertical
+// feel without hardcoding a specific hue.
+const darken = (hex: string, amount = 0.7) => {
+  const h = hex.replace("#", "");
+  const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const r = Math.round(parseInt(n.slice(0, 2), 16) * amount);
+  const g = Math.round(parseInt(n.slice(2, 4), 16) * amount);
+  const b = Math.round(parseInt(n.slice(4, 6), 16) * amount);
+  return `rgb(${r}, ${g}, ${b})`;
+};
 
 export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
   headline,
@@ -45,14 +58,15 @@ export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
   );
 
   return (
-    <AbsoluteFill
-      style={{
-        background: `linear-gradient(180deg, ${brand.colors.primary} 0%, #A8006A 100%)`,
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 32,
-      }}
-    >
+    <SceneBackground variant="flat">
+      <AbsoluteFill
+        style={{
+          background: `linear-gradient(180deg, ${brand.colors.primary} 0%, ${darken(brand.colors.primary, 0.7)} 100%)`,
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 32,
+        }}
+      >
       <div
         style={{
           fontFamily: brand.font.family,
@@ -112,7 +126,8 @@ export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
           <span>{url}</span>
         </div>
       )}
-    </AbsoluteFill>
+      </AbsoluteFill>
+    </SceneBackground>
   );
 };
 

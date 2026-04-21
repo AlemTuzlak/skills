@@ -2,6 +2,7 @@ import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { HighlightedCode } from "../highlighted-code";
 import { brand } from "../brand";
 import { Highlight } from "../highlight";
+import { SceneBackground } from "../scene-background";
 import type { SceneContent, SceneProps } from "../story-types";
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -100,45 +101,46 @@ export const BeforeAfter: React.FC<SceneProps<"BeforeAfter">> = ({
   });
 
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: brand.colors.background,
-        padding: 80,
-        justifyContent: "center",
-      }}
-    >
-      {caption && (
-        <div
-          style={{
-            fontFamily: brand.font.family,
-            fontSize: 56,
-            fontWeight: 800,
-            color: brand.colors.text,
-            marginBottom: 40,
-            textAlign: "center",
-            opacity: captionOpacity,
-          }}
-        >
-          <Highlight text={caption} />
+    <SceneBackground variant="primary-glow">
+      <AbsoluteFill
+        style={{
+          padding: 80,
+          justifyContent: "center",
+        }}
+      >
+        {caption && (
+          <div
+            style={{
+              fontFamily: brand.font.family,
+              fontSize: 56,
+              fontWeight: 800,
+              color: brand.colors.text,
+              marginBottom: 40,
+              textAlign: "center",
+              opacity: captionOpacity,
+            }}
+          >
+            <Highlight text={caption} />
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 40 }}>
+          <Panel
+            side={before}
+            accent={brand.colors.danger}
+            icon="❌"
+            slideFrom={-60}
+            frame={frame}
+          />
+          <Panel
+            side={after}
+            accent={brand.colors.success}
+            icon="✅"
+            slideFrom={60}
+            frame={frame}
+          />
         </div>
-      )}
-      <div style={{ display: "flex", gap: 40 }}>
-        <Panel
-          side={before}
-          accent={brand.colors.danger}
-          icon="❌"
-          slideFrom={-60}
-          frame={frame}
-        />
-        <Panel
-          side={after}
-          accent={brand.colors.success}
-          icon="✅"
-          slideFrom={60}
-          frame={frame}
-        />
-      </div>
-    </AbsoluteFill>
+      </AbsoluteFill>
+    </SceneBackground>
   );
 };
 

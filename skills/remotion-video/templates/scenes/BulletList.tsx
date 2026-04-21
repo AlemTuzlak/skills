@@ -1,6 +1,7 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand";
 import { Highlight } from "../highlight";
+import { SceneBackground } from "../scene-background";
 import type { SceneProps } from "../story-types";
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -33,28 +34,29 @@ export const BulletList: React.FC<SceneProps<"BulletList">> = ({
   const stagger = Math.floor(durationFrames / (items.length + 2));
 
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: brand.colors.background,
-        padding: 100,
-        justifyContent: "center",
-      }}
-    >
-      {caption && (
-        <div
-          style={{
-            fontFamily: brand.font.family,
-            fontSize: 56,
-            fontWeight: 800,
-            color: brand.colors.text,
-            marginBottom: 60,
-            opacity: captionOpacity,
-          }}
-        >
-          <Highlight text={caption} />
-        </div>
-      )}
-      <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
+    <SceneBackground variant="diagonal">
+      <AbsoluteFill
+        style={{
+          padding: 100,
+          justifyContent: "center",
+        }}
+      >
+        {caption && (
+          <div
+            style={{
+              fontFamily: brand.font.family,
+              fontSize: 56,
+              fontWeight: 800,
+              color: brand.colors.text,
+              marginBottom: 60,
+              opacity: captionOpacity,
+              textAlign: "center",
+            }}
+          >
+            <Highlight text={caption} />
+          </div>
+        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
         {items.map((item, i) => {
           const appearAt = (i + 1) * stagger;
           const local = Math.max(0, frame - appearAt);
@@ -105,8 +107,9 @@ export const BulletList: React.FC<SceneProps<"BulletList">> = ({
             </div>
           );
         })}
-      </div>
-    </AbsoluteFill>
+        </div>
+      </AbsoluteFill>
+    </SceneBackground>
   );
 };
 
