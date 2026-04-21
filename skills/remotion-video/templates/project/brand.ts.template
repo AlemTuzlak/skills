@@ -1,0 +1,20 @@
+// Populated by the remotion-video skill from .marketing/brand.json or user input.
+// Edit directly to override; scene components import from this file.
+
+export const brand = {
+  logoPath: null as string | null,
+  colors: {
+    primary: "#0066ff",
+    accent: "#ff6600",
+    background: "#ffffff",
+    text: "#0a0a0a",
+  },
+  font: {
+    family: "Inter",
+    googleFont: "Inter" as string | null,
+  },
+  introPath: null as string | null,
+  outroPath: null as string | null,
+} as const;
+
+export type Brand = typeof brand;

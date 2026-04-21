@@ -1,0 +1,89 @@
+import type { Brand } from "./brand";
+
+export type AspectRatio = "16:9" | "1:1" | "9:16";
+
+export type Story = {
+  meta: {
+    durationSeconds: number;
+    aspectRatio: AspectRatio;
+    fps: 30;
+    slug: string;
+  };
+  brand: Brand;
+  scenes: Scene[];
+};
+
+export type SceneContent = {
+  label: string;
+  code?: string;
+  language?: string;
+};
+
+export type Metric = {
+  label: string;
+  value: string;
+};
+
+export type HookVisual = "pattern-interrupt" | "curiosity-gap" | "social-proof";
+
+export type Scene =
+  | {
+      type: "HookTitle";
+      durationFrames: number;
+      text: string;
+      visual: HookVisual;
+    }
+  | {
+      type: "ProblemSetup";
+      durationFrames: number;
+      text: string;
+      visualBeats: string[];
+    }
+  | {
+      type: "CodeSnippet";
+      durationFrames: number;
+      language: string;
+      code: string;
+      highlightLines?: number[];
+      caption?: string;
+    }
+  | {
+      type: "LibrarySwap";
+      durationFrames: number;
+      sharedCode: string;
+      libraries: { name: string; importLine: string }[];
+      caption?: string;
+    }
+  | {
+      type: "BeforeAfter";
+      durationFrames: number;
+      before: SceneContent;
+      after: SceneContent;
+      caption?: string;
+    }
+  | {
+      type: "MetricCompare";
+      durationFrames: number;
+      before: Metric;
+      after: Metric;
+      caption?: string;
+    }
+  | {
+      type: "BulletList";
+      durationFrames: number;
+      items: string[];
+      caption?: string;
+    }
+  | {
+      type: "CTAEndScreen";
+      durationFrames: number;
+      headline: string;
+      actionVerb: string;
+      url?: string;
+    }
+  | {
+      type: "Custom";
+      durationFrames: number;
+      componentName: string;
+      props: Record<string, unknown>;
+    };
