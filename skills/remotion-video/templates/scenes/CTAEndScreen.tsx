@@ -4,16 +4,13 @@ import { Highlight } from "../highlight";
 import { SceneBackground } from "../scene-background";
 import type { SceneProps } from "../story-types";
 
-// Derive a darker shade of the brand primary for the CTA gradient foot.
-// Drops each channel by ~30% to keep the original bright-to-deep vertical
-// feel without hardcoding a specific hue.
-const darken = (hex: string, amount = 0.7) => {
-  const h = hex.replace("#", "");
-  const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
-  const r = Math.round(parseInt(n.slice(0, 2), 16) * amount);
-  const g = Math.round(parseInt(n.slice(2, 4), 16) * amount);
-  const b = Math.round(parseInt(n.slice(4, 6), 16) * amount);
-  return `rgb(${r}, ${g}, ${b})`;
+const hexToRgba = (hex: string, alpha: number) => {
+  const clean = hex.replace("#", "");
+  const n = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
+  const r = parseInt(n.slice(0, 2), 16);
+  const g = parseInt(n.slice(2, 4), 16);
+  const b = parseInt(n.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
 export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
@@ -58,74 +55,78 @@ export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
   );
 
   return (
-    <SceneBackground variant="flat">
+    <SceneBackground variant="primary-glow">
       <AbsoluteFill
         style={{
-          background: `linear-gradient(180deg, ${brand.colors.primary} 0%, ${darken(brand.colors.primary, 0.7)} 100%)`,
           justifyContent: "center",
           alignItems: "center",
-          gap: 32,
+          gap: 40,
+          padding: 80,
         }}
       >
-      <div
-        style={{
-          fontFamily: brand.font.family,
-          fontSize: 80,
-          fontWeight: 800,
-          color: brand.colors.background,
-          textAlign: "center",
-          transform: `scale(${headlineScale})`,
-          opacity: headlineOpacity,
-          maxWidth: "80%",
-        }}
-      >
-        <Highlight text={headline} />
-      </div>
-      <div
-        style={{
-          fontFamily: brand.font.family,
-          fontSize: 140,
-          fontWeight: 900,
-          color: brand.colors.accent,
-          textTransform: "uppercase",
-          letterSpacing: "-0.02em",
-          transform: `scale(${ctaScale})`,
-          opacity: ctaOpacity,
-          lineHeight: 1,
-          display: "flex",
-          alignItems: "center",
-          gap: 24,
-        }}
-      >
-        <span>{actionVerb}</span>
-        <span
-          style={{
-            display: "inline-block",
-            transform: `scale(${arrowPulse})`,
-          }}
-        >
-          →
-        </span>
-      </div>
-      {url && (
         <div
           style={{
-            fontFamily: "'Fira Code', monospace",
-            fontSize: 44,
-            color: brand.colors.background,
-            opacity: urlOpacity,
-            padding: "12px 32px",
-            borderRadius: 999,
-            background: "rgba(0, 0, 0, 0.35)",
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
+            fontFamily: brand.font.family,
+            fontSize: 80,
+            fontWeight: 800,
+            color: brand.colors.text,
+            textAlign: "center",
+            transform: `scale(${headlineScale})`,
+            opacity: headlineOpacity,
+            maxWidth: "85%",
+            letterSpacing: "-0.01em",
           }}
         >
-          <span>🔗</span>
-          <span>{url}</span>
+          <Highlight text={headline} />
         </div>
-      )}
+        <div
+          style={{
+            fontFamily: brand.font.family,
+            fontSize: 160,
+            fontWeight: 900,
+            color: brand.colors.primary,
+            textTransform: "uppercase",
+            letterSpacing: "-0.03em",
+            transform: `scale(${ctaScale})`,
+            opacity: ctaOpacity,
+            lineHeight: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: 32,
+            textShadow: `0 0 80px ${hexToRgba(brand.colors.primary, 0.45)}, 0 0 24px ${hexToRgba(brand.colors.primary, 0.3)}`,
+          }}
+        >
+          <span>{actionVerb}</span>
+          <span
+            style={{
+              display: "inline-block",
+              transform: `scale(${arrowPulse})`,
+            }}
+          >
+            →
+          </span>
+        </div>
+        {url && (
+          <div
+            style={{
+              fontFamily: "'Fira Code', monospace",
+              fontSize: 44,
+              color: brand.colors.text,
+              opacity: urlOpacity,
+              padding: "14px 36px",
+              borderRadius: 999,
+              background: "rgba(255, 255, 255, 0.06)",
+              border: `1px solid ${hexToRgba(brand.colors.primary, 0.5)}`,
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              boxShadow: `0 0 40px ${hexToRgba(brand.colors.primary, 0.2)}`,
+            }}
+          >
+            <span>🔗</span>
+            <span>{url}</span>
+          </div>
+        )}
       </AbsoluteFill>
     </SceneBackground>
   );
