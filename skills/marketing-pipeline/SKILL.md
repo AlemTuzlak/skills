@@ -31,13 +31,14 @@ Ask the user which skills to run:
 > 1. Marketing brief (`/marketing-brief`)
 > 2. Changelog (`/changelog`)
 > 3. Blog post (`/blog-post`)
-> 4. Newsletter (`/newsletter`)
-> 5. Social copy (`/social-copy`)
-> 6. Video script (`/video-script`)
+> 4. Remotion video (`/remotion-video`)
+> 5. Newsletter (`/newsletter`)
+> 6. Social copy (`/social-copy`)
+> 7. Video script (`/video-script`)
 >
 > "Pick any combination (e.g. '1, 3, and 5', 'all', '3 only')."
 
-`"all"` means skills 1 through 6.
+`"all"` means skills 1 through 7.
 
 ### Input compatibility check
 
@@ -55,6 +56,7 @@ If the user picks a single directory, all files go into that directory:
 - `brief.md` (marketing brief)
 - `changelog.md` (changelog)
 - `blog-post.md` (blog post)
+- `video.mp4` + `poster.jpg` + `remotion/` subdirectory (remotion video)
 - `newsletter.md` (newsletter)
 - `social-copy.md` (social copy)
 - `video-script.md` (video script)
@@ -68,7 +70,7 @@ If the user declines, let each sub-skill use its own default path. Track the act
 Run selected skills in this order (each output feeds the next):
 
 ```
-changelog -> marketing-brief -> blog-post -> newsletter -> social-copy -> video-script
+changelog -> marketing-brief -> blog-post -> remotion-video -> newsletter -> social-copy -> video-script
 ```
 
 The order is designed so that upstream outputs enrich downstream skills:
@@ -76,8 +78,9 @@ The order is designed so that upstream outputs enrich downstream skills:
 - **Changelog** runs first because it produces a structured list of changes that all other skills can use
 - **Marketing brief** uses the changelog (or original input) to build strategy, positioning, and key messages
 - **Blog post** uses the brief (or changelog/original input) for a deep content piece
+- **Remotion video** uses the blog post (or brief / changelog / original input) to produce a rendered mp4 + poster; runs after the text content is settled so its narrative plan can reuse the positioning
 - **Newsletter** uses the brief or blog post to craft the email announcement
-- **Social copy** uses any upstream output for platform-specific posts
+- **Social copy** uses any upstream output for platform-specific posts. If a Remotion video was generated, reference the `video.mp4` + `poster.jpg` paths so the posts can embed them.
 - **Video script** uses any upstream output for the video narrative
 
 If a skill in the chain is not selected, skip it. The next skill receives whatever the most recent upstream output was. If no upstream skill was selected, use the original input.
@@ -114,6 +117,7 @@ After all selected skills are complete, present a summary:
 > - Changelog: `<path>/changelog.md`
 > - Marketing brief: `<path>/brief.md`
 > - Blog post: `<path>/blog-post.md`
+> - Remotion video: `<path>/video.mp4` + `<path>/poster.jpg` (+ `<path>/remotion/` project if kept)
 > - Newsletter: `<path>/newsletter.md`
 > - Social copy: `<path>/social-copy.md`
 > - Video script: `<path>/video-script.md`
