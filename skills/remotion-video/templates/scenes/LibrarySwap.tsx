@@ -1,5 +1,5 @@
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
-import { HighlightedCode } from "@remotion/shiki";
+import { HighlightedCode } from "../highlighted-code";
 import { brand } from "../brand";
 
 type Library = { name: string; importLine: string };

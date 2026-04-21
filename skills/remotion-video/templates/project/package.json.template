@@ -11,10 +11,10 @@
   "dependencies": {
     "@remotion/cli": "^4.0.0",
     "@remotion/google-fonts": "^4.0.0",
-    "@remotion/shiki": "^4.0.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "remotion": "^4.0.0"
+    "remotion": "^4.0.0",
+    "shiki": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -243,7 +243,7 @@ Copy all `.tsx` files from `skills/remotion-video/templates/scenes/` into `<proj
 Detect package manager from lockfile (`pnpm-lock.yaml` → pnpm, `bun.lockb` → bun, `yarn.lock` → yarn, `package-lock.json` → npm). Install:
 
 ```
-remotion @remotion/cli @remotion/shiki @remotion/google-fonts react react-dom typescript @types/react @types/node
+remotion @remotion/cli @remotion/google-fonts shiki react react-dom typescript @types/react @types/node
 ```
 
 Example (pnpm):
@@ -302,7 +302,7 @@ When the story plan calls for a scene shape the 8 bundled templates can't expres
 **Rules (enforced by the skill):**
 
 1. Only a React component exporting a default function
-2. May import only from: `remotion`, `@remotion/shiki`, `@remotion/google-fonts`, `react`, and `../../brand`
+2. May import only from: `remotion`, `shiki`, `@remotion/google-fonts`, `react`, `../../highlighted-code`, and `../../brand`
 3. Must typecheck (`tsc --noEmit`) before render — skill runs typecheck and self-corrects up to 2 times on failure
 4. Must use `interpolate` / `spring` for animations (no `setTimeout`, no external animation libs)
 5. Must respect `durationFrames` from its `Scene` entry
@@ -373,7 +373,7 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 
 - [ ] `pnpm exec tsc --noEmit` passes
 - [ ] Sum of `scenes[].durationFrames / meta.fps` is within ±15% of `meta.durationSeconds` (unless the user explicitly set a different length — then use that as the target)
-- [ ] Every scene with `code` renders without `@remotion/shiki` errors (test by invoking the shiki highlighter on each snippet)
+- [ ] Every scene with `code` renders without `shiki` errors (test by invoking the shiki highlighter on each snippet)
 - [ ] Every brand asset referenced in `src/brand.ts` exists on disk
 - [ ] Hook enforcement rules (see `hooks/hook-rules.md`) pass on the HookTitle scene's `text`
 

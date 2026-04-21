@@ -1,0 +1,68 @@
+import { useEffect, useState } from "react";
+import { cancelRender, continueRender, delayRender } from "remotion";
+import { codeToHtml, type BundledLanguage, type BundledTheme } from "shiki";
+
+/**
+ * Renders syntax-highlighted code using `shiki`.
+ *
+ * Shiki's `codeToHtml` is async, so we wrap the load in Remotion's
+ * `delayRender` / `continueRender` to ensure rendering waits for highlight
+ * output before capturing frames.
+ *
+ * Shiki's HTML output is trusted, generated-on-server content (not user
+ * input), so injecting it via `dangerouslySetInnerHTML` is the standard
+ * Remotion + shiki pattern.
+ */
+export const HighlightedCode: React.FC<{
+  code: string;
+  lang: BundledLanguage | (string & {});
+  theme?: BundledTheme | (string & {});
+  highlightLines?: number[];
+}> = ({ code, lang, theme = "github-dark", highlightLines }) => {
+  const [html, setHtml] = useState<string | null>(null);
+  const [handle] = useState(() => delayRender(`shiki: ${lang}`));
+
+  useEffect(() => {
+    let cancelled = false;
+    codeToHtml(code, {
+      lang: lang as BundledLanguage,
+      theme: theme as BundledTheme,
+      transformers: highlightLines
+        ? [
+            {
+              line(node, line) {
+                if (highlightLines.includes(line)) {
+                  const props = (node.properties ?? {}) as Record<string, unknown>;
+                  const existing = typeof props.class === "string" ? props.class : "";
+                  node.properties = {
+                    ...props,
+                    class: (existing + " remotion-highlight-line").trim(),
+                  };
+                }
+              },
+            },
+          ]
+        : undefined,
+    })
+      .then((out) => {
+        if (cancelled) return;
+        setHtml(out);
+        continueRender(handle);
+      })
+      .catch((err) => {
+        cancelRender(err instanceof Error ? err : new Error(String(err)));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [code, lang, theme, highlightLines, handle]);
+
+  if (html === null) {
+    return null;
+  }
+
+  // eslint-disable-next-line react/no-danger -- shiki output is trusted, server-generated
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+};
+
+export default HighlightedCode;
