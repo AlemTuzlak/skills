@@ -26,7 +26,7 @@ Resolve input
   → Phase 7: Cleanup
 ```
 
-Each phase has an approval gate. Phase 5 is a freeform loop that can run many rounds.
+Phases 1, 3, 5, and 7 have explicit approval gates. Phase 2 is an interactive Q&A. Phase 5 is a freeform iteration loop that can run many rounds.
 
 ## Input Resolution
 
@@ -36,7 +36,7 @@ Resolve the argument (if provided) in this order:
 2. Path to a blog post (`.md` with blog post structure) → **blog post**
 3. Path to a changelog → **changelog**
 4. GitHub PR URL or `#\d+` pattern → **PR**
-5. Contains `...` or `..` → **git ref range**
+5. Matches `<ref>..<ref>` or `<ref>...<ref>` (alphanumeric + `/`, `_`, `.`, `-` on each side) → **git ref range**
 6. Resolves to an existing file/directory → **codebase feature**
 7. Otherwise → **freeform text**
 
@@ -206,7 +206,7 @@ Example output:
 
 **Do not scaffold until the user approves the scene plan.**
 
-See `patterns/README.md` for how patterns map to scene sequences.
+See `patterns/README.md` for how patterns map to scene plans.
 
 ## Phase 4: Scaffold
 
@@ -222,6 +222,7 @@ At the location chosen in Q2.3 (default `marketing/<feature-slug>/remotion/`):
 ├── src/
 │   ├── Root.tsx              # Composition registry
 │   ├── story.ts              # Typed story JSON (written by skill from scene plan)
+│   ├── story-types.ts        # Scene union type (source of truth)
 │   ├── brand.ts              # Brand tokens (written by skill from Q2.4)
 │   ├── scenes/               # Copied from templates/scenes/
 │   └── assets/               # Copied logo, intro/outro if any
@@ -248,7 +249,7 @@ remotion @remotion/cli @remotion/shiki @remotion/google-fonts react react-dom ty
 Example (pnpm):
 
 ```bash
-cd marketing/<feature-slug>/remotion && pnpm install
+pnpm --dir marketing/<feature-slug>/remotion install
 ```
 
 ### Step 4.3 — Write `story.ts`
@@ -260,7 +261,7 @@ export type Story = {
   meta: {
     durationSeconds: number;
     aspectRatio: "16:9" | "1:1" | "9:16";
-    fps: 30 | 60;
+    fps: 30;
     slug: string;
   };
   brand: Brand;
@@ -309,10 +310,10 @@ Use `remotion-best-practices` skill when available for guidance. Fallback to bas
 
 ### Step 5.1 — Start Remotion Studio
 
-Run in the project directory as a background process:
+Run as a background process (from the scaffolded project directory):
 
 ```bash
-pnpm exec remotion studio --port 3000
+pnpm --dir marketing/<feature-slug>/remotion exec remotion studio --port 3000
 ```
 
 (Fall back: try 3001, 3002, 3003 if 3000 is in use. Fail loud if all taken.)
@@ -367,7 +368,7 @@ If the user picks (1), show a numbered list of snapshot summaries (hook text of 
 Before rendering, all of these must pass. If any fail, report exactly what and where, and do not render.
 
 - [ ] `pnpm exec tsc --noEmit` passes
-- [ ] Sum of `scenes[].durationFrames / meta.fps` is within ±25% of `meta.durationSeconds` (unless the user explicitly set a different length — then use that as the target)
+- [ ] Sum of `scenes[].durationFrames / meta.fps` is within ±15% of `meta.durationSeconds` (unless the user explicitly set a different length — then use that as the target)
 - [ ] Every scene with `code` renders without `@remotion/shiki` errors (test by invoking the shiki highlighter on each snippet)
 - [ ] Every brand asset referenced in `src/brand.ts` exists on disk
 - [ ] Hook enforcement rules (see `hooks/hook-rules.md`) pass on the HookTitle scene's `text`
