@@ -145,7 +145,15 @@ Auto-detect using the heuristics documented in `brand-detection.md`. Present fin
 
 > "I loaded brand settings from `.marketing/brand.json`. Use saved, or re-detect?"
 
-**Fallback when nothing detected:** ask explicitly with sensible defaults (black `#000` text, white `#fff` background, system font, no logo).
+**Fallback when nothing detected:** ask explicitly with these sensible defaults:
+- Primary: `#0066ff` (blue)
+- Accent: `#ff6600` (orange)
+- Background: `#ffffff` (white)
+- Text: `#0a0a0a` (near-black)
+- Font: `Inter` (with fallback to system if not installed)
+- Logo: none
+
+Confirm with the user before scaffolding.
 
 **Note on fonts:** `brand.font.family` is used as a CSS `font-family` string. The skill does **not** auto-load Google Fonts — if the user picks a font that isn't system-installed, they must install and wire it manually (e.g. via `@remotion/google-fonts`) post-scaffold. `brand.font.googleFont` is advisory metadata only.
 
@@ -408,7 +416,7 @@ If any rule fails, the skill proposes up to 3 alternative hooks that comply.
 | Render crashes | Show Remotion's error; offer (a) retry, (b) simplify the failing scene, (c) abort |
 | Port 3000 in use | Try 3001, 3002, 3003 in order; fail loud if all taken |
 | Studio background process crashes mid-iteration | Restart once; if it crashes again, surface the error and ask user |
-| Brand auto-detection finds nothing | Ask user explicitly with sensible defaults (black text, white background, system font, no logo) |
+| Brand auto-detection finds nothing | Ask user explicitly with sensible defaults (see Phase 2.4 fallback block for the full primary/accent/background/text/font/logo list) |
 
 ## What This Skill Does NOT Do
 
