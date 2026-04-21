@@ -99,3 +99,60 @@ Present:
 ### Step 1.5 — Sensitive content scan
 
 Before continuing, scan for: security patches, internal pricing, credentials, unreleased roadmap items, content marked confidential. Flag anything questionable to the user.
+
+## Phase 2: Configuration
+
+Ask these questions one at a time, in order.
+
+### Q2.1 — Duration target
+
+> "How long should the video be?
+> 1. **30 seconds** (default) — best for X promo, highest completion rate
+> 2. **45 seconds**
+> 3. **60 seconds** — Fireship-style pace
+> 4. **90 seconds**
+>
+> Duration is a target, not a cap. If the story lands in 27s or stretches to 34s, that's fine — optimize for impact."
+
+### Q2.2 — Aspect ratio
+
+> "Which aspect ratio?
+> 1. **16:9 landscape** (1920×1080, default) — desktop X/LinkedIn
+> 2. **1:1 square** (1080×1080) — mobile-friendly feed
+> 3. **9:16 vertical** (1080×1920) — Reels/Shorts/TikTok
+> 4. **Multi-format** — render all three from the same story"
+
+Frame rate is fixed at 30fps (users who need 60fps can edit `remotion.config.ts` post-scaffold).
+
+### Q2.3 — Remotion project location
+
+> "Where should the Remotion project live?
+> Default: `marketing/<feature-slug>/remotion/` (fresh per-video)
+> Override: specify a path."
+
+### Q2.4 — Brand assets (auto-detect → confirm)
+
+**Auto-detection sequence:**
+
+1. **Logo:** glob `public/logo.{svg,png}`, `assets/logo.*`, `static/logo.*`, `apps/*/public/logo.*`, favicon
+2. **Primary color:** search `tailwind.config.{js,ts,mjs}` for `primary`, CSS files for `--primary`, any `brand.json` / `design-tokens.json`
+3. **Accent / background / text colors:** same sources
+4. **Font family:** `package.json` dependencies for font packages (`@fontsource/*`, `next/font`), Tailwind `fontFamily`, Google Fonts imports
+5. **Intro/outro clips:** glob `marketing/intro.*`, `marketing/outro.*`, `assets/intro.*`, `assets/outro.*`
+
+**Present findings:**
+
+> "I found:
+> - Logo: `public/logo.svg`
+> - Primary: `#0066ff` (from `tailwind.config.js`)
+> - Font: `Inter` (from `next/font`)
+>
+> Use these, customize some, or provide your own?"
+
+**Persistence:** write chosen brand to `.marketing/brand.json` (relative to repo root). On subsequent runs, ask:
+
+> "I loaded brand settings from `.marketing/brand.json`. Use saved, or re-detect?"
+
+**Fallback when nothing detected:** ask explicitly with sensible defaults (black `#000` text, white `#fff` background, system font, no logo).
+
+See `brand-detection.md` for full heuristics.
