@@ -291,6 +291,10 @@ export type Scene =
   | { type: "Custom"; durationFrames: number; componentName: string; props: Record<string, unknown>; };
 ```
 
+### Step 4.3b — Generate `src/Main.tsx`
+
+Generate `src/Main.tsx` that imports all scene components and dispatches based on `Scene.type`. For Custom scenes, dynamically add import statements and a switch case for each registered custom scene name. See the scene dispatch skeleton in `templates/project/Root.tsx.template` comments.
+
 ### Step 4.4 — Custom scene extension slot
 
 When the story plan calls for a scene shape the 8 bundled templates can't express, generate a custom scene under `src/scenes/custom/<Name>.tsx`.
