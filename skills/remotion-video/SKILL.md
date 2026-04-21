@@ -364,35 +364,39 @@ If the user picks (1), show a numbered list of snapshot summaries (hook text of 
 
 #### Render quality is not optional
 
-The Studio preview is pristine; the render pipeline must preserve that. Two
-structural problems ruin h264 output of otherwise-perfect React scenes:
+The Studio preview is pristine; the render pipeline must preserve that.
+Two structural problems ruin h264 output of otherwise-perfect React scenes:
 
 1. **Chroma subsampling (YUV 4:2:0)** halves color resolution. Pink text
    on dark backgrounds, thin colored lines, and subpixel anti-aliasing get
    blurred. The fix is **supersampling**: render at 2x composition
    dimensions (`--scale 2`) so ffmpeg downsamples from a sharper source.
 
-2. **8-bit quantization** gives only 256 luminance steps. Smooth gradients
-   — especially the `SceneBackground` radial glows — show visible stair-step
-   bands. The fix is **10-bit encoding** (`--pixel-format yuv420p10le`,
-   h264 high10 profile) for 1024 steps.
+2. **8-bit quantization** gives only 256 luminance steps — gradients band.
+   The fix must be **at the source**, not at the codec: `SceneBackground`
+   ships a subtle SVG noise overlay (`NoiseDither`) that dithers the
+   quantization below perception. 8-bit h264 encoding is the only format
+   that plays reliably across Windows 11 Films & TV, Discord, browsers,
+   VLC, and social upload pipelines. Do NOT default to 10-bit
+   (`yuv420p10le`) — consumer GPU decoders often skip h264 high10 without
+   falling back to software, producing black frames on Win11/Discord.
 
-Defaults ship both on. They roughly double render time and file size but
-produce output that matches what the creator sees in Studio.
+Defaults ship: `--scale 2` + `--image-format png` + `--crf 14` +
+`--pixel-format yuv420p`. A 30-40s 1080p video lands around 6-15 MB.
 
-File size sanity check: a 30-40s 1080p video at these settings lands at
-~30-60 MB. Under the upload caps for X (512 MB), LinkedIn (200 MB),
-YouTube (any), Reddit (100 MB).
-
-**Fallback for legacy-compat edge cases:** the `render:compat` npm script
-ships with `--pixel-format yuv420p` (8-bit). The `SceneBackground`
-component includes a subtle SVG noise overlay that dithers the 8-bit
-quantization below perception, so the compat path also looks clean. Use
-only when you hit a player that refuses h264 high10 (old Windows Media
-Player on unpatched Win10, some legacy hardware decoders — rare).
+**Edge case — 10-bit opt-in:** the `render:10bit` npm script exists for
+creators who verified their end-to-end pipeline supports h264 high10
+profile (e.g., shipping to a known YouTube upload that always transcodes,
+or to a target audience on mpv/VLC only). Never use as a default.
 
 **Never** render with `--image-format jpeg` for a final. The JPEG
 quality-80 intermediate blurs text independently of anything else.
+
+**How `NoiseDither` works:** an overlay layer inside `SceneBackground`
+renders an SVG `feTurbulence` fractalNoise filter at ~4% opacity in
+overlay blend mode. The noise breaks up the 8-bit gradient-quantization
+step boundaries perceptually, turning visible bands into faint grain.
+This is the same technique Figma and export pipelines use.
 
 ### Step 6.1 — Pre-render checks (fail loud)
 
@@ -403,10 +407,9 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 - [ ] Every scene with `code` renders without `shiki` errors (test by invoking the shiki highlighter on each snippet)
 - [ ] Every brand asset referenced in `src/brand.ts` exists on disk
 - [ ] Hook enforcement rules (see `hooks/hook-rules.md`) pass on the HookTitle scene's `text`
-- [ ] Render flags include `--scale 2` and `--pixel-format yuv420p10le`
-      (or `remotion.config.ts` sets these — either path produces the
-      desired supersampled 10-bit output). Ship the `:compat` variant
-      only when a specific legacy player demands it.
+- [ ] Render flags include `--scale 2 --pixel-format yuv420p` (or
+      `remotion.config.ts` sets both). 10-bit (`yuv420p10le`) is opt-in
+      only; it breaks Win11 Films & TV and Discord inline playback.
 
 ### Step 6.2 — Render mp4 + poster
 
@@ -415,18 +418,18 @@ Stop the Remotion Studio background process first.
 For a single-aspect video:
 
 ```bash
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p10le --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2
 pnpm --dir marketing/<feature-slug>/remotion exec remotion still src/index.ts Main out/poster.jpg --frame 0 --image-format png --scale 2
 ```
 
 For multi-format (user picked 4 in Q2.2), render each composition:
 
 ```bash
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainLandscape out/video-landscape.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p10le --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainLandscape out/video-landscape.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2
 pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainLandscape out/poster-landscape.jpg --frame 0 --image-format png --scale 2
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainSquare    out/video-square.mp4    --codec h264 --crf 14 --image-format png --pixel-format yuv420p10le --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainSquare    out/video-square.mp4    --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2
 pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainSquare    out/poster-square.jpg   --frame 0 --image-format png --scale 2
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainVertical  out/video-vertical.mp4  --codec h264 --crf 14 --image-format png --pixel-format yuv420p10le --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainVertical  out/video-vertical.mp4  --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2
 pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainVertical  out/poster-vertical.jpg --frame 0 --image-format png --scale 2
 ```
 

@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "studio": "remotion studio",
-    "render": "remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p10le --scale 2",
-    "render:compat": "remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2",
+    "render": "remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2",
+    "render:10bit": "remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p10le --scale 2",
     "still": "remotion still src/index.ts Main out/poster.jpg --frame 0 --image-format png --scale 2",
     "typecheck": "tsc --noEmit"
   },
