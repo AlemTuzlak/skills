@@ -364,24 +364,35 @@ If the user picks (1), show a numbered list of snapshot summaries (hook text of 
 
 #### Render quality is not optional
 
-The Studio preview is pristine; the render pipeline must preserve that.
-Defaults ship with `--image-format png` (lossless intermediates) and
-`--crf 16` (visually transparent h264). A 30–60s 1080p video at these
-settings lands at 30–50 MB, which is well within LinkedIn (≤200 MB) and
-X (≤512 MB for verified, ≤512 KB gif fallback for ≤2:20 on regular
-accounts) upload limits.
+The Studio preview is pristine; the render pipeline must preserve that. Two
+structural problems ruin h264 output of otherwise-perfect React scenes:
 
-Never downgrade to `--image-format jpeg` for a final render — the JPEG
-quality-80 intermediate step blurs text and bands gradients. Use JPEG
-only for `remotion preview` / scratch renders where speed matters more
-than fidelity.
+1. **Chroma subsampling (YUV 4:2:0)** halves color resolution. Pink text
+   on dark backgrounds, thin colored lines, and subpixel anti-aliasing get
+   blurred. The fix is **supersampling**: render at 2x composition
+   dimensions (`--scale 2`) so ffmpeg downsamples from a sharper source.
 
-If file size becomes a concern for a specific platform (e.g. Reddit's
-100 MB cap):
-- Try `--crf 18` first (small quality drop, meaningful size drop)
-- Then `--pixel-format yuv420p` (already default — mentioned for
-  completeness)
-- Only as a last resort, `--image-format jpeg --jpeg-quality 95`
+2. **8-bit quantization** gives only 256 luminance steps. Smooth gradients
+   — especially the `SceneBackground` radial glows — show visible stair-step
+   bands. The fix is **10-bit encoding** (`--pixel-format yuv420p10le`,
+   h264 high10 profile) for 1024 steps.
+
+Defaults ship both on. They roughly double render time and file size but
+produce output that matches what the creator sees in Studio.
+
+File size sanity check: a 30-40s 1080p video at these settings lands at
+~30-60 MB. Under the upload caps for X (512 MB), LinkedIn (200 MB),
+YouTube (any), Reddit (100 MB).
+
+**Fallback for legacy-compat edge cases:** the `render:compat` npm script
+ships with `--pixel-format yuv420p` (8-bit). The `SceneBackground`
+component includes a subtle SVG noise overlay that dithers the 8-bit
+quantization below perception, so the compat path also looks clean. Use
+only when you hit a player that refuses h264 high10 (old Windows Media
+Player on unpatched Win10, some legacy hardware decoders — rare).
+
+**Never** render with `--image-format jpeg` for a final. The JPEG
+quality-80 intermediate blurs text independently of anything else.
 
 ### Step 6.1 — Pre-render checks (fail loud)
 
@@ -392,9 +403,10 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 - [ ] Every scene with `code` renders without `shiki` errors (test by invoking the shiki highlighter on each snippet)
 - [ ] Every brand asset referenced in `src/brand.ts` exists on disk
 - [ ] Hook enforcement rules (see `hooks/hook-rules.md`) pass on the HookTitle scene's `text`
-- [ ] Render flags include `--image-format png --crf 16` (or the
-      config.ts defaults are set; either path produces lossless
-      intermediates and h264 CRF ≤16)
+- [ ] Render flags include `--scale 2` and `--pixel-format yuv420p10le`
+      (or `remotion.config.ts` sets these — either path produces the
+      desired supersampled 10-bit output). Ship the `:compat` variant
+      only when a specific legacy player demands it.
 
 ### Step 6.2 — Render mp4 + poster
 
@@ -403,19 +415,19 @@ Stop the Remotion Studio background process first.
 For a single-aspect video:
 
 ```bash
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 16 --image-format png --pixel-format yuv420p
-pnpm --dir marketing/<feature-slug>/remotion exec remotion still src/index.ts Main out/poster.jpg --frame 0 --image-format png
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p10le --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still src/index.ts Main out/poster.jpg --frame 0 --image-format png --scale 2
 ```
 
 For multi-format (user picked 4 in Q2.2), render each composition:
 
 ```bash
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainLandscape out/video-landscape.mp4 --codec h264 --crf 16 --image-format png --pixel-format yuv420p
-pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainLandscape out/poster-landscape.jpg --frame 0 --image-format png
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainSquare    out/video-square.mp4    --codec h264 --crf 16 --image-format png --pixel-format yuv420p
-pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainSquare    out/poster-square.jpg   --frame 0 --image-format png
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainVertical  out/video-vertical.mp4  --codec h264 --crf 16 --image-format png --pixel-format yuv420p
-pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainVertical  out/poster-vertical.jpg --frame 0 --image-format png
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainLandscape out/video-landscape.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p10le --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainLandscape out/poster-landscape.jpg --frame 0 --image-format png --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainSquare    out/video-square.mp4    --codec h264 --crf 14 --image-format png --pixel-format yuv420p10le --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainSquare    out/poster-square.jpg   --frame 0 --image-format png --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainVertical  out/video-vertical.mp4  --codec h264 --crf 14 --image-format png --pixel-format yuv420p10le --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainVertical  out/poster-vertical.jpg --frame 0 --image-format png --scale 2
 ```
 
 Move artifacts from `<project>/out/` to `marketing/<feature-slug>/`:
