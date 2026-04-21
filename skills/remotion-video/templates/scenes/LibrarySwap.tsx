@@ -1,6 +1,7 @@
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { HighlightedCode } from "../highlighted-code";
 import { brand } from "../brand";
+import { Highlight } from "../highlight";
 import type { SceneProps } from "../story-types";
 
 export const LibrarySwap: React.FC<SceneProps<"LibrarySwap">> = ({
@@ -42,9 +43,10 @@ export const LibrarySwap: React.FC<SceneProps<"LibrarySwap">> = ({
             fontWeight: 800,
             color: brand.colors.text,
             marginBottom: 24,
+            textAlign: "center",
           }}
         >
-          {caption}
+          <Highlight text={caption} />
         </div>
       )}
 
@@ -69,10 +71,12 @@ export const LibrarySwap: React.FC<SceneProps<"LibrarySwap">> = ({
           lineHeight: 1.5,
           background: "#0d1117",
           color: "#e6edf3",
-          borderRadius: 16,
+          borderRadius: 20,
           padding: 40,
           minWidth: "60%",
           fontFamily: "'Fira Code', 'JetBrains Mono', monospace",
+          boxShadow:
+            "0 0 0 1px rgba(236, 0, 139, 0.3), 0 20px 60px rgba(236, 0, 139, 0.15)",
         }}
       >
         <HighlightedCode code={sharedCode} lang="ts" theme="github-dark" />

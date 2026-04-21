@@ -1,5 +1,6 @@
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { brand } from "../brand";
+import { Highlight } from "../highlight";
 import type { SceneProps } from "../story-types";
 
 export const ProblemSetup: React.FC<SceneProps<"ProblemSetup">> = ({
@@ -38,11 +39,12 @@ export const ProblemSetup: React.FC<SceneProps<"ProblemSetup">> = ({
           color: brand.colors.text,
           opacity: headerOpacity,
           marginBottom: 60,
+          lineHeight: 1.1,
         }}
       >
-        {text}
+        <Highlight text={text} />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
         {visualBeats.map((beat, i) => {
           const appearAt = (i + 1) * beatInterval;
           const beatOpacity = interpolate(
@@ -66,13 +68,13 @@ export const ProblemSetup: React.FC<SceneProps<"ProblemSetup">> = ({
                 color: brand.colors.text,
                 opacity: beatOpacity,
                 transform: `translateX(${beatX}px)`,
-                display: "flex",
-                alignItems: "center",
-                gap: 16,
+                padding: "24px 32px",
+                background: "rgba(255, 255, 255, 0.04)",
+                borderLeft: `6px solid ${brand.colors.danger}`,
+                borderRadius: 14,
               }}
             >
-              <span style={{ color: brand.colors.accent, fontWeight: 900 }}>×</span>
-              <span>{beat}</span>
+              <Highlight text={beat} />
             </div>
           );
         })}

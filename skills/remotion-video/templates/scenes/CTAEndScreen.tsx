@@ -1,5 +1,6 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand";
+import { Highlight } from "../highlight";
 import type { SceneProps } from "../story-types";
 
 export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
@@ -8,7 +9,7 @@ export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
   url,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
 
   const headlineEnter = spring({ frame, fps, config: { damping: 14 } });
   const headlineScale = interpolate(headlineEnter, [0, 1], [0.85, 1], {
@@ -35,10 +36,18 @@ export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
     extrapolateRight: "clamp",
   });
 
+  // Pulse the arrow: 1.0 -> 1.08 -> 1.0 across the scene
+  const arrowPulse = interpolate(
+    frame,
+    [0, durationInFrames / 2, durationInFrames],
+    [1, 1.08, 1],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+  );
+
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: brand.colors.primary,
+        background: `linear-gradient(180deg, ${brand.colors.primary} 0%, #A8006A 100%)`,
         justifyContent: "center",
         alignItems: "center",
         gap: 32,
@@ -56,7 +65,7 @@ export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
           maxWidth: "80%",
         }}
       >
-        {headline}
+        <Highlight text={headline} />
       </div>
       <div
         style={{
@@ -69,9 +78,20 @@ export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
           transform: `scale(${ctaScale})`,
           opacity: ctaOpacity,
           lineHeight: 1,
+          display: "flex",
+          alignItems: "center",
+          gap: 24,
         }}
       >
-        {actionVerb}
+        <span>{actionVerb}</span>
+        <span
+          style={{
+            display: "inline-block",
+            transform: `scale(${arrowPulse})`,
+          }}
+        >
+          →
+        </span>
       </div>
       {url && (
         <div
@@ -82,10 +102,14 @@ export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
             opacity: urlOpacity,
             padding: "12px 32px",
             borderRadius: 999,
-            background: "rgba(0, 0, 0, 0.25)",
+            background: "rgba(0, 0, 0, 0.35)",
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
           }}
         >
-          {url}
+          <span>🔗</span>
+          <span>{url}</span>
         </div>
       )}
     </AbsoluteFill>

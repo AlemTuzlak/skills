@@ -1,5 +1,6 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand";
+import { Highlight } from "../highlight";
 import type { SceneProps } from "../story-types";
 
 export const BulletList: React.FC<SceneProps<"BulletList">> = ({
@@ -42,7 +43,7 @@ export const BulletList: React.FC<SceneProps<"BulletList">> = ({
             opacity: captionOpacity,
           }}
         >
-          {caption}
+          <Highlight text={caption} />
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
@@ -75,15 +76,24 @@ export const BulletList: React.FC<SceneProps<"BulletList">> = ({
             >
               <span
                 style={{
-                  color: brand.colors.primary,
-                  fontSize: 80,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 56,
+                  height: 56,
+                  minWidth: 56,
+                  borderRadius: 999,
+                  background: brand.colors.primary,
+                  color: brand.colors.text,
+                  fontSize: 48,
                   fontWeight: 900,
-                  lineHeight: 0.8,
+                  lineHeight: 1,
+                  boxShadow: "0 0 24px rgba(236, 0, 139, 0.5)",
                 }}
               >
                 •
               </span>
-              {item}
+              <Highlight text={item} />
             </div>
           );
         })}

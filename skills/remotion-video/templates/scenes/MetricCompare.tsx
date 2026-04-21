@@ -1,5 +1,6 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand";
+import { Highlight } from "../highlight";
 import type { Metric, SceneProps } from "../story-types";
 
 const Card: React.FC<{ metric: Metric; accent: string; delayFrames: number }> = ({
@@ -92,7 +93,7 @@ export const MetricCompare: React.FC<SceneProps<"MetricCompare">> = ({
             opacity: captionOpacity,
           }}
         >
-          {caption}
+          <Highlight text={caption} />
         </div>
       )}
       <div style={{ display: "flex", gap: 40 }}>
