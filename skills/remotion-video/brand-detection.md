@@ -81,14 +81,17 @@ When auto-detection finds nothing:
 {
   "logoPath": null,
   "colors": {
-    "primary": "#0066ff",
-    "accent": "#ff6600",
-    "background": "#ffffff",
-    "text": "#0a0a0a"
+    "primary": "#EC008B",
+    "accent": "#7C3AED",
+    "background": "#0A0A0A",
+    "text": "#FFFFFF",
+    "muted": "#9CA3AF",
+    "success": "#22C55E",
+    "danger": "#EF4444"
   },
   "font": {
-    "family": "Inter",
-    "googleFont": "Inter"
+    "family": "Geist",
+    "googleFont": "Geist"
   },
   "introPath": null,
   "outroPath": null
