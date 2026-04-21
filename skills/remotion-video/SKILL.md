@@ -500,6 +500,53 @@ The end-screen CTA is the last frame viewers see. It must match the deck's visua
 - Action verb in solid `brand.colors.primary` at large weight (160px, 900) with a `textShadow` glow derived from the primary — the primary is the star *against* the dark bg, not fighting a colored background.
 - URL pill: translucent white bg (`rgba(255,255,255,0.06)`) + thin primary-tinted border (`hexToRgba(primary, 0.5)`) + subtle primary outer glow (`boxShadow: 0 0 40px hexToRgba(primary, 0.2)`).
 
+#### Format synthesized code for video readability
+
+Video code is displayed at 20-36px on a static frame — not in an IDE with horizontal scroll. Format for that medium, not for what `prettier` would emit.
+
+Rules:
+
+1. **Multi-line arrays when any element spans multiple lines.** If an array element is itself a multi-line call or object literal, put each element on its own line with the brackets on their own lines:
+
+   ```ts
+   // Bad — hard to parse at display size
+   tools: [webSearchTool({ name: 'web_search', type: 'web_search_20250305' })]
+
+   // Good — readable
+   tools: [
+     webSearchTool({
+       name: 'web_search',
+       type: 'web_search_20250305',
+     }),
+   ]
+   ```
+
+2. **Elide configs with `/*…*/`** when the config shape isn't the point of the scene. A video has ~2–4 seconds per chapter — don't spend those seconds on boilerplate:
+
+   ```ts
+   // Good — highlights the tool, not its config
+   tools: [computerUseTool(/*…*/)]
+   ```
+
+3. **Break long imports across lines in side-by-side scenes.** At 20px font with ~50% of the slide width, imports longer than ~45 chars overflow. Pre-break them:
+
+   ```ts
+   import { computerUseTool }
+     from '@tanstack/ai-anthropic/tools'
+   ```
+
+4. **No trailing semicolons in captions that reference line numbers.** Line numbers in `chapters[].lines` are 1-indexed over the raw template string — every newline matters for accurate line-number references.
+
+#### Choose meaningful wrong/right comparisons
+
+For `BeforeAfter` scenes that show a compile error → fix, pick a comparison that teaches something non-obvious:
+
+- **Weak**: "wrong provider's tool with a different provider's adapter" — viewers already expect this to fail; it's not a surprise.
+- **Strong**: "same tool, two different models of the same provider" — shows that the library's type system is *per-model*, not just *per-provider*. This is the insight most devs don't expect.
+- **Strong**: "old API vs new API on the same feature" — shows the migration path and the diagnostic UX.
+
+The compile error is the punchline; make sure the setup earns it. Look at the library's actual capabilities map (e.g., `<Provider>ChatModelToolCapabilitiesByName`) for real model/tool mismatches that exist in the current release — don't fabricate mismatches that wouldn't actually fire.
+
 ## Error Handling
 
 | Failure | Response |
