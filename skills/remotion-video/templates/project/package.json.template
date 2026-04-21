@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "studio": "remotion studio",
-    "render": "remotion render src/Root.tsx Main out/video.mp4 --codec h264 --crf 18",
-    "still": "remotion still src/Root.tsx Main out/poster.jpg --frame 0",
+    "render": "remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 16 --image-format png --pixel-format yuv420p",
+    "still": "remotion still src/index.ts Main out/poster.jpg --frame 0 --image-format png",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

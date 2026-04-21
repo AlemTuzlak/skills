@@ -362,6 +362,27 @@ If the user picks (1), show a numbered list of snapshot summaries (hook text of 
 
 ## Phase 6: Render
 
+#### Render quality is not optional
+
+The Studio preview is pristine; the render pipeline must preserve that.
+Defaults ship with `--image-format png` (lossless intermediates) and
+`--crf 16` (visually transparent h264). A 30–60s 1080p video at these
+settings lands at 30–50 MB, which is well within LinkedIn (≤200 MB) and
+X (≤512 MB for verified, ≤512 KB gif fallback for ≤2:20 on regular
+accounts) upload limits.
+
+Never downgrade to `--image-format jpeg` for a final render — the JPEG
+quality-80 intermediate step blurs text and bands gradients. Use JPEG
+only for `remotion preview` / scratch renders where speed matters more
+than fidelity.
+
+If file size becomes a concern for a specific platform (e.g. Reddit's
+100 MB cap):
+- Try `--crf 18` first (small quality drop, meaningful size drop)
+- Then `--pixel-format yuv420p` (already default — mentioned for
+  completeness)
+- Only as a last resort, `--image-format jpeg --jpeg-quality 95`
+
 ### Step 6.1 — Pre-render checks (fail loud)
 
 Before rendering, all of these must pass. If any fail, report exactly what and where, and do not render.
@@ -371,6 +392,9 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 - [ ] Every scene with `code` renders without `shiki` errors (test by invoking the shiki highlighter on each snippet)
 - [ ] Every brand asset referenced in `src/brand.ts` exists on disk
 - [ ] Hook enforcement rules (see `hooks/hook-rules.md`) pass on the HookTitle scene's `text`
+- [ ] Render flags include `--image-format png --crf 16` (or the
+      config.ts defaults are set; either path produces lossless
+      intermediates and h264 CRF ≤16)
 
 ### Step 6.2 — Render mp4 + poster
 
@@ -379,19 +403,19 @@ Stop the Remotion Studio background process first.
 For a single-aspect video:
 
 ```bash
-pnpm exec remotion render src/Root.tsx Main out/video.mp4 --codec h264 --crf 18
-pnpm exec remotion still src/Root.tsx Main out/poster.jpg --frame 0
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 16 --image-format png --pixel-format yuv420p
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still src/index.ts Main out/poster.jpg --frame 0 --image-format png
 ```
 
 For multi-format (user picked 4 in Q2.2), render each composition:
 
 ```bash
-pnpm exec remotion render src/Root.tsx MainLandscape out/video-landscape.mp4 --codec h264 --crf 18
-pnpm exec remotion still  src/Root.tsx MainLandscape out/poster-landscape.jpg --frame 0
-pnpm exec remotion render src/Root.tsx MainSquare    out/video-square.mp4    --codec h264 --crf 18
-pnpm exec remotion still  src/Root.tsx MainSquare    out/poster-square.jpg   --frame 0
-pnpm exec remotion render src/Root.tsx MainVertical  out/video-vertical.mp4  --codec h264 --crf 18
-pnpm exec remotion still  src/Root.tsx MainVertical  out/poster-vertical.jpg --frame 0
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainLandscape out/video-landscape.mp4 --codec h264 --crf 16 --image-format png --pixel-format yuv420p
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainLandscape out/poster-landscape.jpg --frame 0 --image-format png
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainSquare    out/video-square.mp4    --codec h264 --crf 16 --image-format png --pixel-format yuv420p
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainSquare    out/poster-square.jpg   --frame 0 --image-format png
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainVertical  out/video-vertical.mp4  --codec h264 --crf 16 --image-format png --pixel-format yuv420p
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainVertical  out/poster-vertical.jpg --frame 0 --image-format png
 ```
 
 Move artifacts from `<project>/out/` to `marketing/<feature-slug>/`:
