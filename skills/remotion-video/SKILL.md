@@ -416,3 +416,39 @@ Ask the user what to do with the scaffolded Remotion project:
 > 3. **Archive** — move to `marketing/<feature-slug>/remotion.zip` and delete the folder"
 
 Execute the chosen action. End.
+
+## Hook Enforcement Rules
+
+Hard rules applied whenever the skill writes or edits HookTitle scene text. See `hooks/hook-rules.md` and `hooks/hook-patterns.md` for details.
+
+1. **Max 7 words** on the hook caption (string length check)
+2. **Blocked openings** — reject if the hook starts with any of: `"In this video"`, `"I'm excited to"`, `"Today we're launching"`, the company/product name as the first token, `"Announcing"`, `"Introducing"`
+3. **Required pattern** — the hook must match one of: Result, Mistake, Secret, Comparison, Pattern-interrupt, or Curiosity-gap (see `hooks/hook-patterns.md`)
+4. **Visual reinforces text** — the HookTitle scene's `visual` field (`pattern-interrupt` / `curiosity-gap` / `social-proof`) must align with the text (checked at scene-plan approval in Phase 3.3)
+5. **Anti-clickbait check** — before render, verify the hook's promise is delivered by at least one later scene's content. If not, refuse to render and ask the user to adjust.
+
+If any rule fails, the skill proposes up to 3 alternative hooks that comply.
+
+## Error Handling
+
+| Failure | Response |
+|---|---|
+| `gh` CLI not available | Tell user, offer alternative input (diff file / freeform description) |
+| Invalid PR or ref | Ask user to verify |
+| Node / package manager not available | Fail loud, tell user what to install |
+| `remotion-best-practices` missing | Per Phase 1.1: offer (a) proceed, (b) install, (c) cancel |
+| Typecheck fails after 2 self-correct attempts | Show the error, ask user to describe the fix in freeform, retry |
+| Render crashes | Show Remotion's error; offer (a) retry, (b) simplify the failing scene, (c) abort |
+| Port 3000 in use | Try 3001, 3002, 3003 in order; fail loud if all taken |
+| Studio background process crashes mid-iteration | Restart once; if it crashes again, surface the error and ask user |
+| Brand auto-detection finds nothing | Ask user explicitly with sensible defaults (black text, white background, system font, no logo) |
+
+## What This Skill Does NOT Do
+
+- Write blog posts, social copy, changelogs, or scripts (separate skills exist)
+- Upload the video anywhere
+- Generate thumbnails beyond the first-frame poster
+- Handle voiceover or audio (silent + captions only)
+- Maintain a cross-project asset library (every video scoped to its own directory; `.marketing/brand.json` is the only shared state)
+- Re-run on previously-rendered videos without user invocation
+- Make editorial judgments about whether a PR is worth a video — if invoked, it runs
