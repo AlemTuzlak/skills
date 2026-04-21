@@ -304,3 +304,58 @@ When the story plan calls for a scene shape the 8 bundled templates can't expres
 6. Must be registered in `src/Root.tsx` alongside the bundled scenes
 
 Use `remotion-best-practices` skill when available for guidance. Fallback to baseline Remotion docs patterns.
+
+## Phase 5: First Draft + Iterate
+
+### Step 5.1 — Start Remotion Studio
+
+Run in the project directory as a background process:
+
+```bash
+pnpm exec remotion studio --port 3000
+```
+
+(Fall back: try 3001, 3002, 3003 if 3000 is in use. Fail loud if all taken.)
+
+Capture the URL and present to the user:
+
+> "Studio is running at http://localhost:3000. Open it in your browser and review the first draft.
+>
+> What do you want to change? (freeform — 'make the hook punchier', 'swap scenes 2 and 3', 'use arktype instead of yup', 'drop the problem scene', 'longer pause on the code', anything you want.)"
+
+### Step 5.2 — Accept freeform feedback → edit → HMR refresh
+
+Parse the user's request and decide which file to edit:
+
+| Request kind | File to edit |
+|---|---|
+| Content / copy change | `src/story.ts` (scene's `text`, `caption`, `code` fields) |
+| Timing / ordering change | `src/story.ts` (reorder array, update `durationFrames`) |
+| Visual / animation tweak on a bundled scene | `src/scenes/<Scene>.tsx` |
+| Novel visual request the library can't express | `src/scenes/custom/<Name>.tsx` (create new) + `src/Root.tsx` (register) + `src/story.ts` (reference with `{ type: "Custom", componentName: "<Name>", props: {...} }`) |
+| Brand change (colors, font, logo) | `src/brand.ts` |
+
+After each edit:
+
+1. Run `pnpm exec tsc --noEmit` silently
+2. If typecheck fails, self-correct (up to 2 attempts) before telling the user
+3. Remotion Studio HMR reloads automatically — no manual refresh needed
+
+Re-prompt:
+
+> "Saved. Studio should have refreshed. Next change, or ready to render?"
+
+### Step 5.3 — Loop until approved
+
+User signals "ready to render", "looks good", "ship it", "render", "done", or similar → move to Phase 6.
+
+### Step 5.4 — Drift guard
+
+Each iteration stores a snapshot of `src/story.ts` content in an in-memory session history. If the iteration loop hits 10 rounds without approval:
+
+> "We've iterated 10 times. Options:
+> 1. Reset to an earlier draft (I'll show the history)
+> 2. Keep going
+> 3. Render the current draft as-is"
+
+If the user picks (1), show a numbered list of snapshot summaries (hook text of each draft) and let them pick.
