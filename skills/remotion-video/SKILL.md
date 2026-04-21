@@ -207,3 +207,100 @@ Example output:
 **Do not scaffold until the user approves the scene plan.**
 
 See `patterns/README.md` for how patterns map to scene sequences.
+
+## Phase 4: Scaffold
+
+### Step 4.1 — Create the project skeleton
+
+At the location chosen in Q2.3 (default `marketing/<feature-slug>/remotion/`):
+
+```
+<project-root>/
+├── package.json
+├── tsconfig.json
+├── remotion.config.ts
+├── src/
+│   ├── Root.tsx              # Composition registry
+│   ├── story.ts              # Typed story JSON (written by skill from scene plan)
+│   ├── brand.ts              # Brand tokens (written by skill from Q2.4)
+│   ├── scenes/               # Copied from templates/scenes/
+│   └── assets/               # Copied logo, intro/outro if any
+```
+
+Copy files from `skills/remotion-video/templates/project/` (stripping the `.template` suffix):
+- `package.json.template` → `package.json`
+- `tsconfig.json.template` → `tsconfig.json`
+- `remotion.config.ts.template` → `remotion.config.ts`
+- `Root.tsx.template` → `src/Root.tsx`
+- `brand.ts.template` → `src/brand.ts` (then populate with Q2.4 values)
+- `story-types.ts.template` → `src/story-types.ts` (scene union type — single source of truth)
+
+Copy all `.tsx` files from `skills/remotion-video/templates/scenes/` into `<project-root>/src/scenes/`.
+
+### Step 4.2 — Install dependencies
+
+Detect package manager from lockfile (`pnpm-lock.yaml` → pnpm, `bun.lockb` → bun, `yarn.lock` → yarn, `package-lock.json` → npm). Install:
+
+```
+remotion @remotion/cli @remotion/shiki @remotion/google-fonts react react-dom typescript @types/react @types/node
+```
+
+Example (pnpm):
+
+```bash
+cd marketing/<feature-slug>/remotion && pnpm install
+```
+
+### Step 4.3 — Write `story.ts`
+
+Populate from the approved scene plan. The `Story` type is defined in `src/story-types.ts`:
+
+```ts
+export type Story = {
+  meta: {
+    durationSeconds: number;
+    aspectRatio: "16:9" | "1:1" | "9:16";
+    fps: 30 | 60;
+    slug: string;
+  };
+  brand: Brand;
+  scenes: Scene[];
+};
+
+export type Brand = {
+  logoPath?: string;
+  colors: { primary: string; accent: string; background: string; text: string };
+  font: { family: string; googleFont?: string };
+  introPath?: string;
+  outroPath?: string;
+};
+
+export type SceneContent = { label: string; code?: string; language?: string };
+export type Metric = { label: string; value: string };
+
+export type Scene =
+  | { type: "HookTitle"; durationFrames: number; text: string; visual: "pattern-interrupt" | "curiosity-gap" | "social-proof"; }
+  | { type: "ProblemSetup"; durationFrames: number; text: string; visualBeats: string[]; }
+  | { type: "CodeSnippet"; durationFrames: number; language: string; code: string; highlightLines?: number[]; caption?: string; }
+  | { type: "LibrarySwap"; durationFrames: number; sharedCode: string; libraries: { name: string; importLine: string }[]; caption?: string; }
+  | { type: "BeforeAfter"; durationFrames: number; before: SceneContent; after: SceneContent; caption?: string; }
+  | { type: "MetricCompare"; durationFrames: number; before: Metric; after: Metric; caption?: string; }
+  | { type: "BulletList"; durationFrames: number; items: string[]; caption?: string; }
+  | { type: "CTAEndScreen"; durationFrames: number; headline: string; actionVerb: string; url?: string; }
+  | { type: "Custom"; durationFrames: number; componentName: string; props: Record<string, unknown>; };
+```
+
+### Step 4.4 — Custom scene extension slot
+
+When the story plan calls for a scene shape the 8 bundled templates can't express, generate a custom scene under `src/scenes/custom/<Name>.tsx`.
+
+**Rules (enforced by the skill):**
+
+1. Only a React component exporting a default function
+2. May import only from: `remotion`, `@remotion/shiki`, `@remotion/google-fonts`, `react`, and `../../brand`
+3. Must typecheck (`tsc --noEmit`) before render — skill runs typecheck and self-corrects up to 2 times on failure
+4. Must use `interpolate` / `spring` for animations (no `setTimeout`, no external animation libs)
+5. Must respect `durationFrames` from its `Scene` entry
+6. Must be registered in `src/Root.tsx` alongside the bundled scenes
+
+Use `remotion-best-practices` skill when available for guidance. Fallback to baseline Remotion docs patterns.
