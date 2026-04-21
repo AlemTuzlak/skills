@@ -359,3 +359,60 @@ Each iteration stores a snapshot of `src/story.ts` content in an in-memory sessi
 > 3. Render the current draft as-is"
 
 If the user picks (1), show a numbered list of snapshot summaries (hook text of each draft) and let them pick.
+
+## Phase 6: Render
+
+### Step 6.1 — Pre-render checks (fail loud)
+
+Before rendering, all of these must pass. If any fail, report exactly what and where, and do not render.
+
+- [ ] `pnpm exec tsc --noEmit` passes
+- [ ] Sum of `scenes[].durationFrames / meta.fps` is within ±25% of `meta.durationSeconds` (unless the user explicitly set a different length — then use that as the target)
+- [ ] Every scene with `code` renders without `@remotion/shiki` errors (test by invoking the shiki highlighter on each snippet)
+- [ ] Every brand asset referenced in `src/brand.ts` exists on disk
+- [ ] Hook enforcement rules (see `hooks/hook-rules.md`) pass on the HookTitle scene's `text`
+
+### Step 6.2 — Render mp4 + poster
+
+Stop the Remotion Studio background process first.
+
+For a single-aspect video:
+
+```bash
+pnpm exec remotion render src/Root.tsx Main out/video.mp4 --codec h264 --crf 18
+pnpm exec remotion still src/Root.tsx Main out/poster.jpg --frame 0
+```
+
+For multi-format (user picked 4 in Q2.2), render each composition:
+
+```bash
+pnpm exec remotion render src/Root.tsx MainLandscape out/video-landscape.mp4 --codec h264 --crf 18
+pnpm exec remotion still  src/Root.tsx MainLandscape out/poster-landscape.jpg --frame 0
+pnpm exec remotion render src/Root.tsx MainSquare    out/video-square.mp4    --codec h264 --crf 18
+pnpm exec remotion still  src/Root.tsx MainSquare    out/poster-square.jpg   --frame 0
+pnpm exec remotion render src/Root.tsx MainVertical  out/video-vertical.mp4  --codec h264 --crf 18
+pnpm exec remotion still  src/Root.tsx MainVertical  out/poster-vertical.jpg --frame 0
+```
+
+Move artifacts from `<project>/out/` to `marketing/<feature-slug>/`:
+- `video.mp4` (or per-aspect files)
+- `poster.jpg` (or per-aspect files)
+
+### Step 6.3 — Print summary
+
+```
+✓ Rendered: marketing/<feature-slug>/video.mp4 (30s, 16:9, <size>)
+✓ Poster:   marketing/<feature-slug>/poster.jpg
+```
+
+## Phase 7: Cleanup
+
+Ask the user what to do with the scaffolded Remotion project:
+
+> "Video is ready. What do you want to do with the Remotion project at `marketing/<feature-slug>/remotion/`?
+>
+> 1. **Keep it** — useful for re-rendering or variants later
+> 2. **Delete it** — keep only the mp4 and poster
+> 3. **Archive** — move to `marketing/<feature-slug>/remotion.zip` and delete the folder"
+
+Execute the chosen action. End.
