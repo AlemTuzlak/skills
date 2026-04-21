@@ -17,6 +17,8 @@
 
 **Synthesize realistic usage code.** The PR diff usually shows the implementation; the compelling story is how consumers *use* it. Example: a PR that adds "Standard Schema" support shouldn't show the schema definition — it should show a user swapping from zod to valibot with one line changed.
 
+Verify synthesized code against the library's actual public API (docs/examples/source) before including it in the story.
+
 ## Hook Pattern Bias
 
 Strong fit:

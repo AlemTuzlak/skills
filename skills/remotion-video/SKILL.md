@@ -146,16 +146,19 @@ Auto-detect using the heuristics documented in `brand-detection.md`. Present fin
 > "I loaded brand settings from `.marketing/brand.json`. Use saved, or re-detect?"
 
 **Fallback when nothing detected:** ask explicitly with these sensible defaults:
-- Primary: `#0066ff` (blue)
-- Accent: `#ff6600` (orange)
-- Background: `#ffffff` (white)
-- Text: `#0a0a0a` (near-black)
-- Font: `Inter` (with fallback to system if not installed)
+- Primary: `#EC008B` (hot pink)
+- Accent: `#7C3AED` (purple)
+- Background: `#0A0A0A` (near-black, dark mode)
+- Text: `#FFFFFF` (white)
+- Muted: `#9CA3AF`
+- Success: `#22C55E`
+- Danger: `#EF4444`
+- Font: `Geist` (loaded automatically via `@remotion/google-fonts`)
 - Logo: none
 
 Confirm with the user before scaffolding.
 
-**Note on fonts:** `brand.font.family` is used as a CSS `font-family` string. The skill does **not** auto-load Google Fonts — if the user picks a font that isn't system-installed, they must install and wire it manually (e.g. via `@remotion/google-fonts`) post-scaffold. `brand.font.googleFont` is advisory metadata only.
+**Note on fonts:** The default scaffold loads **Geist** via `@remotion/google-fonts` and wires it into `brand.font.family`. To use a different Google Font, edit `src/fonts.ts` to import from a different `@remotion/google-fonts/<Name>` module. `brand.font.googleFont` is the display name used by the skill to decide which module to load. Non-Google fonts require manual wiring.
 
 ## Phase 3: Narrative Planning
 
@@ -183,6 +186,18 @@ Offer user override:
 
 > "For code snippets, I'll **synthesize realistic usage examples** rather than paste raw diff. Override: use-diff / synthesize / mix"
 
+### Step 3.2b — Ground synthesized code in the real library
+
+Before synthesizing usage code for a PR, verify the library's actual public API. Do **not** invent method names, argument shapes, or import paths.
+
+For each snippet the skill plans to include:
+1. Locate the real library code locally (e.g., `packages/<name>/src/index.ts`, docs examples in `docs/`, test fixtures in `tests/`).
+2. Confirm every imported name exists as exported.
+3. Confirm every method/function signature matches (argument names, shape, async vs sync).
+4. Prefer patterns from the library's own docs over inferred shapes.
+
+If the library isn't available locally and the skill can't verify, **ask the user** before synthesizing. A wrong API in the first draft destroys user trust and wastes a full iteration round.
+
 ### Step 3.3 — Present scene plan for approval
 
 Example output:
@@ -200,6 +215,10 @@ Example output:
 
 See `patterns/README.md` for how patterns map to scene plans.
 
+### Caption / text highlight syntax
+
+> In any `text`, `caption`, `headline`, or other string field passed to a scene, wrap key words with `**word**` to render them in the brand primary color via the `<Highlight>` component. Use sparingly — 1-2 emphasized runs per line maximum. Example: `"Mix providers wrong — **ship a landmine**."`
+
 ## Phase 4: Scaffold
 
 ### Step 4.1 — Create the project skeleton
@@ -212,11 +231,15 @@ At the location chosen in Q2.3 (default `marketing/<feature-slug>/remotion/`):
 ├── tsconfig.json
 ├── remotion.config.ts
 ├── src/
+│   ├── index.ts              # Entry point: registerRoot + font side-effect
 │   ├── Root.tsx              # Composition registry
+│   ├── Main.tsx              # Scene dispatcher
 │   ├── story.ts              # Typed story JSON (written by skill from scene plan)
 │   ├── story-types.ts        # Scene union type (source of truth)
-│   ├── brand.ts              # Brand tokens (written by skill from Q2.4)
-│   ├── highlighted-code.tsx  # Shiki-based highlighter used by code scenes
+│   ├── brand.ts              # Brand tokens (extended palette: primary/accent/background/text/muted/success/danger)
+│   ├── fonts.ts              # Loads Geist via @remotion/google-fonts — default font
+│   ├── highlight.tsx         # <Highlight text="**word**" /> component for caption emphasis
+│   ├── highlighted-code.tsx  # Shiki-based code highlighter
 │   ├── scenes/               # Copied from templates/scenes/
 │   └── assets/               # Copied logo, intro/outro if any
 ```
@@ -225,9 +248,12 @@ Copy files from `skills/remotion-video/templates/project/` (stripping the `.temp
 - `package.json.template` → `package.json`
 - `tsconfig.json.template` → `tsconfig.json`
 - `remotion.config.ts.template` → `remotion.config.ts`
+- `index.ts.template` → `src/index.ts` (entry point — calls `registerRoot` and imports `./fonts` for side-effect)
 - `Root.tsx.template` → `src/Root.tsx`
 - `brand.ts.template` → `src/brand.ts` (then populate with Q2.4 values)
 - `story-types.ts.template` → `src/story-types.ts` (scene union type — single source of truth)
+- `fonts.ts.template` → `src/fonts.ts` (loads Geist by default via `@remotion/google-fonts/Geist`)
+- `highlight.tsx.template` → `src/highlight.tsx` (text emphasis helper — renders `**word**` in primary color)
 - `highlighted-code.tsx.template` → `src/highlighted-code.tsx` (wraps `shiki` for Remotion async frame capture)
 - `Main.tsx.template` → `src/Main.tsx` (scene dispatcher)
 
@@ -238,7 +264,7 @@ Copy all `.tsx` files from `skills/remotion-video/templates/scenes/` into `<proj
 Detect package manager from lockfile (`pnpm-lock.yaml` → pnpm, `bun.lockb` → bun, `yarn.lock` → yarn, `package-lock.json` → npm). Install:
 
 ```
-remotion shiki react react-dom typescript @types/react @types/react-dom @types/node @remotion/cli
+remotion @remotion/cli @remotion/google-fonts shiki react react-dom typescript @types/react @types/react-dom @types/node
 ```
 
 Example (pnpm):
@@ -417,6 +443,8 @@ If any rule fails, the skill proposes up to 3 alternative hooks that comply.
 | Port 3000 in use | Try 3001, 3002, 3003 in order; fail loud if all taken |
 | Studio background process crashes mid-iteration | Restart once; if it crashes again, surface the error and ask user |
 | Brand auto-detection finds nothing | Ask user explicitly with sensible defaults (see Phase 2.4 fallback block for the full primary/accent/background/text/font/logo list) |
+| Entry point missing (studio fails with "No Remotion entrypoint was found") | Skill forgot to copy `index.ts.template` during scaffold — recopy from templates and retry |
+| Font not rendering at runtime (text shows in fallback sans-serif) | `src/fonts.ts` wasn't imported for side-effect by `src/index.ts` — verify the `import "./fonts"` line is present |
 
 ## What This Skill Does NOT Do
 
