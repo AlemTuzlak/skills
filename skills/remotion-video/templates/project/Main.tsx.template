@@ -12,14 +12,38 @@ import type { Scene } from "./story-types";
 
 const renderScene = (scene: Scene): React.ReactElement => {
   switch (scene.type) {
-    case "HookTitle":    return <HookTitle {...scene} />;
-    case "ProblemSetup": return <ProblemSetup {...scene} />;
-    case "CodeSnippet":  return <CodeSnippet {...scene} />;
-    case "LibrarySwap":  return <LibrarySwap {...scene} />;
-    case "BeforeAfter":  return <BeforeAfter {...scene} />;
-    case "MetricCompare": return <MetricCompare {...scene} />;
-    case "BulletList":   return <BulletList {...scene} />;
-    case "CTAEndScreen": return <CTAEndScreen {...scene} />;
+    case "HookTitle": {
+      const { type: _t, ...props } = scene;
+      return <HookTitle {...props} />;
+    }
+    case "ProblemSetup": {
+      const { type: _t, ...props } = scene;
+      return <ProblemSetup {...props} />;
+    }
+    case "CodeSnippet": {
+      const { type: _t, ...props } = scene;
+      return <CodeSnippet {...props} />;
+    }
+    case "LibrarySwap": {
+      const { type: _t, ...props } = scene;
+      return <LibrarySwap {...props} />;
+    }
+    case "BeforeAfter": {
+      const { type: _t, ...props } = scene;
+      return <BeforeAfter {...props} />;
+    }
+    case "MetricCompare": {
+      const { type: _t, ...props } = scene;
+      return <MetricCompare {...props} />;
+    }
+    case "BulletList": {
+      const { type: _t, ...props } = scene;
+      return <BulletList {...props} />;
+    }
+    case "CTAEndScreen": {
+      const { type: _t, ...props } = scene;
+      return <CTAEndScreen {...props} />;
+    }
     case "Custom":
       throw new Error(
         `Custom scene "${scene.componentName}" must be dispatched from a skill-generated extension. ` +

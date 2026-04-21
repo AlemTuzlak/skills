@@ -45,7 +45,7 @@ const Panel: React.FC<{ side: SceneContent; accent: string; slideFrom: number; f
       </div>
       {side.code ? (
         <div style={{ fontSize: 28, fontFamily: "'Fira Code', monospace", color: "#e6edf3" }}>
-          <HighlightedCode code={side.code} lang={side.language ?? "ts"} theme="github-dark" />
+          <HighlightedCode code={side.code} lang={side.language} theme="github-dark" />
         </div>
       ) : (
         <div

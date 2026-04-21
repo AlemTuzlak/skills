@@ -4,20 +4,17 @@ export type AspectRatio = "16:9" | "1:1" | "9:16";
 
 export type Story = {
   meta: {
-    durationSeconds: number;
     aspectRatio: AspectRatio;
     fps: 30;
     slug: string;
   };
   brand: Brand;
-  scenes: Scene[];
+  scenes: [Scene, ...Scene[]];
 };
 
-export type SceneContent = {
-  label: string;
-  code?: string;
-  language?: string;
-};
+export type SceneContent =
+  | { label: string; code?: never; language?: never }
+  | { label: string; code: string; language: string };
 
 export type Metric = {
   label: string;
@@ -25,6 +22,8 @@ export type Metric = {
 };
 
 export type HookVisual = "pattern-interrupt" | "curiosity-gap" | "social-proof";
+
+export type Library = { name: string; importLine: string };
 
 export type Scene =
   | {
@@ -37,7 +36,7 @@ export type Scene =
       type: "ProblemSetup";
       durationFrames: number;
       text: string;
-      visualBeats: string[];
+      visualBeats: [string, ...string[]];
     }
   | {
       type: "CodeSnippet";
@@ -51,7 +50,7 @@ export type Scene =
       type: "LibrarySwap";
       durationFrames: number;
       sharedCode: string;
-      libraries: { name: string; importLine: string }[];
+      libraries: [Library, ...Library[]];
       caption?: string;
     }
   | {
@@ -71,7 +70,7 @@ export type Scene =
   | {
       type: "BulletList";
       durationFrames: number;
-      items: string[];
+      items: [string, ...string[]];
       caption?: string;
     }
   | {

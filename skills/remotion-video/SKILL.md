@@ -334,7 +334,7 @@ If the user picks (1), show a numbered list of snapshot summaries (hook text of 
 Before rendering, all of these must pass. If any fail, report exactly what and where, and do not render.
 
 - [ ] `pnpm exec tsc --noEmit` passes
-- [ ] Sum of `scenes[].durationFrames / meta.fps` is within ±15% of `meta.durationSeconds`
+- [ ] Sum of `scenes[].durationFrames / meta.fps` is within ±15% of the target duration set at Q2.1
 - [ ] Every scene with `code` renders without `shiki` errors (test by invoking the shiki highlighter on each snippet)
 - [ ] Every brand asset referenced in `src/brand.ts` exists on disk
 - [ ] Hook enforcement rules (see `hooks/hook-rules.md`) pass on the HookTitle scene's `text`
