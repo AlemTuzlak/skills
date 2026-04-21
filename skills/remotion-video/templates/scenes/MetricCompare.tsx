@@ -1,0 +1,99 @@
+import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { brand } from "../brand";
+
+type Metric = { label: string; value: string };
+
+const Card: React.FC<{ metric: Metric; accent: string; delayFrames: number }> = ({
+  metric,
+  accent,
+  delayFrames,
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const localFrame = Math.max(0, frame - delayFrames);
+  const enter = spring({ frame: localFrame, fps, config: { damping: 14, stiffness: 110 } });
+  const scale = interpolate(enter, [0, 1], [0.7, 1]);
+  const opacity = interpolate(enter, [0, 1], [0, 1]);
+
+  return (
+    <div
+      style={{
+        flex: 1,
+        background: "#0d1117",
+        borderRadius: 24,
+        padding: 56,
+        transform: `scale(${scale})`,
+        opacity,
+        borderBottom: `8px solid ${accent}`,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: brand.font.family,
+          fontSize: 36,
+          fontWeight: 800,
+          color: "#7d8590",
+          marginBottom: 16,
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+        }}
+      >
+        {metric.label}
+      </div>
+      <div
+        style={{
+          fontFamily: brand.font.family,
+          fontSize: 180,
+          fontWeight: 900,
+          color: accent,
+          lineHeight: 1,
+          letterSpacing: "-0.03em",
+        }}
+      >
+        {metric.value}
+      </div>
+    </div>
+  );
+};
+
+export const MetricCompare: React.FC<{
+  before: Metric;
+  after: Metric;
+  caption?: string;
+  durationFrames: number;
+}> = ({ before, after, caption }) => {
+  const frame = useCurrentFrame();
+  const captionOpacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
+
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: brand.colors.background,
+        padding: 80,
+        justifyContent: "center",
+      }}
+    >
+      {caption && (
+        <div
+          style={{
+            fontFamily: brand.font.family,
+            fontSize: 56,
+            fontWeight: 800,
+            color: brand.colors.text,
+            marginBottom: 40,
+            textAlign: "center",
+            opacity: captionOpacity,
+          }}
+        >
+          {caption}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 40 }}>
+        <Card metric={before} accent={brand.colors.accent} delayFrames={0} />
+        <Card metric={after} accent={brand.colors.primary} delayFrames={18} />
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+export default MetricCompare;
