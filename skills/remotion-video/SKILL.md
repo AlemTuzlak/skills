@@ -255,6 +255,7 @@ Copy files from `skills/remotion-video/templates/project/` (stripping the `.temp
 - `fonts.ts.template` → `src/fonts.ts` (loads Geist by default via `@remotion/google-fonts/Geist`)
 - `highlight.tsx.template` → `src/highlight.tsx` (text emphasis helper — renders `**word**` in primary color)
 - `highlighted-code.tsx.template` → `src/highlighted-code.tsx` (wraps `shiki` for Remotion async frame capture)
+- `scene-background.tsx.template` → `src/scene-background.tsx` (brand-tinted scene wrapper — every scene uses this)
 - `Main.tsx.template` → `src/Main.tsx` (scene dispatcher)
 
 Copy all `.tsx` files from `skills/remotion-video/templates/scenes/` into `<project-root>/src/scenes/`.
@@ -298,7 +299,7 @@ When the story plan calls for a scene shape the 8 bundled templates can't expres
 **Rules (enforced by the skill):**
 
 1. Only a React component exporting a default function
-2. May import only from: `remotion`, `shiki`, `react`, `../../highlighted-code`, and `../../brand`
+2. May import only from: `remotion`, `shiki`, `react`, `../../highlighted-code`, `../../scene-background`, and `../../brand`
 3. Must typecheck (`tsc --noEmit`) before render — skill runs typecheck and self-corrects up to 2 times on failure
 4. Must use `interpolate` / `spring` for animations (no `setTimeout`, no external animation libs)
 5. Must respect `durationFrames` from its `Scene` entry
