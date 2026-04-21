@@ -11,12 +11,16 @@ export const LibrarySwap: React.FC<{
   durationFrames: number;
 }> = ({ sharedCode, libraries, caption, durationFrames }) => {
   const frame = useCurrentFrame();
+  if (libraries.length === 0) return null;
   const segment = Math.floor(durationFrames / libraries.length);
   const currentIndex = Math.min(Math.floor(frame / segment), libraries.length - 1);
   const current = libraries[currentIndex];
 
   const swapProgress = (frame % segment) / segment;
-  const importScale = interpolate(swapProgress, [0, 0.15, 1], [1.2, 1, 1]);
+  const importScale = interpolate(swapProgress, [0, 0.15, 1], [1.2, 1, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <AbsoluteFill

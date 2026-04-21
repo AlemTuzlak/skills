@@ -38,13 +38,13 @@ export const ProblemSetup: React.FC<{
             frame,
             [appearAt, appearAt + 8],
             [0, 1],
-            { extrapolateRight: "clamp" },
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
           );
           const beatX = interpolate(
             frame,
             [appearAt, appearAt + 12],
             [-40, 0],
-            { extrapolateRight: "clamp" },
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
           );
           return (
             <div

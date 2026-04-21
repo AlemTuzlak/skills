@@ -18,7 +18,7 @@ export const CTAEndScreen: React.FC<{
   const ctaScale = interpolate(ctaEnter, [0, 1], [0.8, 1]);
   const ctaOpacity = interpolate(ctaEnter, [0, 1], [0, 1]);
 
-  const urlOpacity = interpolate(frame, [20, 30], [0, 1], { extrapolateRight: "clamp" });
+  const urlOpacity = interpolate(frame, [fps * 0.66, fps], [0, 1], { extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill

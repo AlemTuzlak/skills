@@ -38,9 +38,9 @@ const Panel: React.FC<{ side: Side; accent: string; slideFrom: number; frame: nu
       >
         {side.label}
       </div>
-      {side.code && side.language ? (
+      {side.code ? (
         <div style={{ fontSize: 28, fontFamily: "'Fira Code', monospace", color: "#e6edf3" }}>
-          <HighlightedCode code={side.code} lang={side.language} theme="github-dark" />
+          <HighlightedCode code={side.code} lang={side.language ?? "ts"} theme="github-dark" />
         </div>
       ) : (
         <div

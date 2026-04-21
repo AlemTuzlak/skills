@@ -40,8 +40,14 @@ export const BulletList: React.FC<{
           const appearAt = (i + 1) * stagger;
           const local = Math.max(0, frame - appearAt);
           const enter = spring({ frame: local, fps, config: { damping: 14, stiffness: 120 } });
-          const x = interpolate(enter, [0, 1], [-50, 0]);
-          const opacity = interpolate(enter, [0, 1], [0, 1]);
+          const x = interpolate(enter, [0, 1], [-50, 0], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          });
+          const opacity = interpolate(enter, [0, 1], [0, 1], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          });
           return (
             <div
               key={i}
