@@ -157,6 +157,8 @@ Frame rate is fixed at 30fps (users who need 60fps can edit `remotion.config.ts`
 
 See `brand-detection.md` for full heuristics.
 
+**Note on fonts:** `brand.font.family` is used as a CSS `font-family` string. The skill does **not** auto-load Google Fonts — if the user picks a font that isn't system-installed, they must install and wire it manually (e.g. via `@remotion/google-fonts`) post-scaffold. `brand.font.googleFont` is advisory metadata only.
+
 ## Phase 3: Narrative Planning
 
 ### Step 3.1 — Detect story pattern
@@ -237,6 +239,7 @@ Copy files from `skills/remotion-video/templates/project/` (stripping the `.temp
 - `brand.ts.template` → `src/brand.ts` (then populate with Q2.4 values)
 - `story-types.ts.template` → `src/story-types.ts` (scene union type — single source of truth)
 - `highlighted-code.tsx.template` → `src/highlighted-code.tsx` (wraps `shiki` for Remotion async frame capture)
+- `Main.tsx.template` → `src/Main.tsx` (scene dispatcher)
 
 Copy all `.tsx` files from `skills/remotion-video/templates/scenes/` into `<project-root>/src/scenes/`.
 
@@ -245,7 +248,7 @@ Copy all `.tsx` files from `skills/remotion-video/templates/scenes/` into `<proj
 Detect package manager from lockfile (`pnpm-lock.yaml` → pnpm, `bun.lockb` → bun, `yarn.lock` → yarn, `package-lock.json` → npm). Install:
 
 ```
-remotion @remotion/cli @remotion/google-fonts shiki react react-dom typescript @types/react @types/node
+remotion shiki react react-dom typescript @types/react @types/react-dom @types/node @remotion/cli
 ```
 
 Example (pnpm):
@@ -293,9 +296,19 @@ export type Scene =
   | { type: "Custom"; durationFrames: number; componentName: string; props: Record<string, unknown>; };
 ```
 
-### Step 4.3b — Generate `src/Main.tsx`
+### Step 4.3b — Extend `src/Main.tsx` for Custom scenes
 
-Generate `src/Main.tsx` that imports all scene components and dispatches based on `Scene.type`. For Custom scenes, dynamically add import statements and a switch case for each registered custom scene name. See the scene dispatch skeleton in `templates/project/Root.tsx.template` comments.
+The skill copies `Main.tsx.template` → `src/Main.tsx` in Step 4.1. That base file dispatches all 8 bundled scene types. Whenever a story plan uses a `Custom` scene, the skill must extend the `renderScene` switch in `src/Main.tsx`: add the `import` for the custom component and a `case` for its `componentName` that renders it with its `props` (instead of throwing). The base template throws on Custom so missing dispatch is loud, not silent.
+
+### Step 4.3c — Multi-format registration
+
+When the user picked option 4 (Multi-format) in Q2.2, the skill modifies `src/Root.tsx` to register **three** compositions instead of one, each passing the same `Main` component with a different width/height:
+
+- `MainLandscape` — 1920×1080
+- `MainSquare` — 1080×1080
+- `MainVertical` — 1080×1920
+
+All three share the same `durationInFrames` and `fps` from `story.meta`. The base `Root.tsx.template` ships with a single `Main` composition by default; the skill replaces that block with the three-composition block when multi-format is selected.
 
 ### Step 4.4 — Custom scene extension slot
 
@@ -304,7 +317,7 @@ When the story plan calls for a scene shape the 8 bundled templates can't expres
 **Rules (enforced by the skill):**
 
 1. Only a React component exporting a default function
-2. May import only from: `remotion`, `shiki`, `@remotion/google-fonts`, `react`, `../../highlighted-code`, and `../../brand`
+2. May import only from: `remotion`, `shiki`, `react`, `../../highlighted-code`, and `../../brand`
 3. Must typecheck (`tsc --noEmit`) before render — skill runs typecheck and self-corrects up to 2 times on failure
 4. Must use `interpolate` / `spring` for animations (no `setTimeout`, no external animation libs)
 5. Must respect `durationFrames` from its `Scene` entry
