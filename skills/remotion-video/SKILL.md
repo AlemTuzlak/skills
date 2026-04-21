@@ -156,3 +156,54 @@ Frame rate is fixed at 30fps (users who need 60fps can edit `remotion.config.ts`
 **Fallback when nothing detected:** ask explicitly with sensible defaults (black `#000` text, white `#fff` background, system font, no logo).
 
 See `brand-detection.md` for full heuristics.
+
+## Phase 3: Narrative Planning
+
+### Step 3.1 — Detect story pattern
+
+Scan the PR/input for signals and pick one of 5 patterns:
+
+| Signal | Pattern |
+|---|---|
+| Public API / types / exports change | `api-library-feature` |
+| UI component files, Storybook updates, CSS changes | `ui-feature` |
+| Perf keywords in title (ms, throughput, speedup, faster), benchmark files | `performance-win` |
+| "fix" in title, bug labels, issue links | `bug-fix` |
+| None of the above | `generic-fallback` |
+
+Load the matching pattern spec from `patterns/<pattern>.md`.
+
+**Confirm with user:**
+
+> "This looks like an **[API/Library feature]** PR. I'll use that story template. Override? Options: api-library / ui / performance / bugfix / generic / describe a custom pattern"
+
+### Step 3.2 — Decide code sourcing (hybrid)
+
+Per pattern:
+
+- **api-library-feature** → **synthesize** realistic usage examples that show how developers will actually use the feature
+- **ui-feature** → **screenshots / mock components** (no code block scenes)
+- **performance-win** → metric cards + optional code
+- **bug-fix** → before (broken) + after (working) snippets, synthesized if raw diff is noisy
+- **generic-fallback** → bullet benefits, no code
+
+Offer user override:
+
+> "For code snippets, I'll **synthesize realistic usage examples** rather than paste raw diff. Override: use-diff / synthesize / mix"
+
+### Step 3.3 — Present scene plan for approval
+
+Example output:
+
+> "Here's the plan (30s target):
+>
+> 1. **HookTitle** (0-3s) — `"Swap validation libs with one line"`
+> 2. **ProblemSetup** (3-8s) — 3 libraries, 3 different syntaxes, same task
+> 3. **LibrarySwap** (8-22s) — same Standard Schema code, swap zod → valibot → arktype
+> 4. **CTAEndScreen** (22-30s) — `"Ship it"` + link to standardschema.dev
+>
+> Approve or adjust any section?"
+
+**Do not scaffold until the user approves the scene plan.**
+
+See `patterns/README.md` for how patterns map to scene sequences.
