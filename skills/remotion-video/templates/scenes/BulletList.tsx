@@ -1,11 +1,12 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand";
+import type { SceneProps } from "../story-types";
 
-export const BulletList: React.FC<{
-  items: string[];
-  caption?: string;
-  durationFrames: number;
-}> = ({ items, caption, durationFrames }) => {
+export const BulletList: React.FC<SceneProps<"BulletList">> = ({
+  items,
+  caption,
+  durationFrames,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 

@@ -1,10 +1,9 @@
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { HighlightedCode } from "../highlighted-code";
 import { brand } from "../brand";
+import type { SceneContent, SceneProps } from "../story-types";
 
-type Side = { label: string; code?: string; language?: string };
-
-const Panel: React.FC<{ side: Side; accent: string; slideFrom: number; frame: number }> = ({
+const Panel: React.FC<{ side: SceneContent; accent: string; slideFrom: number; frame: number }> = ({
   side,
   accent,
   slideFrom,
@@ -57,12 +56,11 @@ const Panel: React.FC<{ side: Side; accent: string; slideFrom: number; frame: nu
   );
 };
 
-export const BeforeAfter: React.FC<{
-  before: Side;
-  after: Side;
-  caption?: string;
-  durationFrames: number;
-}> = ({ before, after, caption }) => {
+export const BeforeAfter: React.FC<SceneProps<"BeforeAfter">> = ({
+  before,
+  after,
+  caption,
+}) => {
   const frame = useCurrentFrame();
   const captionOpacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
 

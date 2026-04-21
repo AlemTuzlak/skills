@@ -1,14 +1,14 @@
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { HighlightedCode } from "../highlighted-code";
 import { brand } from "../brand";
+import type { SceneProps } from "../story-types";
 
-export const CodeSnippet: React.FC<{
-  language: string;
-  code: string;
-  highlightLines?: number[];
-  caption?: string;
-  durationFrames: number;
-}> = ({ language, code, highlightLines, caption }) => {
+export const CodeSnippet: React.FC<SceneProps<"CodeSnippet">> = ({
+  language,
+  code,
+  highlightLines,
+  caption,
+}) => {
   const frame = useCurrentFrame();
   const fadeIn = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
 

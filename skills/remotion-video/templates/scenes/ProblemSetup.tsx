@@ -1,11 +1,12 @@
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { brand } from "../brand";
+import type { SceneProps } from "../story-types";
 
-export const ProblemSetup: React.FC<{
-  text: string;
-  visualBeats: string[];
-  durationFrames: number;
-}> = ({ text, visualBeats, durationFrames }) => {
+export const ProblemSetup: React.FC<SceneProps<"ProblemSetup">> = ({
+  text,
+  visualBeats,
+  durationFrames,
+}) => {
   const frame = useCurrentFrame();
   const headerOpacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
 

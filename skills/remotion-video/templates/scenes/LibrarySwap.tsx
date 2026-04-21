@@ -1,15 +1,14 @@
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { HighlightedCode } from "../highlighted-code";
 import { brand } from "../brand";
+import type { SceneProps } from "../story-types";
 
-type Library = { name: string; importLine: string };
-
-export const LibrarySwap: React.FC<{
-  sharedCode: string;
-  libraries: Library[];
-  caption?: string;
-  durationFrames: number;
-}> = ({ sharedCode, libraries, caption, durationFrames }) => {
+export const LibrarySwap: React.FC<SceneProps<"LibrarySwap">> = ({
+  sharedCode,
+  libraries,
+  caption,
+  durationFrames,
+}) => {
   const frame = useCurrentFrame();
   if (libraries.length === 0) return null;
   const segment = Math.floor(durationFrames / libraries.length);

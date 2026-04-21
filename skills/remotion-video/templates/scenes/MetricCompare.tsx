@@ -1,7 +1,6 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand";
-
-type Metric = { label: string; value: string };
+import type { Metric, SceneProps } from "../story-types";
 
 const Card: React.FC<{ metric: Metric; accent: string; delayFrames: number }> = ({
   metric,
@@ -56,12 +55,11 @@ const Card: React.FC<{ metric: Metric; accent: string; delayFrames: number }> = 
   );
 };
 
-export const MetricCompare: React.FC<{
-  before: Metric;
-  after: Metric;
-  caption?: string;
-  durationFrames: number;
-}> = ({ before, after, caption }) => {
+export const MetricCompare: React.FC<SceneProps<"MetricCompare">> = ({
+  before,
+  after,
+  caption,
+}) => {
   const frame = useCurrentFrame();
   const captionOpacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
 

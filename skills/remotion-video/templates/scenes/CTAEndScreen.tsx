@@ -1,12 +1,12 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand";
+import type { SceneProps } from "../story-types";
 
-export const CTAEndScreen: React.FC<{
-  headline: string;
-  actionVerb: string;
-  url?: string;
-  durationFrames: number;
-}> = ({ headline, actionVerb, url }) => {
+export const CTAEndScreen: React.FC<SceneProps<"CTAEndScreen">> = ({
+  headline,
+  actionVerb,
+  url,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 

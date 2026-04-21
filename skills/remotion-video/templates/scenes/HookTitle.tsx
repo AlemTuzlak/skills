@@ -1,13 +1,8 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand";
+import type { SceneProps } from "../story-types";
 
-type HookVisual = "pattern-interrupt" | "curiosity-gap" | "social-proof";
-
-export const HookTitle: React.FC<{
-  text: string;
-  visual: HookVisual;
-  durationFrames: number;
-}> = ({ text, visual }) => {
+export const HookTitle: React.FC<SceneProps<"HookTitle">> = ({ text, visual }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
