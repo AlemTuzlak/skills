@@ -138,6 +138,38 @@ export type Scene =
       url?: string;
     }
   | {
+      /**
+       * UIShowcase — shows the product's user-visible surface alongside a
+       * short caption. Research on product-launch video: "show the product
+       * in action" is the single strongest predictor of viewer recall.
+       *
+       * Use exactly one of:
+       * - `mediaSrc`: path (or public URL) of a screenshot or short video
+       *   clip of the real UI. Images render as a still; `.mp4`/`.webm`
+       *   render through Remotion's `<Video>`.
+       * - `mockComponent`: name of a Custom scene-style React component
+       *   rendered inside the frame (for hand-built mock UIs).
+       *
+       * `calloutBoxes` overlay brand-primary-tinted call-out rectangles
+       * with optional labels that spring-enter on a staggered timeline.
+       * Use them to direct the viewer to the specific part of the UI that
+       * demonstrates the feature.
+       */
+      type: "UIShowcase";
+      durationFrames: number;
+      caption?: string;
+      mediaSrc?: string;
+      mockComponent?: string;
+      calloutBoxes?: readonly {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        label?: string;
+        appearAt: number;
+      }[];
+    }
+  | {
       type: "Custom";
       durationFrames: number;
       componentName: string;
