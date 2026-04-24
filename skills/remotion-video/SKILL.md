@@ -252,7 +252,8 @@ Copy files from `skills/remotion-video/templates/project/` (stripping the `.temp
 - `story-types.ts.template` → `src/story-types.ts` (scene union type — single source of truth)
 - `fonts.ts.template` → `src/fonts.ts` (loads Geist by default via `@remotion/google-fonts/Geist`)
 - `highlight.tsx.template` → `src/highlight.tsx` (text emphasis helper — renders `**word**` in primary color)
-- `highlighted-code.tsx.template` → `src/highlighted-code.tsx` (wraps `shiki` for Remotion async frame capture)
+- `shiki-theme.ts.template` → `src/shiki-theme.ts` (brand-derived Shiki theme — keywords in primary, strings in accent, comments in muted, background transparent)
+- `highlighted-code.tsx.template` → `src/highlighted-code.tsx` (wraps `shiki` for Remotion async frame capture; defaults to `brandShikiTheme`)
 - `scene-background.tsx.template` → `src/scene-background.tsx` (brand-tinted scene wrapper — every scene uses this)
 - `Main.tsx.template` → `src/Main.tsx` (scene dispatcher)
 
@@ -456,6 +457,102 @@ Ask the user what to do with the scaffolded Remotion project:
 
 Execute the chosen action. End.
 
+## Storytelling & Visual Uniqueness Rules
+
+The default failure mode of an AI-generated promo video is *generic*: a hook, three bullet points, a code block, a CTA. Every scene stacked vertically, same rhythm, same layout language as ten thousand other "new feature launch" reels. Viewers scroll past in under 2 seconds. Technically correct ≠ memorable.
+
+These rules exist to push back against that default.
+
+### Rule 1: No plain bullet lists
+
+A vertical stack of bullet points with icons is the most overused and forgettable scene shape in dev-marketing video. When the story asks for a "list of pains / benefits / reasons", the skill MUST transform the list into a structure that *visualizes what it's saying*:
+
+- Fragmented APIs? Tilted "evidence cards" with real conflicting property names, connected by broken-chain glyphs (`≠`, `↯`).
+- Slow-vs-fast? A physical race lane with two markers at different frame-sync'd positions.
+- Many → one? Scattered inputs flying inward into a single funnel.
+- Three providers compete? Provider logos or name pills with active-state indicators and crossfade swaps.
+
+Every beat should ideally have a form that *only makes sense for that beat*. If the same bullet shape could hold "our five pillars of happiness" or "three reasons our API is fast", it is too generic — redesign it.
+
+### Rule 2: Build a signature visual thread
+
+Every promo video should have one recurring visual element tied to the subject matter — a "thread" that appears in 2–4 scenes (typically hook, problem, and CTA) and carries the theme:
+
+- Audio / music feature → animated waveform bars
+- Speed / performance → velocity streaks, timer digits, progress arcs
+- Types / safety → compile-error squiggles, green check halos
+- Data / ingest → particle flow, inbox filling
+- Network / sync → node-link diagrams with animated packets
+
+The thread should *change state* between scenes to reinforce the narrative — e.g., a clean/smooth waveform in hook+CTA but a **glitchy, broken, red** variant of the same waveform in the ProblemSetup. That contrast ("before vs after") does more storytelling than any caption.
+
+When scaffolding, create a reusable component (e.g., `src/audio-waveform.tsx`, `src/speed-streak.tsx`) and import it into each relevant scene. Never rebuild the thread scene-by-scene.
+
+### Rule 3: Custom scenes over bundled, when it matters
+
+The 8 bundled scenes (`HookTitle`, `ProblemSetup`, `CodeSnippet`, `LibrarySwap`, `BeforeAfter`, `MetricCompare`, `BulletList`, `CTAEndScreen`) cover ~80% of cases and should be used when the story fits. They should NOT be the excuse for a lazy story.
+
+If a beat's visual shape would be unique and memorable, create a `Custom` scene under `src/scenes/custom/<Name>.tsx` rather than bending a bundled scene into something it isn't. Examples that warrant Custom scenes:
+
+- A split-screen showing two API shapes side by side with a rotating "≠" between them
+- A synchronized pair of animations where one depends on the other (input → output pipeline)
+- A physics-driven element (spring-chained cards falling into place, orbiting nodes)
+- A kinetic-typography moment (words swapping in place, letters re-arranging)
+
+The rule of thumb: if your first instinct is "I'll just use `BulletList`" and the content is interesting, stop. Either upgrade to a Custom scene or upgrade the bundled scene's *internal* storytelling (tilts, connection glyphs, staggered physics, per-item glyph variation).
+
+### Rule 4: Replace abstract prose with concrete evidence
+
+Inside any scene that describes a pain or a benefit, prefer *real, verifiable detail* over abstract claims. This makes the video technically credible and visually unique because the evidence IS the design element.
+
+| Abstract (generic) | Concrete (unique + credible) |
+|---|---|
+| "Every provider is different" | `music_length_ms` vs `seconds_total` vs `duration` shown side-by-side |
+| "Our SDK is type-safe" | A screenshot-like TS diagnostic with red squiggles on the bad line |
+| "10× faster" | Two progress bars racing, finishing at t=500ms and t=50ms |
+| "Works anywhere" | Animated pills of the supported runtimes lighting up in sequence |
+
+When pulling evidence from a PR or codebase, quote the actual symbol names, parameter names, or model ids that appear in the source. If a viewer who uses those libraries recognizes the exact string you're showing, you've won credibility and memorability in the same frame.
+
+### Rule 5: Animate with intent, not with defaults
+
+Every animation should deliver information, not just "look animated". If removing an animation would not change what the viewer understands, it is decoration and should be reconsidered.
+
+Good:
+- **Text fades in AFTER the headline lands** → tells the viewer "the headline is the promise; what follows delivers it"
+- **Cards stagger-enter at different tilts** → creates a "chaos / fragmentation" feel that matches the message
+- **Waveform amplitude rises when a provider pill becomes active** → shows "this one is now playing"
+
+Bad:
+- All elements fade in together with identical timing (no narrative layer)
+- Arbitrary bounces on every text element (dilutes emphasis)
+- Continuous looping animations on every background element (fatigues the viewer)
+
+### Rule 6: Fly-in taglines as insight delivery
+
+After any multi-beat scene (evidence wall, problem pile-up, comparison), the viewer needs a one-line synthesis to carry forward. Reserve the last 25–35% of a scene's duration for a fly-in tagline that states the insight:
+
+- After "three conflicting APIs" → "Same goal. Different shapes."
+- After "three slow steps" → "That's a full coffee break."
+- After "five different SDKs" → "Five SDKs to learn. Or one."
+
+The tagline should:
+- Land AFTER all the evidence has arrived (don't overlap with stagger-in)
+- Use distinct styling from the beats (different font weight or color — typically lower saturation so it reads as "narrator voice, not beat")
+- Be ≤ 6 words per half, ≤ 2 halves
+
+This is the single biggest lever for turning "nice visual" into "actually communicates a point".
+
+### Rule 7: The generic test
+
+Before rendering, run this self-check against every scene. If the answer to ANY is "no", the scene is generic and should be redesigned:
+
+1. Could I swap the topic from "audio generation" to "image generation" and this scene would look identical?
+2. Does every visual element in this scene have a reason to exist that ties to THIS story?
+3. Is there at least one element per scene a viewer would remember 10 minutes later?
+
+If a scene fails the test, the fix is rarely "change the copy". It's a layout or visual-element change: add a signature thread appearance, introduce a domain-specific glyph, replace a bullet with a concrete evidence card, pull a real symbol name from the source.
+
 ## Hook Enforcement Rules
 
 Hard rules applied whenever the skill writes or edits HookTitle scene text. See `hooks/hook-rules.md` and `hooks/hook-patterns.md` for details.
@@ -478,7 +575,15 @@ Applied whenever the skill generates or edits any scene.
    - **Left-aligned**: lists, prose paragraphs, side-by-side panel labels, code captions
    - Justify only when there's a strong reason; otherwise left or center
 3. **Emphasis**: in any `text`, `caption`, `headline`, or other string field passed to a scene, wrap key words in `**word**` so `<Highlight>` renders them in `brand.colors.primary`. Limit 1–2 emphasized runs per caption. Example: `"Mix providers wrong — **ship a landmine**."`
-4. **Code blocks**: always render with `<HighlightedCode>`, default `theme="vitesse-dark"`. Container background = `rgba(255,255,255,0.04)` (light overlay on dark bg) with `1px solid rgba(255,255,255,0.08)` border and a brand-primary-tinted `boxShadow`. Never hardcode `#0d1117` or any GitHub-dark-derived color.
+4. **Code blocks**: always render with `<HighlightedCode>`. The default `theme` is `brandShikiTheme` (from `src/shiki-theme.ts`) — a theme derived from `brand.ts` colors so syntax tokens match the rest of the presentation (keywords in `brand.primary`, strings in `brand.accent`, comments in `brand.muted`, background transparent). Do NOT fall back to `vitesse-dark`, `github-dark`, or any other stock theme unless the brand is explicitly monochrome. If the brand palette shifts, regenerate — never hardcode `#0d1117` or any GitHub-dark-derived color. Container background = `rgba(255,255,255,0.04)` with `1px solid rgba(255,255,255,0.08)` border and a brand-primary-tinted `boxShadow`.
+5. **Spacing rhythm — harmony, not extremes**: follow a single consistent scale across every scene so the eye doesn't have to relearn the layout. Defaults that work:
+   - **Scene padding**: 80–100px outer
+   - **Title → next element**: 72–80px (titles always get breathing room; never ≤48px gap — text crowds into the thing below)
+   - **Peer content elements** (cards, code block and pills, caption and content): 40–56px
+   - **Tight pairs** (glyph+text, number+label): 16–24px
+   - **Ambient decorations** (waveforms, background particles): position absolutely with ≥70px edge inset and low opacity (≤0.5); never place them within ~100px of a focal element
+   
+   If a layout feels "too airy", the gap is probably ≥120px between peers — tighten to the 40–56px band. If a title feels "stuck to" what's below, the gap is ≤48px — push to 72+. When in doubt, pick ONE scale and use it everywhere; inconsistent gaps look more "generic AI slideshow" than any single choice.
 
 ### Code Scene Rules
 
@@ -512,7 +617,7 @@ Rules:
 
 #### Render errors as errors
 
-TypeScript diagnostic comments (`// TS2322 ...`, `// ~~~~~~~~~~~~~`, `// TS2345 ...`) are the visual punchline of "wrong provider" / "broken code" scenes. Shiki's default `vitesse-dark` theme renders comments in muted gray, which destroys the signal.
+TypeScript diagnostic comments (`// TS2322 ...`, `// ~~~~~~~~~~~~~`, `// TS2345 ...`) are the visual punchline of "wrong provider" / "broken code" scenes. Any dark theme (the default `brandShikiTheme`, `vitesse-dark`, etc.) renders comments in a muted color, which destroys the signal.
 
 Mark error lines in `story.ts` via `side.errorLines` on a `BeforeAfter` panel — the Panel automatically renders those lines in `brand.colors.danger`, overriding Shiki:
 
