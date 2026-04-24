@@ -25,7 +25,7 @@ Reject hooks whose first phrase matches (case-insensitive):
 
 Rationale: every one of these is a scroll-past signal. The viewer learns nothing in the first second.
 
-## Rule 3: Must match one of six patterns
+## Rule 3: Must match one of seven patterns
 
 See `hook-patterns.md`. The hook must map to at least one:
 
@@ -35,6 +35,7 @@ See `hook-patterns.md`. The hook must map to at least one:
 - Comparison
 - Pattern-interrupt
 - Curiosity-gap
+- Visual-hook (visual leads, text lands 15–30 frames later; text still obeys all other rules)
 
 If the generated hook doesn't fit any, regenerate.
 

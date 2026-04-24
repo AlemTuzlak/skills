@@ -63,6 +63,26 @@ A question or open loop the rest of the video closes.
 
 **When to use:** Novel approaches, counter-intuitive improvements, unexpected results.
 
+## Visual-hook
+
+The hook is primarily a *surprising image, motion, or paradox* — the headline text plays a supporting role or is delayed by 0.5–1s while the visual lands first. Research on scroll-stopping short-form video is consistent: the single strongest attention-grab on silent-autoplay platforms is an unexpected *visual* in the first half-second, not a caption.
+
+Mechanics:
+
+- The HookTitle scene opens with the signature motif from Phase 3.0 in an **unexpected state** — a single bar of the waveform pulsing alone against near-silence, a squiggle underline drawing itself out, a padlock slowly turning. The text headline fades in 15–30 frames *after* the visual has established the mood.
+- A pattern-breaking motion: a perfectly still frame that suddenly snaps — or the opposite, a continuously moving frame that freezes on a single word.
+- A paradox frame: two elements that "shouldn't fit together" shown together (e.g., a TypeScript error rendered next to a green checkmark with no setup).
+
+Examples:
+
+- Audio feature hook: one magenta waveform bar pulsing alone at center → the rest of the wave springs into existence → headline fades in reading *"Your app can compose music now"*
+- Type-safety feature hook: a red squiggle draws itself under a code line → snaps to a green check halo → headline *"Your API is wrong here — and here, and here"*
+- Perf feature hook: a progress bar fills to 50% and stalls → suddenly snaps to 100% → headline *"Fifty-millisecond cold starts"*
+
+**When to use:** Any hook that would otherwise lead with only text, especially when the signature motif is visually distinctive. Pairs well with Result or Curiosity-gap text content — the visual carries the surprise, the text delivers the specificity.
+
+**Constraint:** a visual-hook still obeys Rule 1 (max 7 words on the caption), Rule 2 (no blocked openings), and Rule 5 (anti-clickbait — the hook's promise must be delivered later). The visual is a delivery mechanism, not an exception.
+
 ## Anti-examples (never generate these)
 
 - "In this video I'll show you..." (dead opener)
