@@ -162,6 +162,22 @@ Confirm with the user before scaffolding.
 
 ## Phase 3: Narrative Planning
 
+### Step 3.0 — Derive the signature motif from context
+
+Before picking a story pattern, identify the **signature visual motif** that will carry the narrative across scenes. This is the single most important call for not looking generic.
+
+1. **Finish this sentence in one verb**: "This feature lets developers ___ something."
+   - Examples: *compose* music, *sync* state, *validate* inputs, *secure* tokens, *deploy* functions, *route* requests.
+2. **Translate the verb into a physical / spatial metaphor**: a waveform for audio composition, packets traveling edges for sync, squiggle underlines for type validation, a padlock for auth, a rocket/checkpoint line for deploy, a switchboard for routing.
+3. **Pick the state-change axis**: the motif must visibly change between Problem and Solution scenes (broken ↔ unified, empty ↔ full, disconnected ↔ connected). Pick ONE axis and hold it across the video.
+4. **Look up the motif** in `references/visual-motifs.md` — the catalog maps 20+ common verbs to motifs, state axes, and example custom elements. If the verb isn't listed, apply the heuristic in that file.
+
+**Confirm with user:**
+
+> "The core verb is **compose music**, so I'll use an **animated waveform** as the signature motif — smooth/clean in the hook and solution, jagged/red in the problem. This thread will appear in scenes 1, 2, and 4. Approve, pick a different motif, or let me propose alternatives?"
+
+Do NOT skip this step. A video without a derived motif defaults to generic bullet-list storytelling and fails the generic test (Storytelling Rule 10).
+
 ### Step 3.1 — Detect story pattern
 
 Scan the PR/input for signals and pick one of 5 patterns. See the detection signals table in `patterns/README.md` — that file is the single source of truth.
@@ -476,17 +492,16 @@ Every beat should ideally have a form that *only makes sense for that beat*. If 
 
 ### Rule 2: Build a signature visual thread
 
-Every promo video should have one recurring visual element tied to the subject matter — a "thread" that appears in 2–4 scenes (typically hook, problem, and CTA) and carries the theme:
+Every promo video should have one recurring visual element tied to the subject matter — a "thread" that appears in 2–4 scenes (typically hook, problem, and CTA) and carries the theme.
 
-- Audio / music feature → animated waveform bars
-- Speed / performance → velocity streaks, timer digits, progress arcs
-- Types / safety → compile-error squiggles, green check halos
-- Data / ingest → particle flow, inbox filling
-- Network / sync → node-link diagrams with animated packets
+The motif is **derived in Phase 3.0** from the product's core verb. See `references/visual-motifs.md` for the full catalog (20+ verb → motif mappings) and the heuristic for deriving a motif when the verb isn't listed.
 
-The thread should *change state* between scenes to reinforce the narrative — e.g., a clean/smooth waveform in hook+CTA but a **glitchy, broken, red** variant of the same waveform in the ProblemSetup. That contrast ("before vs after") does more storytelling than any caption.
+Key principles (full detail in the catalog):
+- The motif should be the *physical / spatial metaphor* for what the product does, not a decorative element. Stripe's gradients = money flowing. Linear's lines = motion. The test: would this motif make sense on an unrelated product? If yes, it's generic.
+- The motif must **change state** between scenes to do narrative work. A clean magenta waveform in the hook becoming a jagged red glitch-wave in ProblemSetup, then resolving back to a confident unified wave in the CTA, delivers a complete three-act arc without a single caption.
+- Motif reappearance with a new state is the oldest trick in cinematic storytelling (stairs in *Parasite*, mirrors in *Black Swan*). Same element, different meaning each time.
 
-When scaffolding, create a reusable component (e.g., `src/audio-waveform.tsx`, `src/speed-streak.tsx`) and import it into each relevant scene. Never rebuild the thread scene-by-scene.
+When scaffolding, create a reusable component (e.g., `src/audio-waveform.tsx`, `src/speed-streak.tsx`, `src/packet-flow.tsx`) in the project root and import it into each relevant scene. Never rebuild the thread scene-by-scene.
 
 ### Rule 3: Custom scenes over bundled, when it matters
 
@@ -543,7 +558,49 @@ The tagline should:
 
 This is the single biggest lever for turning "nice visual" into "actually communicates a point".
 
-### Rule 7: The generic test
+### Rule 7: Motion with a payload — kinetic type restraint
+
+Research on high-performing kinetic typography and motion graphics is consistent: **text moves only when motion adds clarity**, never because there's a 3-second hole to fill. Motion without a payload is the single biggest "looks AI-generated" tell.
+
+Good motion choices:
+- A word scales up because it's the answer the previous scene teed up
+- Letters slide in one-by-one because the sequence *is* the message ("M · U · S · I · C" on a music feature)
+- A headline morphs into a different headline because the topic shifted
+
+Bad motion choices (generic):
+- Every headline bouncing into place with the same ease on every scene
+- Continuous shimmer/pulse/loop on every text layer (visual fatigue, no signal)
+- Emoji or icon wobble without a narrative reason
+- Every letter fading in one-by-one on every text element — reserve that for the one letter-by-letter beat of the video
+
+Counter-expectation is underused: when the default register is fast-and-loud, going **still-and-soft** for one beat can land harder than any spring animation. If the surrounding scenes are busy, let the insight tagline (see Rule 6) sit dead-still for 1.5 seconds.
+
+### Rule 8: Color script — emotion across scenes, not palette within one
+
+The brand palette is static; a **color script** is the scene-to-scene emotional arc layered on top. Individual scenes should feel different from each other along a temperature or saturation dimension:
+
+- **Hook** — warm, on-brand, confident (`SceneBackground variant="primary-glow"`)
+- **Problem** — cooler, red-accented, tense (`variant="vignette"` with a danger-colored overlay or glitch accent)
+- **Solution / LibrarySwap / BeforeAfter** — transitional, forward-leaning (`variant="diagonal"`)
+- **CTA** — return to warm, saturated, resolved (`variant="primary-glow"` again)
+
+The arc should support the narrative ("confident → tense → resolved"). A problem scene that uses the same warm glow as the hook robs the narrative of its tension beat. A CTA that stays cool/red reads as unresolved.
+
+Implementation: the existing `SceneBackground` variants are the lightweight color-script surface. For a more cinematic arc, nudge the `hexToRgba` alphas, add a `brand.colors.danger`-tinted overlay in Problem scenes, or add a subtle saturation boost in the CTA.
+
+### Rule 9: First-10-seconds value prop
+
+By the ~10-second mark, the viewer must know (a) what this feature does, (b) who it's for, (c) why it matters. This is a research finding from every major product-launch-video study: the single strongest predictor of completion rate is value clarity before the ~10s mark.
+
+Mapping to the standard 30s structure:
+- Hook (0–3s): promises the value
+- ProblemSetup (3–8s): reveals the stakes / gives the "why"
+- LibrarySwap or CodeSnippet (8–22s): delivers the "how"
+- CTA (22–30s): converts
+
+During Phase 3.3 (scene-plan approval), explicitly self-check: "By the end of scene 2 (around t=8s), does the viewer know what the product does and why?" If no, the scene plan is wrong — restructure before scaffolding. Don't bury the value in the LibrarySwap.
+
+### Rule 10: The generic test
 
 Before rendering, run this self-check against every scene. If the answer to ANY is "no", the scene is generic and should be redesigned:
 
