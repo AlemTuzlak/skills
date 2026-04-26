@@ -1,0 +1,101 @@
+<section
+  class="scene scene-code-snippet"
+  data-bg="diagonal"
+  data-clip-id="{{clipId}}"
+  data-duration="{{durationSeconds}}"
+>
+  <style>
+    .scene-code-snippet {
+      justify-content: center;
+    }
+    .scene-code-snippet .caption-stack {
+      position: relative;
+      max-width: 70%;
+      min-height: 90px;
+    }
+    .scene-code-snippet .scene-caption {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .scene-code-snippet .scene-caption[data-active] {
+      opacity: 1;
+    }
+    .scene-code-snippet .hf-code {
+      max-width: 1500px;
+      align-self: center;
+    }
+    [data-aspect="vertical"] .scene-code-snippet .hf-code {
+      max-width: 92%;
+    }
+  </style>
+
+  <div class="caption-stack">
+{{captionsHtml}}
+  </div>
+  <pre class="hf-code">{{codeHtml}}</pre>
+
+  <script type="application/json" data-chapters>
+{{chaptersJson}}
+  </script>
+
+  <script>
+    (function () {
+      const root = document.querySelector('[data-clip-id="{{clipId}}"]');
+      if (!root || !window.gsap) return;
+      const code = root.querySelector(".hf-code");
+      const captions = root.querySelectorAll(".scene-caption");
+      const chaptersScript = root.querySelector("[data-chapters]");
+      const fps = 30;
+
+      let chapters = [];
+      try {
+        chapters = JSON.parse(chaptersScript.textContent.trim()) || [];
+      } catch {
+        chapters = [];
+      }
+
+      const setActiveLines = (lineNumbers) => {
+        code.querySelectorAll("[data-line]").forEach((el) => {
+          const n = parseInt(el.dataset.line, 10);
+          if (lineNumbers.includes(n)) el.setAttribute("data-active", "");
+          else el.removeAttribute("data-active");
+        });
+      };
+
+      const setActiveCaption = (captionIndex) => {
+        captions.forEach((c, i) => {
+          if (i === captionIndex) c.setAttribute("data-active", "");
+          else c.removeAttribute("data-active");
+        });
+      };
+
+      // Initial state - if chapters define the first focus, use it so we
+      // don't flash "all lines bright" on tick 0 before GSAP fires the
+      // first chapter callback. Fall back to all-active when no chapters.
+      const firstChapter = chapters[0];
+      if (firstChapter && Array.isArray(firstChapter.focusLines) && firstChapter.focusLines.length > 0) {
+        setActiveLines(firstChapter.focusLines);
+      } else {
+        code.querySelectorAll("[data-line]").forEach((el) => el.setAttribute("data-active", ""));
+      }
+      const firstCaptionIndex =
+        firstChapter && typeof firstChapter.captionIndex === "number" ? firstChapter.captionIndex : 0;
+      if (captions.length > 0 && captions[firstCaptionIndex]) {
+        captions[firstCaptionIndex].setAttribute("data-active", "");
+      }
+
+      const tl = window.gsap.timeline({ defaults: { ease: "power2.out" } });
+      tl.from(code, { y: 40, opacity: 0, duration: 0.5 }, 0);
+
+      chapters.forEach((ch, idx) => {
+        const start = (ch.startFrame || 0) / fps;
+        tl.add(() => {
+          setActiveLines(ch.focusLines || []);
+          if (typeof ch.captionIndex === "number") setActiveCaption(ch.captionIndex);
+        }, start);
+      });
+    })();
+  </script>
+</section>

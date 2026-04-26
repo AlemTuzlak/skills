@@ -1,0 +1,46 @@
+{
+  "name": "brand",
+  "type": "dark",
+  "colors": {
+    "editor.background": "transparent",
+    "editor.foreground": "{{text}}"
+  },
+  "tokenColors": [
+    {
+      "scope": ["keyword", "keyword.control", "storage", "storage.type", "storage.modifier"],
+      "settings": { "foreground": "{{primary}}" }
+    },
+    {
+      "scope": ["string", "string.quoted", "string.template", "constant.character.escape"],
+      "settings": { "foreground": "{{accent}}" }
+    },
+    {
+      "scope": ["comment", "punctuation.definition.comment"],
+      "settings": { "foreground": "{{muted}}", "fontStyle": "italic" }
+    },
+    {
+      "scope": ["entity.name.function", "support.function", "meta.function-call"],
+      "settings": { "foreground": "{{primary}}" }
+    },
+    {
+      "scope": ["variable", "entity.name.variable", "meta.definition.variable"],
+      "settings": { "foreground": "{{text}}" }
+    },
+    {
+      "scope": ["constant.numeric", "constant.language", "constant.other"],
+      "settings": { "foreground": "{{accent}}" }
+    },
+    {
+      "scope": ["entity.name.type", "support.type", "support.class", "entity.name.class"],
+      "settings": { "foreground": "{{primary}}" }
+    },
+    {
+      "scope": ["punctuation", "meta.brace", "meta.bracket"],
+      "settings": { "foreground": "{{text}}" }
+    },
+    {
+      "scope": ["invalid", "invalid.illegal"],
+      "settings": { "foreground": "{{danger}}" }
+    }
+  ]
+}

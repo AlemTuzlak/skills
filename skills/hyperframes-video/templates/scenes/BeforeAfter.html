@@ -1,0 +1,126 @@
+<section
+  class="scene scene-before-after"
+  data-bg="vignette"
+  data-clip-id="{{clipId}}"
+  data-duration="{{durationSeconds}}"
+>
+  <style>
+    .scene-before-after {
+      justify-content: center;
+    }
+    .scene-before-after .scene-headline {
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1.1;
+      max-width: 85%;
+      align-self: center;
+      text-align: center;
+    }
+    .scene-before-after .panel-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      margin-top: 56px;
+    }
+    [data-aspect="vertical"] .scene-before-after .panel-row {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    .scene-before-after .before-after-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+    .scene-before-after .panel-label {
+      font-size: 24px;
+      font-family: var(--brand-font-code);
+      color: var(--brand-muted);
+      letter-spacing: 0.05em;
+    }
+    .scene-before-after .before-after-panel[data-side="before"] .panel-label {
+      color: var(--brand-danger);
+    }
+    .scene-before-after .before-after-panel .hf-code {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .scene-before-after .scene-caption {
+      margin-top: 40px;
+      align-self: center;
+      text-align: center;
+      max-width: 75%;
+    }
+  </style>
+
+  <h2 class="scene-headline">{{headlineHtml}}</h2>
+
+  <div class="panel-row">
+    <div
+      class="before-after-panel"
+      data-side="before"
+      data-active="true"
+      data-error-lines="{{beforeErrorLines}}"
+    >
+      <div class="panel-label">{{beforeLabel}}</div>
+      <pre class="hf-code" data-panel="half">{{beforeCodeHtml}}</pre>
+    </div>
+    <div
+      class="before-after-panel"
+      data-side="after"
+      data-active="false"
+      data-error-lines="{{afterErrorLines}}"
+    >
+      <div class="panel-label">{{afterLabel}}</div>
+      <pre class="hf-code" data-panel="half">{{afterCodeHtml}}</pre>
+    </div>
+  </div>
+
+  <p class="scene-caption">{{captionHtml}}</p>
+
+  <script>
+    (function () {
+      const root = document.querySelector('[data-clip-id="{{clipId}}"]');
+      if (!root || !window.gsap) return;
+      const dur = parseFloat(root.dataset.duration) || 8;
+      const panels = root.querySelectorAll(".before-after-panel");
+
+      // Apply danger color to error lines (Code Scene Rule "errors-as-errors").
+      // Shiki wraps tokens in <span style="color:#xxx"> with inline styles, so
+      // the line wrapper alone won't override it. Walk descendants and rewrite
+      // their inline color too.
+      const applyDanger = (el) => {
+        el.style.color = "var(--brand-danger)";
+        el.querySelectorAll("*").forEach((child) => {
+          child.style.color = "var(--brand-danger)";
+        });
+      };
+      panels.forEach((panel) => {
+        const raw = (panel.dataset.errorLines || "").trim();
+        if (!raw) return;
+        const lines = raw.split(",").map((s) => parseInt(s.trim(), 10)).filter(Number.isFinite);
+        const code = panel.querySelector(".hf-code");
+        lines.forEach((n) => {
+          const el = code.querySelector(`[data-line="${n}"]`);
+          if (el) applyDanger(el);
+        });
+      });
+
+      const setActive = (side) => {
+        panels.forEach((p) => {
+          p.dataset.active = p.dataset.side === side ? "true" : "false";
+        });
+      };
+
+      const tl = window.gsap.timeline({ defaults: { ease: "power2.out" } });
+      tl.from(root.querySelector(".scene-headline"), { y: 30, opacity: 0, duration: 0.5 }, 0);
+      tl.from(panels, { y: 40, opacity: 0, stagger: 0.18, duration: 0.5 }, 0.3);
+
+      // Default focus: before, then swap to after at ~55% of duration.
+      tl.add(() => setActive("before"), 0.9);
+      tl.add(() => setActive("after"), Math.max(1.5, dur * 0.55));
+      tl.from(root.querySelector(".scene-caption"), { y: 20, opacity: 0, duration: 0.4 }, dur * 0.75);
+    })();
+  </script>
+</section>

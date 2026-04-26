@@ -1,0 +1,158 @@
+<section
+  class="scene scene-metric-compare"
+  data-bg="diagonal"
+  data-clip-id="{{clipId}}"
+  data-duration="{{durationSeconds}}"
+>
+  <style>
+    .scene-metric-compare {
+      justify-content: center;
+    }
+    .scene-metric-compare .scene-headline {
+      font-size: 64px;
+      font-weight: 800;
+      line-height: 1.1;
+      max-width: 80%;
+      align-self: center;
+      text-align: center;
+    }
+    /* Single shared race lane - both markers run on the same track at
+       different positions, per Storytelling Rule 4 (race-lane metaphor over
+       abstract bar charts). */
+    .scene-metric-compare .race-lane {
+      position: relative;
+      margin: 80px 0 24px;
+      height: 120px;
+    }
+    .scene-metric-compare .lane-track {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 14px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .scene-metric-compare .lane-finish {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      background: color-mix(in srgb, var(--brand-text) 30%, transparent);
+    }
+    .scene-metric-compare .marker {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      transition: left 0.6s ease;
+    }
+    .scene-metric-compare .marker-dot {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--brand-primary);
+      box-shadow: 0 0 32px color-mix(in srgb, var(--brand-primary) 60%, transparent);
+      border: 4px solid var(--brand-background);
+    }
+    .scene-metric-compare .marker[data-tone="left"] .marker-dot {
+      background: var(--brand-danger);
+      box-shadow: 0 0 32px color-mix(in srgb, var(--brand-danger) 60%, transparent);
+    }
+    .scene-metric-compare .marker-label {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--brand-text);
+      white-space: nowrap;
+    }
+    .scene-metric-compare .marker-value {
+      font-family: var(--brand-font-code);
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--brand-text);
+      white-space: nowrap;
+    }
+    .scene-metric-compare .scene-caption {
+      margin-top: 48px;
+      align-self: center;
+      text-align: center;
+      max-width: 80%;
+    }
+  </style>
+
+  <h2 class="scene-headline">{{headlineHtml}}</h2>
+
+  <div class="race-lane">
+    <div class="lane-track"></div>
+    <div class="lane-finish"></div>
+    <div
+      class="marker"
+      data-tone="left"
+      data-fill-percent="{{leftFillPercent}}"
+      data-target="{{leftValueTarget}}"
+      data-suffix="{{leftValueSuffix}}"
+    >
+      <div class="marker-label">{{leftLabel}}</div>
+      <div class="marker-dot"></div>
+      <div class="marker-value" data-counter>0</div>
+    </div>
+    <div
+      class="marker"
+      data-tone="right"
+      data-fill-percent="{{rightFillPercent}}"
+      data-target="{{rightValueTarget}}"
+      data-suffix="{{rightValueSuffix}}"
+    >
+      <div class="marker-label">{{rightLabel}}</div>
+      <div class="marker-dot"></div>
+      <div class="marker-value" data-counter>0</div>
+    </div>
+  </div>
+
+  <p class="scene-caption">{{captionHtml}}</p>
+
+  <script>
+    (function () {
+      const root = document.querySelector('[data-clip-id="{{clipId}}"]');
+      if (!root || !window.gsap) return;
+      const dur = parseFloat(root.dataset.duration) || 6;
+      const markers = root.querySelectorAll(".marker");
+      const tl = window.gsap.timeline({ defaults: { ease: "power2.out" } });
+
+      tl.from(root.querySelector(".scene-headline"), { y: 30, opacity: 0, duration: 0.5 }, 0);
+      tl.from(root.querySelector(".lane-track"), { scaleX: 0, transformOrigin: "left center", duration: 0.6 }, 0.2);
+      tl.from(markers, { opacity: 0, scale: 0.6, stagger: 0.18, duration: 0.5 }, 0.4);
+
+      // Markers race along the same lane to their respective fillPercent positions.
+      markers.forEach((m) => {
+        const fill = parseFloat(m.dataset.fillPercent) || 0;
+        const target = parseFloat(m.dataset.target) || 0;
+        const suffix = m.dataset.suffix || "";
+        const counterEl = m.querySelector("[data-counter]");
+        const counterObj = { v: 0 };
+
+        tl.to(m, { left: fill + "%", duration: Math.min(2.4, dur * 0.6), ease: "power2.inOut" }, 0.7);
+        tl.to(
+          counterObj,
+          {
+            v: target,
+            duration: Math.min(2.4, dur * 0.6),
+            onUpdate: () => {
+              counterEl.textContent = Math.round(counterObj.v) + suffix;
+            },
+          },
+          0.7
+        );
+      });
+
+      tl.from(root.querySelector(".scene-caption"), { y: 20, opacity: 0, duration: 0.4 }, dur * 0.75);
+    })();
+  </script>
+</section>

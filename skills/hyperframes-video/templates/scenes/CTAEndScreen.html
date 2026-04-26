@@ -1,0 +1,64 @@
+<section
+  class="scene scene-cta"
+  data-bg="primary-glow"
+  data-clip-id="{{clipId}}"
+  data-duration="{{durationSeconds}}"
+>
+  <style>
+    .scene-cta {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 36px;
+    }
+    .scene-cta .cta-headline {
+      font-size: 72px;
+      font-weight: 800;
+      line-height: 1.1;
+      max-width: 80%;
+      color: var(--brand-text);
+    }
+    .scene-cta .cta-action {
+      font-size: 160px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: var(--brand-primary);
+      text-shadow: 0 0 60px color-mix(in srgb, var(--brand-primary) 50%, transparent);
+    }
+    .scene-cta .cta-url {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      padding: 22px 36px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid color-mix(in srgb, var(--brand-primary) 50%, transparent);
+      box-shadow: 0 0 40px color-mix(in srgb, var(--brand-primary) 20%, transparent);
+      font-family: var(--brand-font-code);
+      font-size: 32px;
+      color: var(--brand-text);
+    }
+    .scene-cta .cta-url::before {
+      content: "→";
+      color: var(--brand-primary);
+      font-family: var(--brand-font);
+      font-weight: 700;
+    }
+  </style>
+
+  <h2 class="cta-headline">{{headlineHtml}}</h2>
+  <div class="cta-action">{{actionVerb}}</div>
+  <a class="cta-url" href="{{urlHref}}">{{urlText}}</a>
+
+  <script>
+    (function () {
+      const root = document.querySelector('[data-clip-id="{{clipId}}"]');
+      if (!root || !window.gsap) return;
+      const tl = window.gsap.timeline({ defaults: { ease: "power3.out" } });
+      tl.from(root.querySelector(".cta-headline"), { y: 30, opacity: 0, duration: 0.5 }, 0);
+      tl.from(root.querySelector(".cta-action"), { y: 50, opacity: 0, scale: 0.92, duration: 0.6 }, 0.25);
+      tl.from(root.querySelector(".cta-url"), { y: 20, opacity: 0, scale: 0.95, duration: 0.5 }, 0.7);
+    })();
+  </script>
+</section>

@@ -1,0 +1,67 @@
+<section
+  class="scene scene-hook-title"
+  data-bg="primary-glow"
+  data-clip-id="{{clipId}}"
+  data-duration="{{durationSeconds}}"
+  data-visual-variant="{{visualVariant}}"
+>
+  <style>
+    .scene-hook-title {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .scene-hook-title .hook-title {
+      font-size: 120px;
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: var(--brand-text);
+      max-width: 80%;
+    }
+    .scene-hook-title .hook-tagline {
+      margin-top: 36px;
+      font-size: 36px;
+      color: color-mix(in srgb, var(--brand-text) 70%, transparent);
+    }
+    .scene-hook-title[data-visual-variant="pattern-interrupt"] .hook-title {
+      letter-spacing: 0.04em;
+    }
+  </style>
+
+  <h1 class="hook-title">{{textHtml}}</h1>
+  {{taglineBlock}}
+
+  <script>
+    (function () {
+      const root = document.querySelector('[data-clip-id="{{clipId}}"]');
+      if (!root || !window.gsap) return;
+      const variant = root.dataset.visualVariant;
+      const tl = window.gsap.timeline({
+        scrollTrigger: false,
+        defaults: { ease: "power3.out" },
+      });
+      const title = root.querySelector(".hook-title");
+      const tagline = root.querySelector(".hook-tagline");
+
+      if (variant === "pattern-interrupt") {
+        // Letter-by-letter only on this variant (Storytelling Rule 7)
+        const text = title.textContent;
+        title.textContent = "";
+        const spans = text.split("").map((ch) => {
+          const s = document.createElement("span");
+          s.textContent = ch === " " ? " " : ch;
+          s.style.display = "inline-block";
+          title.appendChild(s);
+          return s;
+        });
+        tl.from(spans, { y: 40, opacity: 0, duration: 0.4, stagger: 0.04 }, 0);
+      } else {
+        tl.from(title, { y: 60, opacity: 0, duration: 0.6 }, 0);
+      }
+      if (tagline) {
+        tl.from(tagline, { y: 30, opacity: 0, duration: 0.5 }, 0.35);
+      }
+    })();
+  </script>
+</section>

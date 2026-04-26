@@ -1,0 +1,29 @@
+# DESIGN.md
+
+## Style Prompt
+
+{{stylePrompt}}
+
+## Colors
+
+- **Primary** — `{{primary}}` ({{primaryRole}})
+- **Accent** — `{{accent}}` ({{accentRole}})
+- **Background** — `{{background}}` ({{backgroundRole}})
+- **Text** — `{{text}}` ({{textRole}})
+- **Muted** — `{{muted}}` ({{mutedRole}})
+- **Success** — `{{success}}`
+- **Danger** — `{{danger}}`
+
+## Typography
+
+- **Display / Headline** — `{{fontFamily}}` ({{fontSource}})
+- **Body** — `{{fontFamily}}`
+- **Code** — `{{codeFontFamily}}`
+
+## What NOT to Do
+
+- Do not introduce colors outside the palette above. Stick to primary / accent / background / text / muted / success / danger.
+- Do not use stock syntax themes (vitesse-dark, github-dark, etc.) for code blocks. Code uses the brand-derived shiki theme generated from this palette.
+- Do not use generic fade-to-black transitions. Match-cut on the signature motif or use a brand-primary directional sweep.
+- Do not place ambient decorations within ~100px of focal elements; keep them at ≤0.5 opacity.
+- Do not stack peer content with gaps outside the 40–56px band; keep title→content gaps in the 72–80px band.

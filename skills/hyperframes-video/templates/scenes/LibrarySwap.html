@@ -1,0 +1,129 @@
+<section
+  class="scene scene-library-swap"
+  data-bg="diagonal"
+  data-clip-id="{{clipId}}"
+  data-duration="{{durationSeconds}}"
+>
+  <style>
+    .scene-library-swap {
+      justify-content: center;
+    }
+    .scene-library-swap .swap-grid {
+      display: grid;
+      grid-template-columns: 2.2fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    [data-aspect="vertical"] .scene-library-swap .swap-grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    .scene-library-swap .import-stack {
+      position: relative;
+      min-height: 56px;
+      margin-bottom: 16px;
+      font-family: var(--brand-font-code);
+      font-size: 32px;
+    }
+    .scene-library-swap .import-line {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      color: var(--brand-text);
+    }
+    .scene-library-swap .import-line[data-active] {
+      opacity: 1;
+    }
+    .scene-library-swap .provider-list {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .scene-library-swap .provider-pill {
+      padding: 18px 28px;
+      border-radius: 999px;
+      font-size: 28px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--brand-text);
+      transition: background 0.4s ease, border-color 0.4s ease, transform 0.4s ease;
+    }
+    .scene-library-swap .provider-pill[data-active] {
+      background: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+      border-color: var(--brand-primary);
+      transform: translateX(8px);
+    }
+    .scene-library-swap .scene-caption {
+      margin-top: 56px;
+      max-width: 80%;
+    }
+  </style>
+
+  <div class="swap-grid">
+    <div class="code-side">
+      <div class="import-stack">
+{{importLinesHtml}}
+      </div>
+      <pre class="hf-code">{{sharedCodeHtml}}</pre>
+    </div>
+    <ul class="provider-list">
+{{providerPillsHtml}}
+    </ul>
+  </div>
+  <p class="scene-caption">{{captionHtml}}</p>
+
+  <script type="application/json" data-providers>
+{{providersJson}}
+  </script>
+
+  <script>
+    (function () {
+      const root = document.querySelector('[data-clip-id="{{clipId}}"]');
+      if (!root || !window.gsap) return;
+      const importLines = root.querySelectorAll(".import-line");
+      const pills = root.querySelectorAll(".provider-pill");
+      const dur = parseFloat(root.dataset.duration) || 12;
+
+      const providersScript = root.querySelector("[data-providers]");
+      let providers = [];
+      try {
+        providers = JSON.parse(providersScript.textContent.trim()) || [];
+      } catch {
+        providers = [];
+      }
+
+      const activate = (i) => {
+        importLines.forEach((el, idx) =>
+          idx === i ? el.setAttribute("data-active", "") : el.removeAttribute("data-active")
+        );
+        pills.forEach((el, idx) =>
+          idx === i ? el.setAttribute("data-active", "") : el.removeAttribute("data-active")
+        );
+      };
+
+      activate(0);
+
+      const tl = window.gsap.timeline({ defaults: { ease: "power2.out" } });
+      tl.from(root.querySelector(".code-side"), { y: 30, opacity: 0, duration: 0.5 }, 0);
+      tl.from(pills, { y: 20, opacity: 0, stagger: 0.1, duration: 0.4 }, 0.3);
+
+      // Cycle through providers across the scene's duration. Reserve last 25%
+      // for caption read. Clamp the per-provider slot to a sensible range so
+      // few-provider plans don't sit on each one too long (dead air) and
+      // many-provider plans don't blur past too fast.
+      const cycleEnd = dur * 0.75;
+      const cycleDuration = Math.max(0.5, cycleEnd - 1.0);
+      const rawSlot = providers.length > 1 ? cycleDuration / providers.length : cycleDuration;
+      const slot = Math.max(1.2, Math.min(rawSlot, 3.0));
+      providers.forEach((_, i) => {
+        tl.add(() => activate(i), 1.0 + i * slot);
+      });
+      tl.from(root.querySelector(".scene-caption"), { y: 20, opacity: 0, duration: 0.4 }, cycleEnd);
+    })();
+  </script>
+</section>
