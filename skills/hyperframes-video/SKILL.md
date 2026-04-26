@@ -39,6 +39,31 @@ Resolve input
 
 Phases 1, 3, 5, and 7 have explicit approval gates. Phase 2 is an interactive Q&A. Phase 5 is a freeform iteration loop that can run many rounds.
 
+## "Use Sane Defaults" / "Don't Ask Questions" — What It Does and Doesn't Override
+
+When the user invokes the skill with phrasing like *"use sane defaults"*, *"don't ask questions"*, *"non-interactive"*, *"just ship it"*, or any equivalent — interpret it precisely:
+
+**It DOES override (skip the prompt, pick the default):**
+
+- Q2.1 duration → 30s
+- Q2.2 aspect ratio → 16:9 landscape
+- Q2.3 project location → `marketing/<feature-slug>/hyperframes/`
+- Q2.4 brand *confirmation* (the "use these / customize / provide your own?" question)
+- Phase 1.4 scope confirmation
+- Phase 3.0 motif confirmation
+- Phase 3.1 story-pattern confirmation
+- Phase 3.3 scene-plan approval
+- Phase 5 freeform iteration loop (the "what would you like to change?" prompt)
+
+**It does NOT override (must always run regardless):**
+
+- Brand color/font/logo **scanning** (Q2.4 detection — see HARD-GATE in Q2.4). Hardcoding colors from training-data assumptions about a project is a forbidden shortcut.
+- Phase 5 **preview** (HARD-GATE in Phase 5). Even in fully unattended mode, `npx hyperframes preview` must start and the studio URL must be opened in the browser before the render runs. The user can interrupt; the agent must not pre-decide for them.
+- Phase 6 pre-render audits (storytelling, hook rules, motif presence, pacing variance, value-prop timing, contrast). These exist to prevent shipping a generic video.
+- Phase 7 cleanup question (the user owns project disposition).
+
+If you're tempted to skip a HARD-GATE because the user "said no questions" — re-read this section. The user said no *questions*, not no *gates*.
+
 ## Input Resolution
 
 Resolve the argument (if provided) in this order:
@@ -143,7 +168,34 @@ Frame rate is fixed at 30fps.
 
 ### Q2.4 — Brand assets (auto-detect → confirm)
 
-Auto-detect using the heuristics documented in `brand-detection.md`. Present findings as:
+<HARD-GATE>
+**The brand scan is mandatory. It is not skippable under any user instruction — including "use sane defaults", "don't ask questions", "just ship it", or "non-interactive". Those instructions affect interactive *confirmation*; they do NOT affect *detection*.**
+
+You MUST run the heuristics in `brand-detection.md` against the actual target repository — the source code that owns the feature, not the `marketing/` output directory — before selecting any color, font, or logo.
+
+**Forbidden shortcuts (these produce wrong colors and waste an iteration):**
+
+- "I know this project — TanStack uses amber, Vercel uses black/white, Stripe uses purple" → **No.** Run the scan. Recall is unreliable; brand details drift between training data and now.
+- "It's a dev tool, dark + neon green is fine" → **No.** Generic vibes ≠ this product's brand.
+- "User said no questions, so I'll skip detection" → **No.** Detection is silent. Confirmation is what the "no questions" instruction skips.
+- Picking from a palette in your head because it "fits the topic" → **No.** Read the repo's CSS/Tailwind/theme files.
+
+**The scan must produce a written record before any composition file is written.** Output a short block listing, for each field: the source file checked, the value found (or `not found`), and the final value used. Example:
+
+```
+Brand scan — TanStack/ai
+  Primary  : checked tailwind.config.* (none) · packages/*/styles.css (--brand: #0a3d2e) → #0a3d2e
+  Accent   : checked theme.json (none) · brand.json (none) · derived from primary → #14b870
+  Logo     : checked public/logo.svg → media/header_ai.png
+  Font     : checked next/font (none) · @fontsource (none) · README ref → Inter (fallback)
+```
+
+If the scan finds nothing for a field, fall through to the neutral defaults below — but **only after** the scan ran and is recorded. Skipping the scan and going straight to defaults is the failure mode this gate exists to prevent.
+
+In interactive mode, present findings (the block above) and ask for confirmation. In non-interactive / "use sane defaults" mode, print the same block and proceed without asking — the *record* is required either way.
+</HARD-GATE>
+
+Present findings as:
 
 > "I found:
 > - Logo: `public/logo.svg`
@@ -389,6 +441,27 @@ Use the `hyperframes` skill's authoring guidance (Layout Before Animation, palet
 
 ## Phase 5: First Draft + Iterate
 
+<HARD-GATE>
+**The preview is mandatory and must be visibly running in the user's browser before any render. This gate is non-negotiable.**
+
+It is not skipped by "use sane defaults", "don't ask questions", "non-interactive", "just ship it", "just render it", or any equivalent instruction. Those phrases govern *configuration questions* (Q2.1–Q2.4 confirmations) and *iteration prompting* — they do NOT authorize skipping straight to render. The user is always given the chance to see the first draft moving on screen and steer it before render burns time.
+
+**Forbidden shortcuts:**
+
+- "User said sane defaults, so I'll just `npx hyperframes render`" → **No.** Render is gated by Phase 6, which is gated by Phase 5.
+- "I'll do a draft render and show them frames instead" → **No.** Frames are not motion. Rendering is also slow (1–2 minutes for 30s) — preview is instant and HMRs.
+- "Preview's optional because the lint+inspect already passed" → **No.** Lint catches structural errors. Preview catches storytelling, pacing, motion, and copy errors.
+
+**Required actions in this phase, in order:**
+
+1. Start `npx hyperframes preview --port 3002` as a background process (fall through 3003/3004/3005 if busy).
+2. Wait for `Studio running` in the process output before proceeding.
+3. **Open the URL in the user's browser** with the platform-appropriate command (`open` on macOS, `xdg-open` on Linux, `start` on Windows). Do this once, automatically — do not just print the URL and assume the user will click it.
+4. Tell the user the URL is open and ask for freeform feedback (in interactive mode) or proceed straight to the standard render after a short visible pause (in non-interactive mode — but the preview tab is still opened so the user can intervene).
+
+If the user has explicitly disabled the preview gate in advance (e.g., a CLAUDE.md note, a one-off "render only, no preview"), record that override in the final summary. Vague "use defaults" phrasing is NOT such an override.
+</HARD-GATE>
+
 ### Step 5.1 — Start the preview server
 
 Run as a background process, scoped to the scaffolded project directory:
@@ -399,9 +472,20 @@ npx hyperframes preview --port 3002
 
 (Fall back: try 3003, 3004, 3005 if 3002 is in use. Fail loud if all taken.)
 
-Capture the URL and present to the user:
+Wait for `Studio running` in the preview process output, then open the URL in the user's browser:
 
-> "Preview is running at http://localhost:3002. Open it in your browser and review the first draft.
+```bash
+# macOS
+open http://localhost:3002
+# Linux
+xdg-open http://localhost:3002
+# Windows
+start http://localhost:3002
+```
+
+Then present to the user:
+
+> "Preview is running and I've opened http://localhost:3002 in your browser. Review the first draft.
 >
 > What do you want to change? (freeform — 'make the hook punchier', 'swap scenes 2 and 3', 'use arktype instead of yup', 'drop the problem scene', 'longer pause on the code', anything you want.)"
 
