@@ -510,6 +510,10 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 - [ ] **Per-scene payoff**: every scene has a recorded payoff sentence from Phase 3.3. If any is missing, blank, or duplicates another, refuse.
 - [ ] **Anti-clickbait**: the hook's promise is delivered by at least one non-hook scene (existing rule).
 - [ ] **Transitions planned**: for each adjacent scene pair sharing a motif, a match-cut is described in the scene plan (Phase 3.4).
+- [ ] **Single alignment per scene**: every scene's text elements share ONE alignment (centered / left / right). Mixed alignments within a scene (or within one column of a two-column scene) fail this check. See Layout Rule 2.
+- [ ] **Foreground readability over decoration**: every scene with background decoration (streaming feeds, ambient motion, low-opacity logos) renders the foreground text at WCAG AA contrast. If decoration effective opacity exceeds ~0.25 anywhere behind hero text, a local scrim (zIndex=1 between bg and fg) must exist. See Layout Rule 6.
+- [ ] **No accidental overlap**: at the hero frame of every scene, no focal element's bounding box overlaps a non-foreground element by more than ~10% without an explicit `zIndex` declaration. Verify any newly-added decorations against the rendered hero frame in Remotion Studio, not frame 0. See Layout Rule 7.
+- [ ] **Code beats ≥5s have chapters**: any scene with code visible for >5 seconds (>150 frames at 30fps) defines `chapters[]`. Static `emphasizedLines`-only code dumps fail this check. See Code Scene Rules — *Tell a story with chapters*.
 
 ### Step 6.2 — Render mp4 + poster
 
@@ -710,10 +714,13 @@ If any rule fails, the skill proposes up to 3 alternative hooks that comply.
 Applied whenever the skill generates or edits any scene.
 
 1. **Backgrounds**: every scene uses `<SceneBackground variant="…">`. Flat background fills are banned — if a scene absolutely needs one, document why in a code comment and pass `variant="flat"` explicitly. Variants: `primary-glow` (radial glow of the brand primary at top-left), `vignette` (dark vignette around the edges for focus scenes), `diagonal` (subtle accent→primary linear gradient), `flat` (no overlay).
-2. **Text alignment**:
-   - **Centered**: hooks, titles, CTAs, emphatic one-liners
-   - **Left-aligned**: lists, prose paragraphs, side-by-side panel labels, code captions
-   - Justify only when there's a strong reason; otherwise left or center
+2. **Text alignment — pick ONE per scene, never mix.** A single scene must use ONE text alignment for every text element it contains. Mixing alignments inside a scene (e.g., left-aligned headline + centered tagline + left-aligned caption) reads as broken — the eye has no anchor to track and the layout looks like assembled fragments rather than a designed scene.
+   - **Centered scenes**: hooks, titles, CTAs, emphatic one-liners — every text element in the scene is centered, including any sub-captions or taglines that follow the headline.
+   - **Left-aligned scenes**: lists, prose paragraphs, side-by-side panels, code-card scenes — every text element is left-aligned, including the section captions above each panel.
+   - **Right-aligned scenes**: rare; only for intentional "log feed" / "right-rail" treatments where every element is right-aligned.
+   - Justify only when there's a strong reason; otherwise left or center.
+
+   In two-column scenes (left = code, right = trace tree, or before/after panels), each column is its own alignment context, but each column must be internally consistent — a column's caption, body, and tagline all share one alignment. Never have the right column centered while the left column is left-aligned. The pre-render audit (Phase 6.1) flags scenes with mixed alignments inside one column.
 3. **Emphasis**: in any `text`, `caption`, `headline`, or other string field passed to a scene, wrap key words in `**word**` so `<Highlight>` renders them in `brand.colors.primary`. Limit 1–2 emphasized runs per caption. Example: `"Mix providers wrong — **ship a landmine**."`
 4. **Code blocks**: always render with `<HighlightedCode>`. The default `theme` is `brandShikiTheme` (from `src/shiki-theme.ts`) — a theme derived from `brand.ts` colors so syntax tokens match the rest of the presentation (keywords in `brand.primary`, strings in `brand.accent`, comments in `brand.muted`, background transparent). Do NOT fall back to `vitesse-dark`, `github-dark`, or any other stock theme unless the brand is explicitly monochrome. If the brand palette shifts, regenerate — never hardcode `#0d1117` or any GitHub-dark-derived color. Container background = `rgba(255,255,255,0.04)` with `1px solid rgba(255,255,255,0.08)` border and a brand-primary-tinted `boxShadow`.
 5. **Spacing rhythm — harmony, not extremes**: follow a single consistent scale across every scene so the eye doesn't have to relearn the layout. Defaults that work:
@@ -725,11 +732,33 @@ Applied whenever the skill generates or edits any scene.
    
    If a layout feels "too airy", the gap is probably ≥120px between peers — tighten to the 40–56px band. If a title feels "stuck to" what's below, the gap is ≤48px — push to 72+. When in doubt, pick ONE scale and use it everywhere; inconsistent gaps look more "generic AI slideshow" than any single choice.
 
+6. **Background-versus-foreground readability — load-bearing contrast.** Whenever decorative elements sit behind a focal text element (streaming background traces, ambient particles, low-opacity logos, looping motion threads), the foreground text MUST remain unambiguously readable. Defaults that work:
+   - **Background decoration opacity**: ≤0.22 against a brand-background near `#0A0A0A`. Above 0.25 it competes with foreground; above 0.4 it actively obscures.
+   - **Local scrim behind hero text**: when a decoration must run across the whole canvas (e.g., a streaming event feed in the CTA), add a centered radial-gradient scrim (`hexToRgba(brand.colors.background, 0.78)` at the center, fading to transparent at ~70% radius) on a z-layer **between** the decoration and the text. Keeps decoration visible at the edges, keeps text on a clean dark base.
+   - **Test by squinting**: if you squint at the scene and the text shape disappears into the background, contrast is insufficient. The viewer scrolling past on mobile is squinting.
+   - **Never reduce text contrast to "balance" the bg**: foreground text must always meet WCAG AA (4.5:1 for body, 3:1 for ≥24px display). If the bg is too busy, fix the bg, not the foreground.
+
+7. **Z-stack discipline — no unintended overlap.** Every focal element (headline, code line, span row, attribute chip, CTA button) must be either fully visible or intentionally and obviously layered. The failure modes this rule exists to catch:
+   - A decoration positioned with negative offsets or overlapping bounds that visually clips a focal element ("the chips appear half behind the trace tree"). Verify the rendered position of decorative elements at the hero frame in Remotion Studio, not just frame 0.
+   - A foreground element whose bounding box happens to land underneath a higher-z-index ambient layer ("the redaction overlay covers half the title"). Background elements get `zIndex: 0`; scrims/vignettes get `zIndex: 1`; foreground content gets `zIndex: 2+`. Stick to a known scale; don't sprinkle ad-hoc `zIndex` values.
+   - Streaming elements that overshoot their container, partially exiting the visible canvas mid-animation. Either clip them (`overflow: 'hidden'` on the container) or constrain their travel distance to stay inside.
+
+   **Layout intent vs. layout accident**: a logo deliberately framed behind a CTA URL pill is intentional (z-stack, transparency, designed). The same logo crashing into the URL pill at an unintended position is an accident. The pre-render audit (Phase 6.1) flags any focal element whose bounding box overlaps a non-foreground element by more than ~10% of its area without an explicit `zIndex` declaration.
+
 ### Code Scene Rules
 
 #### Tell a story with chapters
 
-Code scenes (`CodeSnippet`, `BeforeAfter`) should walk the viewer through the code over time, not dump everything at once. Use the `chapters` array on the scene to sequence emphasis:
+**Mandatory for any code beat ≥5 seconds (~150 frames at 30fps).** A 15-line dump on screen with no progressive emphasis is the strongest "AI-generated reference doc" tell — the viewer's eye hunts for what to read first, can't find an anchor, and disengages. Code must be staged as a *narrative arc* the viewer can follow:
+
+- **Chapter 1 — the world before**: highlight the imports / the prior approach / what the developer writes today (the empathy beat).
+- **Chapter 2 — the change**: focus on the one new line, the new import, or the new call site that activates the feature (the wow beat).
+- **Chapter 3 — the consequence**: shift focus to the line(s) that show the *result* — what the new feature unlocks downstream (the payoff beat). Often the consequence is shown alongside a sibling visual (a trace tree appearing, a UI updating, a metric flipping).
+- **Chapter 4 — victory beat** (optional, ~30–60 frames): all lines visible, no dimming, viewer's eye can rest.
+
+If the code beat is a single 15-line snapshot with no progression — no `chapters[]` on the scene, only static `emphasizedLines` — refuse the scene plan in Phase 3.3 and ask for a chapter breakdown before scaffolding.
+
+Code scenes (`CodeSnippet`, `BeforeAfter`) walk the viewer through the code over time, not dump everything at once. Use the `chapters` array on the scene to sequence emphasis:
 
 1. **Imports arrive** — highlight all imports (~3s)
 2. **The new import** — zoom to the key import line (~3s)
@@ -743,6 +772,7 @@ Rules:
 - Sum of chapter `durationFrames` should match the scene's `durationFrames`. Extra frames hold on the last chapter; missing frames truncate.
 - Each chapter may override the scene's `caption` for a per-beat narration. The caption cross-fades (300ms) when it changes.
 - `chapters` is preferred over the static `emphasizedLines` for anything longer than ~3s.
+- **No chapterless dumps**: any code beat scoped at >5s (>150 frames at 30fps) is required to define `chapters[]`. A static `emphasizedLines` is only acceptable for ≤3s flashes. The pre-render audit refuses to render code scenes longer than 5s without a chapter breakdown.
 
 #### Make code fit the slide
 
