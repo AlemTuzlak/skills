@@ -514,6 +514,9 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 - [ ] **Foreground readability over decoration**: every scene with background decoration (streaming feeds, ambient motion, low-opacity logos) renders the foreground text at WCAG AA contrast. If decoration effective opacity exceeds ~0.25 anywhere behind hero text, a local scrim (zIndex=1 between bg and fg) must exist. See Layout Rule 6.
 - [ ] **No accidental overlap**: at the hero frame of every scene, no focal element's bounding box overlaps a non-foreground element by more than ~10% without an explicit `zIndex` declaration. Verify any newly-added decorations against the rendered hero frame in Remotion Studio, not frame 0. See Layout Rule 7.
 - [ ] **Code beats ≥5s have chapters**: any scene with code visible for >5 seconds (>150 frames at 30fps) defines `chapters[]`. Static `emphasizedLines`-only code dumps fail this check. See Code Scene Rules — *Tell a story with chapters*.
+- [ ] **Visual chunk cap (≤4 per frame)**: every scene's hero frame contains ≤4 distinct visual chunks (where a chunk is a Gestalt group, not a single element). Counts: title, motif, code card, trace tree = 4 chunks. Adding an attribute chip row pushes to 5 — must merge via similarity (chips and tree share color/font) or split scene. See Visual Cognition Rule A.
+- [ ] **One pre-attentive cue per focal element**: each focal element is marked by exactly one dominant cue (color OR size OR motion OR orientation), not multiple. Two or more competing cues force conjunction search and double parse time. See Visual Cognition Rule B.
+- [ ] **Reading flow matches scene type**: hero/sparse scenes lay out for Z-pattern, code-heavy scenes for F-pattern, multi-card scenes for layer-cake. Misplaced elements (e.g. CTA URL in top-left of a sparse scene, code caption far from the focused line) fail this check. See Visual Cognition Rule C.
 
 ### Step 6.2 — Render mp4 + poster
 
@@ -744,6 +747,67 @@ Applied whenever the skill generates or edits any scene.
    - Streaming elements that overshoot their container, partially exiting the visible canvas mid-animation. Either clip them (`overflow: 'hidden'` on the container) or constrain their travel distance to stay inside.
 
    **Layout intent vs. layout accident**: a logo deliberately framed behind a CTA URL pill is intentional (z-stack, transparency, designed). The same logo crashing into the URL pill at an unintended position is an accident. The pre-render audit (Phase 6.1) flags any focal element whose bounding box overlaps a non-foreground element by more than ~10% of its area without an explicit `zIndex` declaration.
+
+### Visual Cognition & Attention Rules
+
+These rules are grounded in established research on how the human visual system actually digests information: Cowan on working memory capacity, Treisman's Feature Integration Theory on pre-attentive processing, Nielsen Norman Group eye-tracking studies on scanning patterns, Gestalt principles of perceptual grouping, and Rayner's reading-saccade research. They explain *why* certain layouts feel intuitive and others feel like "AI-generated noise," and they are checked at scene-plan approval (Phase 3.3) and pre-render (Phase 6.1).
+
+#### Rule A: ≤ 4 distinct visual chunks per frame
+
+Visual working memory tops out at about **3–4 chunks** (Cowan, refining Miller's 7±2). When a frame shows 5+ distinct elements (icons, cards, badges, numbers, captions, motifs), the viewer cannot hold them simultaneously — the eye samples 3–4 and drops the rest.
+
+- A "chunk" is one visual unit a viewer parses as a single thing. A row of 6 evenly-spaced provider logos that share color and size is ONE chunk (parsed as a group via Gestalt similarity), not 6.
+- **Hero scenes (hook, CTA)**: 2–3 chunks ideal — title + supporting motif + URL/action.
+- **Showcase scenes**: max 4 distinct foreground chunks. A trace tree with 5–7 rows that share bar geometry counts as ONE chunk; an attribute chip row is a second chunk; a code card is a third.
+- If a scene plan has 5+ chunks that don't merge via similarity/proximity, restructure before scaffolding — re-group with shared color/size/shape, or split into two scenes.
+
+#### Rule B: One pre-attentive cue marks the focal element per frame
+
+Pre-attentive processing (Treisman, Feature Integration Theory) detects **color, motion, orientation, and size** in parallel and unconsciously within ~200 ms. A single pre-attentive feature is found in constant time regardless of distractor count; conjunctions of features require slow serial attention.
+
+- Pick ONE cue per frame to mark "look here":
+  - Brand-primary color on a near-black canvas = strong attention magnet (color cue)
+  - Largest text on the frame = anchor (size cue)
+  - The only moving element while everything else is still (motion cue)
+  - Sole vertical element among horizontals (orientation cue)
+- If two or more pre-attentive cues compete (a primary-colored button AND a moving particle AND the largest text), the eye stalls in conjunction search and parse time doubles. Pick one focal cue. Supporting elements get *secondary* cues (smaller size, lower saturation, no motion).
+- The redaction safety beat is the canonical example: the entire chart goes still (background motion stops), the redaction card slides in (sole motion), AND the content is danger-red (single discrete color shift). Three cues align on one element — viewer's attention locks instantly.
+
+#### Rule C: Reading flow — Z for hero, F for code, layer-cake for lists
+
+Nielsen Norman Group eye-tracking studies identified four dominant scanning patterns. Match the scene's layout to the expected pattern; mismatches add ~0.5 s of parse time per scene (≈2% of a 30 s budget per misplacement).
+
+- **Hero / sparse scenes (hook, CTA)** — **Z-pattern**. Eye lands top-left → top-right → bottom-left → bottom-right. Place the headline along the top, the action verb on the diagonal axis, the URL or supporting element bottom-right. Match-cut transitions should preserve this trajectory across cuts.
+- **Code-heavy scenes** — **F-pattern**. Eye scans the top line, then the leftmost characters of subsequent lines. Code captions and chapter highlights anchor to the leftmost character of the focused line; never float captions at center-right where the eye won't land.
+- **Multi-card / list scenes** — **layer-cake pattern**. The eye locks onto headings and skips body text. Make every card's label larger AND brighter than its body, or viewers miss the body entirely. The "evidence cards" pattern (Storytelling Rule 1) depends on this — the conflicting property names must read as headings, not buried in body text.
+
+#### Rule D: Gestalt grouping carries meaning before reading begins
+
+Use perceptual grouping to encode relationships *before* the viewer reads any text. Done right, the layout *is* the message; done wrong, you need callout lines to explain what relates to what.
+
+- **Proximity**: elements within 24–32 px of each other read as one group; elements ≥ 56 px apart read as separate. Use spacing alone to encode hierarchy.
+- **Similarity**: shared color/size/shape = same category. Three OTel iteration spans rendered in the same primary tint communicate "all the same kind of thing." A tool span in a different tint communicates "different kind." Don't waste this signal on decoration.
+- **Common region**: a card, border, or background panel groups everything inside it. Use for event-content panels, code blocks, attribute panels — each `gen_ai.*.message` event lands in its own bordered region.
+- **Figure / ground**: the smaller, higher-contrast element reads as the figure (the message); the larger, lower-contrast element reads as the ground (context). If your decoration is more saturated than your headline, the viewer parses the decoration as the message. Always.
+- If a layout *requires* drawn lines or callouts to clarify what groups with what, the Gestalt grouping is wrong — fix the spacing or color, not the callout.
+
+#### Rule E: Saccade-aware text — every caption lands in 1–2 fixations
+
+A reading fixation lasts ~200–300 ms; viewers make ~3–4 fixations per second; a typical reading saccade covers 7–9 letter spaces (Rayner). Video viewers do **not** backtrack — if a caption isn't readable in the time it's on screen, it gets skipped entirely.
+
+- **Hook (3 s budget, ≈10 fixations)**: ≤ 7 words. Reason: 7 words ≈ 2 fixations in central vision = one glance. Already enforced (Rule 1).
+- **Scene captions** (≥ 2 s on screen): ≤ 9 words, single line, ≥ 32 px on a 1920×1080 frame. Wraps require a re-orientation saccade and steal a fixation from comprehension.
+- **Code lines focused via chapter**: ≤ 45–50 chars at half-width, ≤ 75 chars at full-width. Already enforced. The line in focus must be readable in one fixation.
+- **Numbers and key terms first**: place the number or key term at the leftmost saccade landing point (left edge for left-aligned text, first 3 words for centered text). Trailing numbers require regression saccades and lose ~30% of viewers.
+
+#### Rule F: Motion is a budget — spend it on direction, not decoration
+
+Sudden motion in peripheral vision triggers the **orienting response** — the eye snaps toward it within ~150 ms involuntarily. This is the strongest attention pull in the entire visual system. It's also exhausting if abused.
+
+- **One motion-attention pull per scene**, timed to direct the eye to where the next message lands. A continuous loop in the corner steals attention from every subsequent beat.
+- **Entrance animations spend budget**. Every moving element costs viewer attention. Stagger entrances so they land sequentially (≥3 frames / ~0.1 s apart at 30 fps), not simultaneously — viewer can track one focal point at a time.
+- **Foreground motion must be ≥3× faster (or larger) than background motion**. If foreground and background move at similar rates, the eye has no figure/ground to lock onto and parsing collapses. A streaming-events backdrop in a CTA succeeds because the streams move slowly (one row per ~1 s) while the headline lands instantly — clear figure/ground.
+- **No infinite loops on focal elements**. Viewer fatigue sets in within ~3 cycles; after that the loop becomes peripheral noise and the underlying message is lost.
 
 ### Code Scene Rules
 
