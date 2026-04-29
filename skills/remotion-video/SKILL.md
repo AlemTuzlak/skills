@@ -286,17 +286,40 @@ Skip this step only if the feature is purely API-level with no user-visible surf
 
 When the user picked option 4 (Multi-format) in Q2.2, the skill must plan **per-aspect narrative variants** — a 9:16 vertical video is not just a cropped 16:9.
 
-Adjustments to apply:
+#### Rule 0 (the load-bearing one): **Fill the canvas. Don't just shrink content.**
 
-- **Text size**: the vertical variant needs ~30% larger text at the same reading distance. Caption font sizes that work at 48px on 16:9 need to move to ~60px on 9:16.
-- **Horizontal-heavy scenes**: side-by-side `BeforeAfter`, multi-pill pill rows, and wide `LibrarySwap` layouts must switch to stacked (top/bottom) or single-item-at-a-time layouts on 9:16. Mark these scenes with an `aspectOverrides` hint during scene planning.
+The most common failure mode when porting a 16:9 layout to 1:1 or 9:16: the agent keeps the original element sizes, only changes `Composition` `width` and `height`, and ships a video where content occupies ~50% of the new canvas with huge dead margins on top/bottom (vertical) or sides (square).
+
+The right move is the **opposite of intuition**: when the canvas gets *smaller* in one axis, the content's per-element size needs to get *bigger*, not smaller. Less competing content = each element earns more visual space.
+
+Concrete defaults when porting from 1920×1080 (landscape) to other aspects:
+
+- **Hero text** (hook/CTA headlines): same px size or +10–25%. A 132px landscape headline becomes ~116–144px on 1:1 and ~140–160px on 9:16. Going *down* to 88px is wrong.
+- **Body text & captions**: +20–40% for 9:16 (a 22px caption → 28–32px). On 1:1, hold or grow slightly.
+- **Padding & margins**: increase scene padding 1.5–2× to consume edge space. A 32px landscape scene padding becomes ~70px on 1:1 and ~140–200px on 9:16 (especially top/bottom on 9:16).
+- **Inter-element gaps**: the `Stack`-style flex `gap` of 56px on landscape becomes ~80px on 9:16. Whitespace is doing brand work — keep it generous.
+- **Element heights / min-heights**: code-card mount-card heights, browser-mock chat min-height — all should grow on 9:16 to use the tall canvas.
+- **Code font**: code that was 18px on landscape often goes to ~17–18px on 1:1 (less width to spare) but **bigger** on 9:16 where there's less content competing — 16–20px is fine.
+
+Implementation pattern in Remotion: read the current aspect from `useVideoConfig()` (or a context) inside each scene/Panel and switch sizing values via a small `byAspect({ landscape, square, vertical })` helper, instead of hardcoding pixel sizes. The same `Story` data drives all three compositions; only the per-aspect sizing layer differs.
+
+Run the **fill check** mentally before rendering and as a hard pre-render audit:
+
+> At the hero frame (peak content) of every scene at every aspect, the bounding box of the foreground content reaches within ~80–100px of every canvas edge. If any scene at any aspect has more than ~120px of dead margin on either axis, the per-aspect sizing is wrong — the content is undersized.
+
+If you're tempted to keep all the landscape sizes "since they look fine on landscape" — stop. They look fine on landscape *because* they fill landscape. They will not fill a different aspect at the same sizes.
+
+#### Layout-shape adjustments
+
+- **Horizontal-heavy scenes**: side-by-side `BeforeAfter`, multi-pill pill rows, and wide `LibrarySwap` layouts must switch to stacked (top/bottom) or single-item-at-a-time layouts on 9:16. Mark these scenes with an `aspectOverrides` hint during scene planning, and branch the JSX in the scene component on `useVideoConfig().width / height` ratio.
+- **Multi-column grids**: a 6-col framework grid becomes 4-col on 1:1, 3-col on 9:16. A 5-card mount row becomes a 3-col grid (with 2 wrapping to a second row) on 1:1, or a 2-col grid (with the 5th wrapping) on 9:16.
 - **Motif sizing**: waveform/thread widths should scale with composition width, not be hardcoded. Review any reusable motif component for responsive sizing before scaffolding.
 - **Pacing**: vertical-first platforms (Reels, TikTok) favor a faster cut rhythm than desktop X/LinkedIn. Consider shaving 3–5s from a 30s landscape plan when producing the 9:16 variant.
 - **CTA URL placement**: URL pills are harder to scan on narrow aspects — consider shortening the URL shown (e.g., `tanstack.com/ai` instead of `https://tanstack.com/ai/audio-generation`) for 9:16.
 
 Write the per-aspect deltas into the scene plan as a short section, even if most scenes render identically. Example:
 
-> **9:16 deltas**: Scene 3 `LibrarySwap` stacks the code card above the provider pills (same content, vertical flow). Caption font +30%. Total duration shaved to 26s (hook 2.5s / problem 4s / delivery 12s / CTA 7.5s).
+> **9:16 deltas**: Scene 3 `LibrarySwap` stacks the code card above the provider pills (same content, vertical flow). Headline 132px → 144px (kept large). Padding 32px → 200px top/bottom. Code font 18px → 18px (held). Total duration shaved to 26s (hook 2.5s / problem 4s / delivery 12s / CTA 7.5s).
 
 Skip this step if the user picked a single aspect.
 
@@ -514,6 +537,8 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 - [ ] **Foreground readability over decoration**: every scene with background decoration (streaming feeds, ambient motion, low-opacity logos) renders the foreground text at WCAG AA contrast. If decoration effective opacity exceeds ~0.25 anywhere behind hero text, a local scrim (zIndex=1 between bg and fg) must exist. See Layout Rule 6.
 - [ ] **No accidental overlap**: at the hero frame of every scene, no focal element's bounding box overlaps a non-foreground element by more than ~10% without an explicit `zIndex` declaration. Verify any newly-added decorations against the rendered hero frame in Remotion Studio, not frame 0. See Layout Rule 7.
 - [ ] **Code beats ≥5s have chapters**: any scene with code visible for >5 seconds (>150 frames at 30fps) defines `chapters[]`. Static `emphasizedLines`-only code dumps fail this check. See Code Scene Rules — *Tell a story with chapters*.
+- [ ] **Every chapter has a synchronized title**: any scene with `chapters[]` MUST have a per-chapter `caption` / `title` that swaps in lockstep with the `focusLines` change. A code highlight without a synchronized title saying *why* we're looking at it fails this check. See Code Scene Rules — *Synchronized chapter narration*.
+- [ ] **Per-aspect canvas fill** (when multi-format selected in Q2.2): for each aspect (1:1, 9:16) at every scene's hero frame, the bounding box of foreground content reaches within ~80–100px of every canvas edge. If any scene leaves >120px of dead margin on either axis, the per-aspect sizing is wrong — content is undersized for the aspect. See Step 3.6 — *Fill the canvas*.
 - [ ] **Visual chunk cap (≤4 per frame)**: every scene's hero frame contains ≤4 distinct visual chunks (where a chunk is a Gestalt group, not a single element). Counts: title, motif, code card, trace tree = 4 chunks. Adding an attribute chip row pushes to 5 — must merge via similarity (chips and tree share color/font) or split scene. See Visual Cognition Rule A.
 - [ ] **One pre-attentive cue per focal element**: each focal element is marked by exactly one dominant cue (color OR size OR motion OR orientation), not multiple. Two or more competing cues force conjunction search and double parse time. See Visual Cognition Rule B.
 - [ ] **Reading flow matches scene type**: hero/sparse scenes lay out for Z-pattern, code-heavy scenes for F-pattern, multi-card scenes for layer-cake. Misplaced elements (e.g. CTA URL in top-left of a sparse scene, code caption far from the focused line) fail this check. See Visual Cognition Rule C.
@@ -837,6 +862,34 @@ Rules:
 - Each chapter may override the scene's `caption` for a per-beat narration. The caption cross-fades (300ms) when it changes.
 - `chapters` is preferred over the static `emphasizedLines` for anything longer than ~3s.
 - **No chapterless dumps**: any code beat scoped at >5s (>150 frames at 30fps) is required to define `chapters[]`. A static `emphasizedLines` is only acceptable for ≤3s flashes. The pre-render audit refuses to render code scenes longer than 5s without a chapter breakdown.
+
+#### Synchronized chapter narration — every chapter needs a title that says WHY
+
+A code highlight without a synchronized title is half a beat. The viewer sees something dimmed and something focused, but doesn't know whether the focused part is the *new feature*, the *result*, the *bug being fixed*, or the *foundation everyone already has* — so they can't reason about it.
+
+**Every chapter must include a synchronized narration line that swaps in lockstep with the focus change.** The narration sits above the code (or in a fixed slot near it) and tells the viewer the verb of what's happening:
+
+- *"Wrap with the provider."*
+- *"Add a custom tool."*
+- *"Render it inline."*
+- *"Plug into the runtime."*
+- *"Mount in any framework."*
+
+Implementation pattern (Remotion):
+
+1. Each `chapter` object on the scene takes a `caption` (or `title`) string. Don't rely on the scene-level `caption` — chapters override per beat.
+2. Render the chapter title in a `<HeadingStack>`-style component above the code card: a small wrapper that cross-fades between the active chapter's caption and the previous one. Drive it off `useCurrentFrame()` and the chapter timeline so the title transition is timeline-driven, not based on React re-renders.
+3. The transition: ~14–18 frames out / 16–20 frames in (≈0.45s / 0.55s at 30fps), with a small ~3-frame overlap. Schedule the title swap to start ~6 frames **before** the code-focus swap so the viewer reads the title first, then sees the highlight resolve.
+
+Authoring rules:
+
+- **Action language only**: titles describe what's *happening* (verb-led), not what's labelled. *"Wrap with the provider."* not *"The provider"*. *"Add a tool."* not *"Tool registration."*
+- **End-to-end narrative arc**: read all the chapter titles back-to-back as a sentence. They should flow as a tour or set of instructions: *"Set up the client. Wrap with the provider. Drop in your components. Add a custom tool. Render it inline."* — not random captions.
+- **Match the visual to the words**: when the title says *"add a custom tool"*, the focused lines must literally show the tool being added (the import, the call site, or the JSX). Misalignment between what the title claims and what's highlighted breaks viewer trust harder than a missing title.
+- **Pair with synchronized side activity**: if the scene has a sibling visual (a chat mock, a trace tree, a UI panel), its content reveal should sync to the title beat too — *"Render it inline."* fires the same time the WeatherCard appears in the chat. Title + code highlight + side visual all change together.
+- **One title beat = one chapter**: don't reuse a title across chapters; each chapter earns its own line.
+
+Pre-render audit: any chapter with `focusLines` (or equivalent active-line targeting) but no `caption` / `title` field fails the gate. Refuse to render chaptered code scenes without narration.
 
 #### Make code fit the slide
 
