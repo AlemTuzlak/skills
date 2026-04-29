@@ -150,6 +150,8 @@ Ask these questions one at a time, in order.
 >
 > Duration is a target, not a cap. If the story lands in 27s or stretches to 34s, that's fine — optimize for impact."
 
+**Duration is a soft target, not a deadline.** When the user picks a duration, treat it as a midpoint. The rendered video can land roughly ±5s away from the chosen target (formally ±15% — see the audit in Phase 6) without violating the spec. Story coherence trumps clock precision: do NOT pad scenes to hit 30.0s exactly, do NOT compress a scene that needs to breathe just to fit. If the story lands at 27s, ship 27s. If it needs 34s to feel natural, ship 34s. No artificial deadlines.
+
 ### Q2.2 — Aspect ratio
 
 > "Which aspect ratio?
