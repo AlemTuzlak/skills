@@ -1,0 +1,31 @@
+{
+  "name": "alemtuzlak",
+  "owner": {
+    "name": "Alem Tuzlak"
+  },
+  "plugins": [
+    {
+      "name": "alemtuzlak-skills",
+      "source": "./",
+      "description": "Marketing and content generation skills — turn a PR, git ref, or freeform idea into briefs, blog posts, changelogs, social copy, newsletters, video scripts, rendered promo videos, and architecture impact docs.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Alem Tuzlak"
+      },
+      "homepage": "https://github.com/alemtuzlak/skills",
+      "repository": "https://github.com/alemtuzlak/skills",
+      "license": "MIT",
+      "keywords": [
+        "marketing",
+        "content",
+        "blog",
+        "changelog",
+        "newsletter",
+        "social",
+        "video",
+        "skills"
+      ],
+      "category": "marketing"
+    }
+  ]
+}
