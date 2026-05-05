@@ -11,28 +11,16 @@ import { brand } from "./brand";
  *   - "vignette": dark vignette around edges for focus scenes
  *   - "diagonal": subtle linear gradient from top-left (accent-tinted) to bottom-right
  *   - "flat": no overlay (only use when the scene draws its own background)
- *   - "reactbits": render a frame-locked reactbits component as the base
- *     (see references/reactbits-catalog.md). Pass via `reactbits` prop.
  *
- * Variants except "flat" and "reactbits" include a subtle SVG-noise dither
- * overlay. This dithers the gradient's 8-bit quantization below perceptual
- * threshold, so the `render:compat` (8-bit yuv420p) path also looks clean
- * without relying on 10-bit encoding to eliminate banding.
- *
- * For "reactbits", the dither overlay is omitted (the shader's own noise
- * usually fixes banding; if the chosen background banded, set `dither` true).
- * A scrim layer is always rendered between the reactbits canvas and the
- * children at low opacity (default 0.35) — keeps hero text readable per
- * Layout Rule 6. Override scrim with `scrim={0}` for hooks that want the
- * background full-bleed, or `scrim={0.7}` for code-heavy scenes.
+ * All variants except "flat" include a subtle SVG-noise dither overlay.
+ * This dithers the gradient's 8-bit quantization below perceptual threshold,
+ * so the `render:compat` (8-bit yuv420p) path also looks clean without
+ * relying on 10-bit encoding to eliminate banding.
  */
 export const SceneBackground: React.FC<{
-  variant?: "primary-glow" | "vignette" | "diagonal" | "flat" | "reactbits";
-  reactbits?: React.ReactNode;
-  scrim?: number;
-  dither?: boolean;
+  variant?: "primary-glow" | "vignette" | "diagonal" | "flat";
   children: React.ReactNode;
-}> = ({ variant = "primary-glow", reactbits, scrim = 0.35, dither, children }) => {
+}> = ({ variant = "primary-glow", children }) => {
   const base = brand.colors.background;
   const primary = brand.colors.primary;
   const accent = brand.colors.accent;
@@ -51,25 +39,6 @@ export const SceneBackground: React.FC<{
           background: `linear-gradient(135deg, ${hexToRgba(accent, 0.08)} 0%, transparent 50%, ${hexToRgba(primary, 0.06)} 100%)`,
         }
       : {};
-
-  if (variant === "reactbits") {
-    return (
-      <AbsoluteFill style={{ backgroundColor: base }}>
-        <AbsoluteFill style={{ zIndex: 0 }}>{reactbits}</AbsoluteFill>
-        {scrim > 0 && (
-          <AbsoluteFill
-            style={{
-              zIndex: 1,
-              background: `radial-gradient(ellipse 75% 60% at 50% 50%, ${hexToRgba(base, scrim)}, transparent 75%)`,
-              pointerEvents: "none",
-            }}
-          />
-        )}
-        {dither && <NoiseDither />}
-        <AbsoluteFill style={{ zIndex: 2 }}>{children}</AbsoluteFill>
-      </AbsoluteFill>
-    );
-  }
 
   return (
     <AbsoluteFill style={{ backgroundColor: base }}>

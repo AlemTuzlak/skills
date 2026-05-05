@@ -102,55 +102,6 @@ html, body {
   background: var(--brand-background);
 }
 
-/* Reactbits slot — atmospheric animated backgrounds from reactbits.dev,
-   mounted into [data-reactbits-mount] and frame-locked via reactbits-adapter.js.
-   See references/reactbits-catalog.md for selection guidance. */
-.scene[data-bg="reactbits"] {
-  background: var(--brand-background);
-}
-
-.scene[data-bg="reactbits"] [data-reactbits-mount] {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Scrim layer between reactbits canvas and foreground content (Layout Rule 6).
-   Default opacity 0.35; raise to 0.5–0.7 for code-heavy scenes via
-   data-bg-scrim="strong". Drop with data-bg-scrim="none" only for hooks
-   that want full-bleed atmosphere. */
-.scene[data-bg="reactbits"]::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse 75% 60% at 50% 50%,
-    color-mix(in srgb, var(--brand-background) 35%, transparent),
-    transparent 75%
-  );
-}
-
-.scene[data-bg="reactbits"][data-bg-scrim="strong"]::before {
-  background: radial-gradient(
-    ellipse 90% 80% at 50% 50%,
-    color-mix(in srgb, var(--brand-background) 70%, transparent),
-    transparent 85%
-  );
-}
-
-.scene[data-bg="reactbits"][data-bg-scrim="none"]::before {
-  display: none;
-}
-
-.scene[data-bg="reactbits"] > .scene-content,
-.scene[data-bg="reactbits"] > [data-foreground] {
-  position: relative;
-  z-index: 2;
-}
-
 /* NoiseDither overlay - applied to every scene-bg via ::after.
    Breaks 8-bit gradient banding perceptually. ~4% opacity, blend overlay.
    See SKILL.md Phase 6 for rationale. */
