@@ -243,6 +243,37 @@ Before picking a story pattern, identify the **signature visual motif** that wil
 
 Do NOT skip this step. A video without a derived motif defaults to generic bullet-list storytelling and fails the generic test (Storytelling Rule 10).
 
+### Step 3.0b — Background selection (gradients vs. reactbits vs. 3D)
+
+After the motif is approved, decide the **per-scene background language**. The default `data-bg` variants in `styles.css` (`primary-glow`, `vignette`, `diagonal`, `flat`) remain the safe choice for many scenes — especially **hooks and CTAs that need clean focus on text** and **code-dense delivery scenes** where any busy backdrop fights the foreground.
+
+Reach for richer backdrops when the story earns them:
+
+1. **Reactbits animated background** — pick from `references/reactbits-catalog.md` when a scene's mood maps to one of the catalog entries. Use sparingly: 1–2 reactbits scenes per video typically beats every-scene reactbits, because contrast between flat-gradient and rich-shader scenes is itself a narrative beat. Match the background to:
+   - The **motif verb** (catalog has a verb-to-background quick-pick table — `LineWaves` for audio, `LiquidEther` for sync, `Radar` for search, `Hyperspeed` for ship/deploy CTA, etc.).
+   - The **scene mood** in the color script (Rule 8): calm/atmospheric for hook/CTA, tension for problem, hype for the moment of resolution.
+   - The **state-change axis** (Phase 3.4) — the chosen background must drive at least one prop (intensity, color, speed) from scene-state, otherwise it's decoration.
+
+2. **3D moment** — pick when the story has an establishing-shot hook (3D logo flythrough), a CTA finale that earns lift-off, a direct metaphor (rocket for "deploy", kite for "soar", lock for "secure"), or a match-cut bridge. See `references/3d-elements.md` for patterns. 3D moments **own their scene's frame** — no competing 2D motion. Do NOT use 3D during code-snippet / `LibrarySwap` / bullet-list beats.
+
+3. **Default `data-bg` variants** — everything else. Always valid. Never apologize for using them.
+
+**Confirm with user:**
+
+> "For backgrounds I'm proposing:
+> - Scene 1 (Hook): **`primary-glow`** gradient (clean focus on text)
+> - Scene 2 (Problem): **`DarkVeil`** reactbits (tension mood, shifts darkness state)
+> - Scene 3 (LibrarySwap): **`diagonal`** gradient (clean for code)
+> - Scene 4 (CTA): **3D logo lift + LightRays** reactbits (cinematic resolution)
+>
+> This gives variance across scenes and keeps code-heavy beats clean. Approve, swap any scene's background, or stick all-gradients?"
+
+If the user picks any reactbits or 3D options:
+- Schedule the corresponding installs in Phase 4.2.
+- Schedule the per-component reactbits adapter patch in Phase 4.5 (new step).
+
+**Defaults when uncertain:** if the story plan doesn't strongly call for atmosphere, default to `data-bg` variants for the entire video. A clean, well-paced gradient video beats a poorly-adapted reactbits video every time.
+
 ### Step 3.1 — Detect story pattern
 
 Scan the PR/input for signals and pick one of 5 patterns. See the detection signals table in `patterns/README.md` — that file is the single source of truth.
@@ -405,8 +436,9 @@ This creates the HyperFrames skeleton (`package.json`, base `index.html`, `compo
 ```
 <project-root>/
 ├── DESIGN.md                  # written from templates/project/DESIGN.md.template + Q2.4 brand
-├── styles.css                 # written from templates/project/styles.css.template + brand tokens
+├── styles.css                 # written from templates/project/styles.css.template + brand tokens (includes data-bg="reactbits" slot)
 ├── index.html                 # replaces init-generated; from templates/project/index.html.template
+├── reactbits-adapter.js       # from templates/project/reactbits-adapter.js.template (only when reactbits selected — see Step 4.5)
 ├── .hyperframes/
 │   └── shiki-theme.json       # from templates/project/shiki-theme.json.template + brand colors
 ├── .marketing/
@@ -426,6 +458,11 @@ Detect package manager from lockfile (`pnpm-lock.yaml` → pnpm, `bun.lockb` →
 ```bash
 pnpm --dir marketing/<feature-slug>/hyperframes install --save-dev shiki
 ```
+
+**Conditional installs** based on Phase 3.0b decisions:
+
+- If any scene uses `data-bg="reactbits"` → also overlay `templates/project/reactbits-adapter.js.template` → `reactbits-adapter.js` and pull in the chosen background(s) via shadcn-add. Reactbits ships its components (no runtime npm dep); transitive deps like `ogl` arrive automatically with the `add` command. See Step 4.5.
+- If any scene uses 3D → no extra install (Three.js loads via CDN import map inside the scene's `<script type="module">`). See `references/3d-elements.md`.
 
 ### Step 4.3 — Pre-highlight code at scaffold time
 
@@ -461,6 +498,56 @@ When the story plan calls for a scene shape the 9 bundled templates can't expres
 6. Must be referenced from `index.html`'s clip list alongside the bundled scenes.
 
 Use the `hyperframes` skill's authoring guidance (Layout Before Animation, palette discipline, motion principles) when writing the custom scene.
+
+### Step 4.5 — Reactbits adapter (only when reactbits is selected)
+
+Skip this step entirely if Phase 3.0b chose only gradient variants. When at least one scene uses `data-bg="reactbits"`:
+
+1. **Install the chosen background(s) via shadcn**, from inside the scaffolded project:
+
+   ```bash
+   pnpm --dir marketing/<feature-slug>/hyperframes dlx shadcn@latest add @react-bits/<Name>-JS-CSS
+   ```
+
+   Use `JS-CSS` — HyperFrames is HTML+JS+CSS. The component lands at `src/components/<Name>/<Name>.jsx`. License: MIT + Commons Clause; commercial use in user marketing videos is permitted.
+
+2. **Patch the component for frame-locking.** Reactbits components animate via `requestAnimationFrame` + `performance.now()`, which freezes under HyperFrames' frame-stepping render. Apply the per-component patch from `references/reactbits-catalog.md`. The general shape:
+
+   - Locate the component's `requestAnimationFrame` recursive loop.
+   - Replace it with a registration to `window.__reactbitsRegistry`:
+     ```js
+     window.__reactbitsRegistry.register((time) => {
+       program.uniforms.uTime.value = time;
+       renderer.render({ scene: mesh });
+     });
+     ```
+   - Force-disable any mouse interaction prop (`mouseInteraction={false}`, `mouseReact={false}`, `enableMouseInteraction={false}` — varies per component).
+
+3. **Mount the React component into HyperFrames.** Add to the scene's HTML:
+
+   ```html
+   <div data-clip-id="problem-setup" data-duration="6" data-bg="reactbits" data-bg-scrim="strong">
+     <div data-reactbits-mount="problem-setup-bg"></div>
+     <div data-foreground class="scene-content">
+       <!-- 2D foreground content here -->
+     </div>
+     <script type="module">
+       import { createRoot } from "https://esm.sh/react-dom@18/client";
+       import React from "https://esm.sh/react@18";
+       import "../../reactbits-adapter.js";
+       import DarkVeil from "../../src/components/DarkVeil/DarkVeil.jsx";
+
+       const root = createRoot(document.querySelector('[data-reactbits-mount="problem-setup-bg"]'));
+       root.render(React.createElement(DarkVeil, { darkness: 0.7, mouseInteraction: false }));
+     </script>
+   </div>
+   ```
+
+   The `data-bg-scrim` attribute controls the scrim layer above the canvas: `none` for hooks that want full-bleed atmosphere, default (no attribute) for ~0.35 scrim, `strong` for code-heavy scenes that need ~0.65.
+
+4. **Verify with `npx hyperframes inspect`** that the foreground text passes the contrast check against the reactbits canvas. If contrast fails, add `data-bg-scrim="strong"` to the scene root and re-inspect.
+
+5. **Render-time WebGL flag** — most reactbits backgrounds need WebGL in the headless render context. If `npx hyperframes render` produces black-frame backgrounds, run `npx hyperframes doctor` and consult the `hyperframes-cli` skill for the current GL flag (versions vary).
 
 ## Phase 5: First Draft + Iterate
 
@@ -620,6 +707,11 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 - [ ] **Visual chunk cap (≤4 per frame)**: every scene's hero frame contains ≤4 distinct visual chunks (where a chunk is a Gestalt group, not a single element). Counts: title, motif, code card, trace tree = 4 chunks. Adding an attribute chip row pushes to 5 — must merge via similarity (chips and tree share color/font) or split scene. See Visual Cognition Rule A.
 - [ ] **One pre-attentive cue per focal element**: each focal element is marked by exactly one dominant cue (color OR size OR motion OR orientation), not multiple. Two or more competing cues force conjunction search and double parse time. See Visual Cognition Rule B.
 - [ ] **Reading flow matches scene type**: hero/sparse scenes lay out for Z-pattern, code-heavy scenes for F-pattern, multi-card scenes for layer-cake. Misplaced elements (e.g. CTA URL in top-left of a sparse scene, code caption far from the focused line) fail this check. See Visual Cognition Rule C.
+- [ ] **Reactbits frame-locking**: every scene with `data-bg="reactbits"` references a component patched per Step 4.5 — its render registers via `window.__reactbitsRegistry.register(...)`, mouse-interaction props are forced false, and no surviving `requestAnimationFrame` recursive loop exists in the patched file. Grep the patched component for `requestAnimationFrame(.*update` — must match zero. See Rule 11–12.
+- [ ] **Reactbits state-change observed**: any reactbits component referenced in ≥2 scenes has at least one prop varying between those scenes (color, intensity, speed, amplitude, or density) — byte-identical reuse across all referencing scenes fails this check. See Rule 12.
+- [ ] **WCAG 2.3.1 photosensitive-seizure ceiling**: backgrounds in the strobe-risk family (`Lightning`, `LetterGlitch`, `PrismaticBurst`, `FaultyTerminal`) are configured below the 3-flashes/sec threshold (catalog notes per-component caps). Above-threshold defaults must be lowered before render — refuse otherwise.
+- [ ] **3D scene owns its frame**: any scene using a `<canvas>` for Three.js either has all 2D foreground animations complete before the 3D motion starts, or has the 3D scene held static while 2D animates. Concurrent 3D camera + 2D-headline entry in the same scene fails this check. See Rule 13.
+- [ ] **3D render is timeline-driven**: every scene with a Three.js `<canvas>` calls `renderer.render(...)` from a `gsap.ticker.add(...)` or `tl.eventCallback("onUpdate", ...)`, never from a wall-clock `requestAnimationFrame`. Grep the 3D scene scripts for `requestAnimationFrame` — must match zero. See `references/3d-elements.md`.
 
 ### Step 6.2 — Render mp4 + poster
 
@@ -817,6 +909,43 @@ Before rendering, run this self-check against every scene. If the answer to ANY 
 
 If a scene fails the test, the fix is rarely "change the copy". It's a layout or visual-element change: add a signature thread appearance, introduce a domain-specific glyph, replace a bullet with a concrete evidence card, pull a real symbol name from the source.
 
+### Rule 11: Background selection follows mood and motif, not novelty
+
+Animated backgrounds (reactbits or otherwise) are not a uniform upgrade over the `data-bg` gradient variants. They earn their place when they reinforce the **mood** of the scene and the **verb** of the motif. Picking `Hyperspeed` for a calm enterprise auth story is wrong even though it's flashy. Picking `DotGrid` for a music-generation hero is bland even though it's dev-trusted.
+
+The decision flow:
+
+1. Identify the scene's narrative mood: calm, technical, hype, tension, playful, atmospheric, premium.
+2. Look up the verb in `references/reactbits-catalog.md`'s motif-verb table; if there's a near-direct map (`Radar` for search, `LineWaves` for audio), prefer that.
+3. If verb maps to multiple candidates, pick by mood column.
+4. If neither verb nor mood produces a confident match, **stay on the `data-bg` gradient variant**. A clean gradient beats a mismatched shader.
+
+**Hooks and CTAs default to `data-bg` gradients** unless the story specifically calls for cinematic atmosphere. Code-dense scenes default to gradients always — a busy backdrop fights the foreground.
+
+Mixing 1–2 reactbits scenes against 2–3 gradient scenes is the strongest visual rhythm: the contrast between flat and atmospheric reads as a beat.
+
+### Rule 12: Background must reinforce the motif's state-change axis
+
+If a reactbits background is used, at least one of its props (intensity, color, speed, amplitude, density) must vary across the video to support the motif's state-change (Phase 3.4). A reactbits background that holds identical props across every scene is decoration, not narrative.
+
+Two patterns:
+
+- **Same component, two prop snapshots.** `Aurora` with `colorStops={[brand.muted, brand.background]}` in the problem scene, `colorStops={[brand.primary, brand.accent]}` in the solution. Same shader, opposite emotional reading.
+- **Two complementary backgrounds across the arc.** `DarkVeil` (problem, low light) → `LightRays` (solution, breakthrough). Two components from the same mood family, opposite intensity.
+
+A pre-render check (Phase 6.1) rejects videos where a reactbits component is referenced with byte-identical props in every scene that uses it.
+
+### Rule 13: 3D supports the focal element, never replaces it
+
+3D moments (flying logos, 3D card stacks, extruded match-cuts — see `references/3d-elements.md`) belong in the **opening hook**, the **CTA finale**, or as a **brief match-cut bridge**. They do not belong during code-snippet, `LibrarySwap`, `BeforeAfter`, or `BulletList` beats.
+
+Two enforcement principles:
+
+- **3D either owns the frame or sits still.** Concurrent 3D camera motion + 2D headline entry breaks figure/ground discipline. If the 3D logo flies in, the headline holds. If the headline animates, the 3D stays static.
+- **The "≥3× foreground motion rate vs. background motion" rule extends to 3D.** A 3D background scene rotates at ~0.3–1°/frame; the foreground's 2D animations complete in ~0.5–1s. Same-rate motion in both layers stalls the eye.
+
+When a brand asset is a literal physical metaphor (kite for "soaring", rocket for "deploy", lock for "secure"), the 3D treatment is *demonstrating* the metaphor, not decorating — the rocket actually launches, the lock actually clicks shut. That's the highest-value use of 3D in this skill.
+
 ## Hook Enforcement Rules
 
 Hard rules applied whenever the skill writes or edits HookTitle scene text. See `hooks/hook-rules.md` and `hooks/hook-patterns.md` for details.
@@ -833,7 +962,7 @@ If any rule fails, the skill proposes up to 3 alternative hooks that comply.
 
 Applied whenever the skill generates or edits any scene.
 
-1. **Backgrounds**: every scene root carries `data-bg="…"` — variants: `primary-glow` (radial glow of the brand primary at top-left), `vignette` (dark vignette around the edges for focus scenes; ships with a danger-tinted overlay on the problem side), `diagonal` (subtle accent→primary linear gradient), `flat` (no overlay). Flat background fills are banned by default — if a scene absolutely needs one (e.g. UIShowcase, where the captured UI carries the visual), document why in a leading HTML comment and use `data-bg="flat"` explicitly.
+1. **Backgrounds**: every scene root carries `data-bg="…"` — variants: `primary-glow` (radial glow of the brand primary at top-left), `vignette` (dark vignette around the edges for focus scenes; ships with a danger-tinted overlay on the problem side), `diagonal` (subtle accent→primary linear gradient), `flat` (no overlay), `reactbits` (cinematic animated background — mounts a frame-locked reactbits component into `[data-reactbits-mount]`; pair with `data-bg-scrim="strong"` for code-heavy scenes). Flat background fills are banned by default — if a scene absolutely needs one (e.g. UIShowcase, where the captured UI carries the visual), document why in a leading HTML comment and use `data-bg="flat"` explicitly. See `references/reactbits-catalog.md` for selection guidance on the `reactbits` variant and Rule 11 for when to reach for it.
 2. **Text alignment — pick ONE per scene, never mix.** A single scene must use ONE text alignment for every text element it contains. Mixing alignments inside a scene (e.g., left-aligned headline + centered tagline + left-aligned caption) reads as broken — the eye has no anchor to track and the layout looks like assembled fragments rather than a designed scene.
    - **Centered scenes**: hooks, titles, CTAs, emphatic one-liners — every text element in the scene is centered, including any sub-captions or taglines that follow the headline.
    - **Left-aligned scenes**: lists, prose paragraphs, side-by-side panels, code-card scenes — every text element is left-aligned, including the section captions above each panel.

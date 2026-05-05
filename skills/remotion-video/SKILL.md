@@ -180,6 +180,38 @@ Before picking a story pattern, identify the **signature visual motif** that wil
 
 Do NOT skip this step. A video without a derived motif defaults to generic bullet-list storytelling and fails the generic test (Storytelling Rule 10).
 
+### Step 3.0b — Background selection (gradients vs. reactbits vs. 3D)
+
+After the motif is approved, decide the **per-scene background language**. The default `<SceneBackground>` gradient variants (`primary-glow`, `vignette`, `diagonal`, `flat`) remain the safe choice for many scenes — especially **hooks and CTAs that need clean focus on text** and **code-dense delivery scenes** where any busy backdrop fights the foreground.
+
+Reach for richer backdrops when the story earns them:
+
+1. **Reactbits animated background** — pick from `references/reactbits-catalog.md` when a scene's mood maps to one of the catalog entries. Use sparingly: 1–2 reactbits scenes per video typically beats every-scene reactbits, because contrast between flat-gradient and rich-shader scenes is itself a narrative beat. Match the background to:
+   - The **motif verb** (catalog has a verb-to-background quick-pick table — `LineWaves` for audio, `LiquidEther` for sync, `Radar` for search, `Hyperspeed` for ship/deploy CTA, etc.).
+   - The **scene mood** in the color script (Rule 8): calm/atmospheric for hook/CTA, tension for problem, hype for the moment of resolution.
+   - The **state-change axis** (Phase 3.4) — the chosen background must drive at least one prop (intensity, color, speed) from `frame` or scene-state, otherwise it's decoration.
+
+2. **3D moment** — pick when the story has an establishing-shot hook (3D logo flythrough), a CTA finale that earns lift-off, a direct metaphor (rocket for "deploy", kite for "soar", lock for "secure"), or a match-cut bridge. See `references/3d-elements.md` for patterns. 3D moments **own their scene's frame** — no competing 2D motion. Do NOT use 3D during code-snippet / `LibrarySwap` / bullet-list beats.
+
+3. **Default gradient variants** — everything else. Always valid. Never apologize for using them.
+
+**Confirm with user:**
+
+> "For backgrounds I'm proposing:
+> - Scene 1 (Hook): **`primary-glow`** gradient (clean focus on text)
+> - Scene 2 (Problem): **`DarkVeil`** reactbits (tension mood, drives `darkness` prop from problem→worse)
+> - Scene 3 (LibrarySwap): **`diagonal`** gradient (clean for code)
+> - Scene 4 (CTA): **3D logo lift + LightRays** reactbits (cinematic resolution)
+>
+> This gives variance across scenes and keeps code-heavy beats clean. Approve, swap any scene's background, or stick all-gradients?"
+
+If the user picks any reactbits or 3D options:
+- Add `--gl=angle` to the planned render command.
+- Schedule the corresponding install in Phase 4.2.
+- Schedule the per-component reactbits adapter patch in Phase 4.5 (new step).
+
+**Defaults when uncertain:** if the story plan doesn't strongly call for atmosphere, default to gradient variants for the entire video. A clean, well-paced gradient video beats a poorly-adapted reactbits video every time.
+
 ### Step 3.1 — Detect story pattern
 
 Scan the PR/input for signals and pick one of 5 patterns. See the detection signals table in `patterns/README.md` — that file is the single source of truth.
@@ -364,7 +396,8 @@ Copy files from `skills/remotion-video/templates/project/` (stripping the `.temp
 - `highlight.tsx.template` → `src/highlight.tsx` (text emphasis helper — renders `**word**` in primary color)
 - `shiki-theme.ts.template` → `src/shiki-theme.ts` (brand-derived Shiki theme — keywords in primary, strings in accent, comments in muted, background transparent)
 - `highlighted-code.tsx.template` → `src/highlighted-code.tsx` (wraps `shiki` for Remotion async frame capture; defaults to `brandShikiTheme`)
-- `scene-background.tsx.template` → `src/scene-background.tsx` (brand-tinted scene wrapper — every scene uses this)
+- `scene-background.tsx.template` → `src/scene-background.tsx` (brand-tinted scene wrapper — every scene uses this; supports `reactbits` variant)
+- `reactbits-adapter.tsx.template` → `src/reactbits-adapter.tsx` (frame-locking helpers for reactbits backgrounds — only needed when at least one scene uses `variant="reactbits"`)
 - `Main.tsx.template` → `src/Main.tsx` (scene dispatcher)
 
 Copy all `.tsx` files from `skills/remotion-video/templates/scenes/` into `<project-root>/src/scenes/`.
@@ -382,6 +415,11 @@ Example (pnpm):
 ```bash
 pnpm --dir marketing/<feature-slug>/remotion install
 ```
+
+**Conditional installs** based on Phase 3.0b decisions:
+
+- If any scene uses a reactbits background → no extra npm dep yet (reactbits ships via shadcn-add in Step 4.5; the components copy themselves into the project). Most reactbits backgrounds pull `ogl` as a transitive dep when their `add` command runs — that's expected.
+- If any scene uses 3D (`<ThreeCanvas>`) → also install: `@remotion/three @react-three/fiber three @types/three`. Optional: `@react-three/drei` (cameras, `<RoundedBox>`) when the 3D pattern needs it. See `references/3d-elements.md`.
 
 ### Step 4.3 — Write `story.ts`
 
@@ -417,6 +455,48 @@ When the story plan calls for a scene shape the 9 bundled templates can't expres
 6. Must be registered in `src/Root.tsx` alongside the bundled scenes
 
 Use `remotion-best-practices` skill when available for guidance. Fallback to baseline Remotion docs patterns.
+
+### Step 4.5 — Reactbits adapter (only when reactbits is selected)
+
+Skip this step entirely if Phase 3.0b chose only gradient variants. When at least one scene uses `variant="reactbits"`:
+
+1. **Install the chosen background(s) via shadcn**, from inside the scaffolded project:
+
+   ```bash
+   pnpm --dir marketing/<feature-slug>/remotion dlx shadcn@latest add @react-bits/<Name>-TS-CSS
+   ```
+
+   Use `TS-CSS` — the project is TypeScript. The component lands at `src/components/<Name>/<Name>.tsx` (or wherever `components.json` resolves). License: MIT + Commons Clause; commercial use in user marketing videos is permitted.
+
+2. **Patch the component for frame-locking.** Reactbits components animate via `requestAnimationFrame` + `performance.now()`, which freezes under Remotion's per-frame render. Apply the per-component patch from `references/reactbits-catalog.md`. The general shape:
+
+   - Add imports: `import { useCurrentFrame, useVideoConfig } from "remotion";`
+   - Inside the component, derive `const time = useCurrentFrame() / useVideoConfig().fps;`
+   - In the render loop's `useEffect`, set `program.uniforms.uTime.value = time;` (or the equivalent shader uniform), then call `renderer.render(...)` once and **return** — delete the original `requestAnimationFrame` recursive loop.
+   - Pass `[frame, fps, ...other-deps]` to that `useEffect`'s dep array so it fires per frame.
+   - Force-disable any mouse interaction prop (`mouseInteraction={false}`, `mouseReact={false}`, `enableMouseInteraction={false}`, etc. — varies per component).
+
+3. **For R3F components (`Beams`, `Dither`)**: do NOT use `useFrame`. Pass `frame` from the parent into JSX attributes directly, or use `useFrameEffect` from `src/reactbits-adapter.tsx`.
+
+4. **Typecheck after patching**: `pnpm exec tsc --noEmit`. Self-correct up to 2 times on failure before surfacing to the user.
+
+5. **Wire into the scene** that referenced `variant="reactbits"`:
+
+   ```tsx
+   import Aurora from "../../components/Aurora/Aurora";
+   // ...
+   <SceneBackground
+     variant="reactbits"
+     reactbits={<Aurora colorStops={[brand.colors.primary, brand.colors.accent]} />}
+     scrim={0.4}
+   >
+     {/* foreground */}
+   </SceneBackground>
+   ```
+
+   `scrim` defaults to 0.35; raise to 0.5–0.7 if hero text fails the squint test from Layout Rule 6.
+
+6. **Update render command** to include `--gl=angle` (or `--gl=swangle` on macOS/Linux). The skill adds this flag automatically in Phase 6.2 when any reactbits or 3D scene is present.
 
 ## Phase 5: First Draft + Iterate
 
@@ -544,6 +624,12 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 - [ ] **Visual chunk cap (≤4 per frame)**: every scene's hero frame contains ≤4 distinct visual chunks (where a chunk is a Gestalt group, not a single element). Counts: title, motif, code card, trace tree = 4 chunks. Adding an attribute chip row pushes to 5 — must merge via similarity (chips and tree share color/font) or split scene. See Visual Cognition Rule A.
 - [ ] **One pre-attentive cue per focal element**: each focal element is marked by exactly one dominant cue (color OR size OR motion OR orientation), not multiple. Two or more competing cues force conjunction search and double parse time. See Visual Cognition Rule B.
 - [ ] **Reading flow matches scene type**: hero/sparse scenes lay out for Z-pattern, code-heavy scenes for F-pattern, multi-card scenes for layer-cake. Misplaced elements (e.g. CTA URL in top-left of a sparse scene, code caption far from the focused line) fail this check. See Visual Cognition Rule C.
+- [ ] **Reactbits frame-locking**: every scene with `variant="reactbits"` references a component patched per Step 4.5 — its render `useEffect` includes `useCurrentFrame()` in deps, mouse-interaction props are forced false, and no surviving `requestAnimationFrame` recursive loop exists in the patched file. Grep the patched component for `requestAnimationFrame(.*update` — must match zero. See Rule 11–12.
+- [ ] **Reactbits state-change observed**: any reactbits component referenced in ≥2 scenes has at least one prop varying between those scenes (color, intensity, speed, amplitude, or density) — byte-identical reuse across all referencing scenes fails this check. See Rule 12.
+- [ ] **Render command includes `--gl`**: when any scene uses `variant="reactbits"` or `<ThreeCanvas>`, the planned render command includes `--gl=angle` (Windows) or `--gl=swangle` (cross-platform fallback). Without it, WebGL is unavailable in headless Chromium and the scene renders black. See Step 4.5 and `references/3d-elements.md`.
+- [ ] **WCAG 2.3.1 photosensitive-seizure ceiling**: backgrounds in the strobe-risk family (`Lightning`, `LetterGlitch`, `PrismaticBurst`, `FaultyTerminal`) are configured below the 3-flashes/sec threshold (catalog notes per-component caps). Above-threshold defaults must be lowered before render — refuse otherwise.
+- [ ] **3D scene owns its frame**: any scene using `<ThreeCanvas>` either has all 2D foreground animations complete before the 3D motion starts, or has the 3D scene held static while 2D animates. Concurrent 3D camera + 2D-headline entry in the same scene fails this check. See Rule 13.
+- [ ] **No `useFrame` in 3D scenes**: grep all files under `src/scenes/` for `useFrame` — must match zero. R3F's `useFrame` reads wall-clock time and won't capture deterministically. Replace with frame-derived JSX attributes or `useFrameEffect` from `src/reactbits-adapter.tsx`. See `references/3d-elements.md`.
 
 ### Step 6.2 — Render mp4 + poster
 
@@ -552,19 +638,19 @@ Stop the Remotion Studio background process first.
 For a single-aspect video:
 
 ```bash
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2
-pnpm --dir marketing/<feature-slug>/remotion exec remotion still src/index.ts Main out/poster.jpg --frame 0 --image-format png --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts Main out/video.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2 --gl=angle
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still src/index.ts Main out/poster.jpg --frame 0 --image-format png --scale 2 --gl=angle
 ```
 
 For multi-format (user picked 4 in Q2.2), render each composition:
 
 ```bash
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainLandscape out/video-landscape.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2
-pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainLandscape out/poster-landscape.jpg --frame 0 --image-format png --scale 2
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainSquare    out/video-square.mp4    --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2
-pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainSquare    out/poster-square.jpg   --frame 0 --image-format png --scale 2
-pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainVertical  out/video-vertical.mp4  --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2
-pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainVertical  out/poster-vertical.jpg --frame 0 --image-format png --scale 2
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainLandscape out/video-landscape.mp4 --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2 --gl=angle
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainLandscape out/poster-landscape.jpg --frame 0 --image-format png --scale 2 --gl=angle
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainSquare    out/video-square.mp4    --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2 --gl=angle
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainSquare    out/poster-square.jpg   --frame 0 --image-format png --scale 2 --gl=angle
+pnpm --dir marketing/<feature-slug>/remotion exec remotion render src/index.ts MainVertical  out/video-vertical.mp4  --codec h264 --crf 14 --image-format png --pixel-format yuv420p --scale 2 --gl=angle
+pnpm --dir marketing/<feature-slug>/remotion exec remotion still  src/index.ts MainVertical  out/poster-vertical.jpg --frame 0 --image-format png --scale 2 --gl=angle
 ```
 
 Move artifacts from `<project>/out/` to `marketing/<feature-slug>/`:
@@ -727,6 +813,43 @@ Before rendering, run this self-check against every scene. If the answer to ANY 
 
 If a scene fails the test, the fix is rarely "change the copy". It's a layout or visual-element change: add a signature thread appearance, introduce a domain-specific glyph, replace a bullet with a concrete evidence card, pull a real symbol name from the source.
 
+### Rule 11: Background selection follows mood and motif, not novelty
+
+Animated backgrounds (reactbits or otherwise) are not a uniform upgrade over gradient variants. They earn their place when they reinforce the **mood** of the scene and the **verb** of the motif. Picking `Hyperspeed` for a calm enterprise auth story is wrong even though it's flashy. Picking `DotGrid` for a music-generation hero is bland even though it's dev-trusted.
+
+The decision flow:
+
+1. Identify the scene's narrative mood: calm, technical, hype, tension, playful, atmospheric, premium.
+2. Look up the verb in `references/reactbits-catalog.md`'s motif-verb table; if there's a near-direct map (`Radar` for search, `LineWaves` for audio), prefer that.
+3. If verb maps to multiple candidates, pick by mood column.
+4. If neither verb nor mood produces a confident match, **stay on the gradient variant**. A clean gradient beats a mismatched shader.
+
+**Hooks and CTAs default to gradients** unless the story specifically calls for cinematic atmosphere. Code-dense scenes default to gradients always — a busy backdrop fights the foreground.
+
+Mixing 1–2 reactbits scenes against 2–3 gradient scenes is the strongest visual rhythm: the contrast between flat and atmospheric reads as a beat.
+
+### Rule 12: Background must reinforce the motif's state-change axis
+
+If a reactbits background is used, at least one of its props (intensity, color, speed, amplitude, density) must vary across the video to support the motif's state-change (Phase 3.4). A reactbits background that holds identical props across every scene is decoration, not narrative.
+
+Two patterns:
+
+- **Same component, two prop snapshots.** `Aurora` with `colorStops={[brand.muted, brand.background]}` in the problem scene, `colorStops={[brand.primary, brand.accent]}` in the solution. Same shader, opposite emotional reading.
+- **Two complementary backgrounds across the arc.** `DarkVeil` (problem, low light) → `LightRays` (solution, breakthrough). Two components from the same mood family, opposite intensity.
+
+A pre-render check (Phase 6.1) rejects videos where a reactbits component is referenced with byte-identical props in every scene that uses it.
+
+### Rule 13: 3D supports the focal element, never replaces it
+
+3D moments (flying logos, 3D card stacks, extruded match-cuts — see `references/3d-elements.md`) belong in the **opening hook**, the **CTA finale**, or as a **brief match-cut bridge**. They do not belong during code-snippet, `LibrarySwap`, `BeforeAfter`, or `BulletList` beats.
+
+Two enforcement principles:
+
+- **3D either owns the frame or sits still.** Concurrent 3D camera motion + 2D headline entry breaks figure/ground discipline. If the 3D logo flies in, the headline holds. If the headline animates, the 3D stays static.
+- **The "≥3× foreground motion rate vs. background motion" rule extends to 3D.** A 3D background scene rotates at ~0.3–1°/frame; the foreground's 2D animations complete in ~0.5–1s. Same-rate motion in both layers stalls the eye.
+
+When a brand asset is a literal physical metaphor (kite for "soaring", rocket for "deploy", lock for "secure"), the 3D treatment is *demonstrating* the metaphor, not decorating — the rocket actually launches, the lock actually clicks shut. That's the highest-value use of 3D in this skill.
+
 ## Hook Enforcement Rules
 
 Hard rules applied whenever the skill writes or edits HookTitle scene text. See `hooks/hook-rules.md` and `hooks/hook-patterns.md` for details.
@@ -743,7 +866,7 @@ If any rule fails, the skill proposes up to 3 alternative hooks that comply.
 
 Applied whenever the skill generates or edits any scene.
 
-1. **Backgrounds**: every scene uses `<SceneBackground variant="…">`. Flat background fills are banned — if a scene absolutely needs one, document why in a code comment and pass `variant="flat"` explicitly. Variants: `primary-glow` (radial glow of the brand primary at top-left), `vignette` (dark vignette around the edges for focus scenes), `diagonal` (subtle accent→primary linear gradient), `flat` (no overlay).
+1. **Backgrounds**: every scene uses `<SceneBackground variant="…">`. Flat background fills are banned — if a scene absolutely needs one, document why in a code comment and pass `variant="flat"` explicitly. Variants: `primary-glow` (radial glow of the brand primary at top-left), `vignette` (dark vignette around the edges for focus scenes), `diagonal` (subtle accent→primary linear gradient), `flat` (no overlay), `reactbits` (cinematic animated background — pass the patched reactbits component via the `reactbits` prop, plus a `scrim` opacity if the foreground is text-heavy). See `references/reactbits-catalog.md` for selection guidance and Rule 11 for when to reach for it.
 2. **Text alignment — pick ONE per scene, never mix.** A single scene must use ONE text alignment for every text element it contains. Mixing alignments inside a scene (e.g., left-aligned headline + centered tagline + left-aligned caption) reads as broken — the eye has no anchor to track and the layout looks like assembled fragments rather than a designed scene.
    - **Centered scenes**: hooks, titles, CTAs, emphatic one-liners — every text element in the scene is centered, including any sub-captions or taglines that follow the headline.
    - **Left-aligned scenes**: lists, prose paragraphs, side-by-side panels, code-card scenes — every text element is left-aligned, including the section captions above each panel.
