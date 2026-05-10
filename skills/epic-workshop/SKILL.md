@@ -1,11 +1,13 @@
 ---
-name: epic-instructor
-description: Use when creating, planning, scripting, or recording a workshop, exercise, or tip in the Epic Web / Epic React style — applies Kent C. Dodds' "How to be an Epic Instructor" principles to workshop design, exercise structure, video recording, and material delivery. Triggers on "create a workshop", "design an exercise", "record a workshop video", "Epic workshop", "Epic Web", "Epic React", "Epic instructor", or `/epic-instructor`.
+name: epic-workshop
+description: Use when generating, planning, authoring, or recording an Epic Web / Epic React style workshop, exercise, tip, or video. Applies Kent C. Dodds' "How to be an Epic Instructor" principles to workshop design, exercise structure, recording, and material delivery, and encodes Epic Web's exercise-comment emoji conventions. Used to generate workshops following https://www.epicweb.dev/get-started. Triggers on "create a workshop", "generate a workshop", "design an exercise", "record a workshop video", "Epic workshop", "Epic Web", "Epic React", or `/epic-workshop`.
 ---
 
-# Epic Instructor
+# Epic Workshop
 
-Encodes Kent C. Dodds' guidance on how to be an Epic instructor. Use this whenever the user is producing teaching material in the Epic Web style — workshops, exercises, tips, recorded videos, or workshop apps.
+Generates and shapes Epic Web / Epic React style workshops. Encodes Kent C. Dodds' "How to be an Epic Instructor" guidance plus Epic Web's exercise-comment emoji conventions. Use whenever the user is producing teaching material in the Epic Web style — workshops, exercises, tips, recorded videos, or workshop apps.
+
+The end goal is a workshop that fits the Epic Web getting-started flow at https://www.epicweb.dev/get-started — meaning it runs in the Epic workshop app (kcdshop), follows the welcome → exercise (intro → problem → solution → outro) → outro structure, and uses the emoji-key conventions in exercise comments.
 
 ## When this skill applies
 
@@ -146,9 +148,38 @@ If the user proposes any of these, surface the principle and ask them to reconsi
 | "I'll outsource the exercise authoring" | Instructors make their own demos |
 | "Let's keep this workshop closed-source so it stays valuable" | Give freely |
 
+## Emoji Key
+
+Epic Web exercises use a recurring cast of named emoji characters in code comments and `README.mdx` files to guide the learner through each step. Use these consistently when authoring exercise content (problem code, solution code, instructions). Don't invent new ones — the cast is fixed across all Epic Web workshops, which is how learners build intuition for what each emoji means.
+
+| Emoji | Name | Role |
+|-------|------|------|
+| 👨‍💼 | Peter the Product Manager | Tells us what our users want |
+| 🧝‍♀️ | Kellie the Co-worker | A co-worker who sometimes does work ahead of your exercises |
+| 🐨 | Kody the Koala | Tells you when there's something specific you should do |
+| 🦺 | Lily the Life Jacket | Helps with TypeScript-specific parts of the exercises |
+| 💰 | Marty the Money Bag | Gives specific tips (and sometimes code) along the way |
+| 📝 | Nancy the Notepad | Encourages you to take notes on what you're learning |
+| 🦉 | Olivia the Owl | Gives useful tidbits and best-practice notes |
+| 📜 | Dominic the Document | Gives links to useful documentation |
+| 💣 | Barry the Bomb | Hangs around anywhere you need to blow stuff up (delete code) |
+| 💪 | Matthew the Muscle | Indicates you're working with an exercise |
+| 🏁 | Chuck the Checkered Flag | Indicates you're working with a final |
+| 🚨 | Alfred the Alert | Shows up in test failures with potential explanations for why the tests are failing |
+
+### Authoring rules
+
+- **Match the emoji to the role.** Don't use Kody for a TypeScript hint — that's Lily. Don't use Olivia for a doc link — that's Dominic.
+- **Stay terse.** One sentence per emoji line. The character is the framing; the instruction is what matters.
+- **Wrong-attempt code uses 💣.** When the learner needs to delete the wrong-attempt placeholder before writing the real solution, Barry shows up there.
+- **Doc links go through 📜 Dominic.** Don't drop bare links into instructions; have Dominic introduce them.
+- **TypeScript-only friction goes through 🦺 Lily.** This keeps the main flow language-agnostic in tone even when the code is TS.
+- **🚨 Alfred lives in test output**, not in instruction prose. Use him in test assertion messages so failure logs read in-character.
+
 ## References
 
 - Workshop app: https://github.com/epicweb-dev/kcdshop
+- Epic Web getting started (workshop generator entrypoint): https://www.epicweb.dev/get-started
 - Workshop chat management: https://www.coursebuilder.dev/tips/workshop-chat-m7gb9
 - Calendar event communication: https://www.coursebuilder.dev/tips/google-calendar-for-workshop-attendee-communication-hw6c2
 - Gather.town setup: https://www.coursebuilder.dev/tips/gather-town-setup-for-online-coding-workshops-gvo8u
