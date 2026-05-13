@@ -59,6 +59,7 @@ Create the following structure inside `${CLAUDE_PROJECT_DIR}`:
 
 ```
 .agent/self-learning/
+├── .gitignore            # excludes agent-private state files
 ├── INDEX.md
 ├── lessons/
 │   └── promoted/         # empty, kept with a .gitkeep
@@ -66,6 +67,13 @@ Create the following structure inside `${CLAUDE_PROJECT_DIR}`:
 ├── curation-state.yml
 └── config.yml
 ```
+
+Agent-private state files (not in the scaffolded tree, written lazily by other commands):
+
+- `fallback-counts.json` — `/check-couplings` shape-key counters for sibling-fallback nudges.
+- `*.bak` — transient backup files.
+
+These are gitignored (see the `.gitignore` step below) so they don't pollute commits.
 
 For each file, copy from the matching template under `${CLAUDE_PLUGIN_ROOT}/templates/` and substitute placeholders:
 
@@ -111,6 +119,16 @@ Copy `${CLAUDE_PLUGIN_ROOT}/templates/config.yml.tmpl` verbatim — no substitut
 ### `.agent/self-learning/lessons/promoted/.gitkeep`
 
 Create an empty file so the directory is tracked by git.
+
+### `.agent/self-learning/.gitignore`
+
+Create with the following content so agent-private state files (counters, transient backups, OS detritus) do not pollute commits:
+
+```gitignore
+fallback-counts.json
+*.bak
+.DS_Store
+```
 
 ---
 
@@ -210,6 +228,7 @@ Print a final summary to the user with these sections:
 self-improve init — complete
 
 Files added in this repo:
+  - .agent/self-learning/.gitignore
   - .agent/self-learning/INDEX.md
   - .agent/self-learning/coupling.json
   - .agent/self-learning/coupling.schema.json

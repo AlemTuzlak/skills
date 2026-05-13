@@ -136,6 +136,7 @@ Knobs:
 
 ```
 .agent/self-learning/
+├── .gitignore               # excludes agent-private state (fallback-counts.json, *.bak, .DS_Store)
 ├── INDEX.md                 # routing descriptions of captured lessons (managed region between <!-- LESSONS:START --> ... <!-- LESSONS:END -->)
 ├── coupling.json            # architectural impact-surface rules
 ├── coupling.schema.json     # JSON Schema for coupling.json (copied at init for editor validation)
@@ -146,6 +147,11 @@ Knobs:
     └── promoted/
         └── <slug>.md        # archived lessons promoted into CLAUDE.md or skills
 ```
+
+The `.gitignore` excludes:
+- `fallback-counts.json` — `/check-couplings` writes per-shape counters to nudge the user once an unmatched shape has been seen ≥3 times; this is agent-private state, not data the team needs to share.
+- `*.bak` — transient backup files.
+- `.DS_Store` — macOS Finder metadata.
 
 ### Global (`~/.agent/self-learning/`)
 
