@@ -87,19 +87,32 @@ fi
 
 # --- Helper: does a regex compile in grep -E? ---
 is_valid_regex() {
-  printf '' | grep -qE "$1" 2>/dev/null
+  local pat="$1"
+  local id="${2:-<unknown>}"
+  printf '' | grep -qE "$pat" 2>/dev/null
+  local rc=$?
   # grep returns 1 on no-match (regex is valid). Returns 2 on invalid regex.
-  [ $? -ne 2 ]
+  if [ "$rc" -eq 2 ]; then
+    printf '[self-improve] warning: coupling `%s` has invalid trigger/target regex: %s\n' "$id" "$pat" >&2
+    return 1
+  fi
+  return 0
 }
 
 # --- Helper: does any line in $1 (changed files) match pattern $2 (regex first, glob fallback)? ---
 # Returns 0 (success) on match, 1 on no match.
+#
+# Substring containment was previously a third fallback, but it over-matched
+# (e.g. trigger "src/index" wrongly matched any file with "src/index" anywhere
+# in its path, including unrelated nested matches). Triggers must match by
+# regex or glob only.
 files_match_pattern() {
   local files="$1"
   local pattern="$2"
+  local coupling_id="${3:-<unknown>}"
 
   # Try regex first.
-  if is_valid_regex "$pattern"; then
+  if is_valid_regex "$pattern" "$coupling_id"; then
     if printf '%s\n' "$files" | grep -qE "$pattern" 2>/dev/null; then
       return 0
     fi
@@ -112,10 +125,6 @@ files_match_pattern() {
     case "$f" in
       $pattern) return 0 ;;
     esac
-    # Also check substring containment for simple path triggers.
-    case "$f" in
-      *"$pattern"*) return 0 ;;
-    esac
   done <<< "$files"
 
   return 1
@@ -125,12 +134,13 @@ files_match_pattern() {
 file_under_target() {
   local files="$1"
   local target="$2"
+  local coupling_id="${3:-<unknown>}"
 
   # Strip trailing slash for cleaner prefix match.
   local clean_target="${target%/}"
 
   # Try regex match.
-  if is_valid_regex "$target"; then
+  if is_valid_regex "$target" "$coupling_id"; then
     if printf '%s\n' "$files" | grep -qE "$target" 2>/dev/null; then
       return 0
     fi
@@ -160,7 +170,7 @@ while [ "$i" -lt "$n" ]; do
   id="$(jq -r ".couplings[$i].id" "$COUPLING_JSON")"
   trigger="$(jq -r ".couplings[$i].trigger" "$COUPLING_JSON")"
 
-  if files_match_pattern "$all_changed_files" "$trigger"; then
+  if files_match_pattern "$all_changed_files" "$trigger" "$id"; then
     # Triggered. Walk impacts.
     impact_count="$(jq -r ".couplings[$i].impacts | length" "$COUPLING_JSON")"
     j=0
@@ -181,7 +191,7 @@ while [ "$i" -lt "$n" ]; do
       matched=0
       while IFS= read -r t; do
         [ -z "$t" ] && continue
-        if file_under_target "$all_changed_files" "$t"; then
+        if file_under_target "$all_changed_files" "$t" "$id"; then
           matched=1
           break
         fi
@@ -222,12 +232,41 @@ fi
 } >&2
 
 # --- Decide on blocking ---
+#
+# Parse `pre_push_block` scoped to the `enforcement:` block. The previous
+# implementation grabbed the first `^pre_push_block:` line in the file, which
+# would silently honour the field at top-level. Walk the file line-by-line and
+# only accept the value when we're inside the `enforcement:` section.
+#
+# Inline comments (`# ...`) are stripped from the value so that
+# `pre_push_block: true   # warn only` parses as `true`, not `true   # warn only`.
 pre_push_block="true"
 if [ -f "$CONFIG_YML" ]; then
-  v="$(grep -E '^[[:space:]]*pre_push_block:[[:space:]]*' "$CONFIG_YML" | head -n1 | sed -E 's/^[[:space:]]*pre_push_block:[[:space:]]*//; s/[[:space:]]+$//' | tr -d '\r')"
-  case "$v" in
-    true|false) pre_push_block="$v" ;;
-  esac
+  in_enforcement=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    # Detect leaving enforcement section: any non-indented key resets the flag.
+    if [ "$in_enforcement" -eq 1 ] && printf '%s' "$line" | grep -qE '^[A-Za-z_]'; then
+      in_enforcement=0
+    fi
+    # Detect entering enforcement section.
+    if printf '%s' "$line" | grep -qE '^enforcement:[[:space:]]*$'; then
+      in_enforcement=1
+      continue
+    fi
+    if [ "$in_enforcement" -eq 1 ]; then
+      if printf '%s' "$line" | grep -qE '^[[:space:]]+pre_push_block:[[:space:]]*'; then
+        v="$(printf '%s' "$line" \
+          | sed -E 's/^[[:space:]]+pre_push_block:[[:space:]]*//' \
+          | sed -E 's/#.*$//' \
+          | sed -E 's/[[:space:]]+$//' \
+          | tr -d '\r')"
+        case "$v" in
+          true|false) pre_push_block="$v" ;;
+        esac
+        break
+      fi
+    fi
+  done < "$CONFIG_YML"
 fi
 
 if [ "$any_fail" -eq 0 ]; then
