@@ -95,13 +95,31 @@ Preserve everything that's already inside the markers — append after existing 
 
 Write the updated `CLAUDE.md`.
 
-### 3c. Replace the lesson file with a redirect stub
+### 3c. Replace the lesson file body with a redirect stub (preserve frontmatter)
 
 Compute today's date as `YYYY-MM-DD` (UTC).
 
-Overwrite the original lesson file with **only** this content (no frontmatter):
+**Preserve the original frontmatter** so that downstream tooling (the `/learn` contradiction check, the curation walker, the INDEX renderer) can still see the lesson exists and is marked as promoted. Mutate the frontmatter in place:
+
+- Set `promoted: true` (add the key if absent).
+- Set `promoted_at: <YYYY-MM-DD>`.
+- Preserve every other field unchanged (`description`, `scope`, `tags`, `related_skill`, `created`, `source`, `supersedes`, etc.).
+
+Replace the **body** (everything after the closing `---` of the frontmatter) with the redirect stub:
 
 ```markdown
+Promoted to CLAUDE.md on <YYYY-MM-DD>. Body lives at CLAUDE.md > <Title>.
+```
+
+The final file shape:
+
+```markdown
+---
+<preserved frontmatter>
+promoted: true
+promoted_at: <YYYY-MM-DD>
+---
+
 Promoted to CLAUDE.md on <YYYY-MM-DD>. Body lives at CLAUDE.md > <Title>.
 ```
 
