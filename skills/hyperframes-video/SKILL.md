@@ -830,7 +830,7 @@ Read `npx hyperframes render --help` once at scaffold time and pick the closest 
 Try the CLI's still flag first (e.g. `--still`, `--poster`, or whatever the current version exposes — check `--help`). Fall back to ffmpeg:
 
 ```bash
-ffmpeg -ss 0 -frames:v 1 -i out/video.mp4 out/poster.jpg
+ffmpeg -ss 0 -i out/video.mp4 -frames:v 1 out/poster.jpg
 ```
 
 Move artifacts from `<project>/out/` to `marketing/<feature-slug>/`:
