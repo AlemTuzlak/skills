@@ -97,11 +97,15 @@ The <scope> lesson pile is not initialized. Run /self-improve init in <repo|home
 
 ---
 
-## Step 5: Compute slug
+## Step 5: Compute slug and filename
 
 Derive a kebab-case slug from the rule's *intent* (not a verbatim slugify — pick the salient noun-phrase). Cap at 50 chars. Strip trailing hyphens. Lowercase ASCII + digits + hyphens only.
 
-If `${lessons_dir}/<slug>.md` already exists, append a numeric suffix: `<slug>-2`, `<slug>-3`, etc.
+Compute today's UTC date as `YYYY-MM-DD`. The lesson filename is `<YYYY-MM-DD>-<slug>.md` (the date prefix gives chronological sort and disambiguates re-use of the same intent on different dates).
+
+If `${lessons_dir}/<YYYY-MM-DD>-<slug>.md` already exists, append a numeric suffix: `<YYYY-MM-DD>-<slug>-2.md`, `<YYYY-MM-DD>-<slug>-3.md`, etc.
+
+In subsequent steps, references to "`<slug>`" in the lesson filename mean the full `<YYYY-MM-DD>-<slug>` prefix; the bare slug is still used for INDEX entries and for the lesson's frontmatter `slug:` field.
 
 ---
 
@@ -181,7 +185,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/templates/lesson.md.tmpl` and substitute placeholder
 | `{{when-where-this-kicks-in}}` | concrete description of when this rule should be applied |
 | `{{optional-extended-body}}` | omit unless the rule needs elaboration |
 
-Write the substituted content to `${lessons_dir}/<slug>.md`. Ensure `${lessons_dir}` exists (`mkdir -p`).
+Write the substituted content to `${lessons_dir}/<YYYY-MM-DD>-<slug>.md` (the full date-prefixed filename from Step 5). Ensure `${lessons_dir}` exists (`mkdir -p`).
 
 ---
 
@@ -198,7 +202,7 @@ Read `${index_path}`. Locate the marker block:
 Inside that block, append a single line (idempotently — if the exact line already exists, do not duplicate it):
 
 ```
-- [<slug>](lessons/<slug>.md) — <description from the lesson's frontmatter>
+- [<slug>](lessons/<YYYY-MM-DD>-<slug>.md) — <description from the lesson's frontmatter>
 ```
 
 Where `<description from the lesson's frontmatter>` is the `description:` field you wrote in Step 7 (e.g. `Use when … — …`). Preserve existing entries and the markers.
