@@ -4,9 +4,9 @@ This file maps each locked decision in `F:/projects/tanstack/ai/.claude/specs/20
 
 | # | Decision (spec §10) | Implementation file(s) | Verified |
 |---|---|---|---|
-| 1 | **Form factor:** Global Claude Code plugin, published to marketplace. | `F:/projects/skills/skills/self-improve/.claude-plugin/plugin.json`, `F:/projects/skills/.claude-plugin/marketplace.json` | ✅ |
+| 1 | **Form factor:** Global Claude Code plugin, published to marketplace. | `skills/self-improve/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` (paths relative to the skills marketplace repo root) | ✅ |
 | 2 | **Packaging:** Plugin source lives in the user's skills marketplace repo at `<skills-repo>/skills/self-improve/`. Plugin installs into `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/` per Claude Code's plugin loader. Mirror sync scripts are not used; development uses `--plugin-dir`. | Plugin tree under `skills/self-improve/`; `.claude-plugin/plugin.json` declares the plugin manifest; the parent marketplace's `marketplace.json` references it via `source: "./skills/self-improve"`. Cache layout documented in `RESEARCH.md` §6. | ✅ |
-| 3 | **Trigger model:** Hybrid — hook-based auto-detection (regex pre-filter) + slash command. | `F:/projects/skills/skills/self-improve/hooks/hooks.json` (UserPromptSubmit registration), `hooks/user-prompt-submit.sh` (regex pre-filter + additionalContext injection), `lib/regex-patterns.json` (correction + coupling patterns), `commands/*.md` (slash commands). | ✅ |
+| 3 | **Trigger model:** Hybrid — hook-based auto-detection (regex pre-filter) + slash command. | `skills/self-improve/hooks/hooks.json` (UserPromptSubmit registration), `hooks/user-prompt-submit.sh` (regex pre-filter + additionalContext injection), `lib/regex-patterns.json` (correction + coupling patterns), `commands/*.md` (slash commands). | ✅ |
 | 4 | **Portability:** CC-only automation, portable `.agent/` data layer namespaced under `.agent/self-learning/`, AGENTS.md + CLAUDE.md both reference it. | `templates/INDEX.md.tmpl`, `templates/coupling.json.tmpl`, `templates/coupling.schema.json`, `templates/config.yml.tmpl`, `templates/curation-state.yml.tmpl` (data layer); `commands/self-improve-init.md` Step 4 inserts the same `<!-- SELF-IMPROVE:START --> ... <!-- SELF-IMPROVE:END -->` reference block into both `CLAUDE.md` and `AGENTS.md`. | ✅ |
 | 5 | **Scope of plugin:** Global install, repo opts in by `/self-improve init` creating `.agent/self-learning/`. | `commands/self-improve-init.md` (bootstrap procedure); `hooks/user-prompt-submit.sh` activation gate (no-op unless `<cwd>/.agent/self-learning/` or `$HOME/.agent/self-learning/` exists, lines 41–50). | ✅ |
 | 6 | **Model invocation:** No direct LLM calls from hooks; `additionalContext` injection delegates classification to main model. | `hooks/user-prompt-submit.sh` (emits JSON with `additionalContext` only, no API calls); `hooks/pre-push.sh` (pure git/jq, no model calls); `commands/*.md` all run inside the main model's turn. | ✅ |
@@ -29,3 +29,24 @@ This file maps each locked decision in `F:/projects/tanstack/ai/.claude/specs/20
 - No occurrences of the legacy `${pluginDir}` variable outside `RESEARCH.md` (where the bug fix is documented).
 - Both hook scripts (`hooks/pre-push.sh`, `hooks/user-prompt-submit.sh`) have the executable bit set.
 - 26 phase commits on `feature/self-improve-plugin` ahead of `main`.
+
+## CR Round 1 fixes (branch `cr-fix-r1`)
+
+Sixteen follow-up commits applied on top of the original phase commits to address findings from a 7-agent code review. Each line is one commit:
+
+1. `feat(self-improve): config-driven skills_repo path` — replace hardcoded `F:/projects/skills` with a configurable `skills_repo` field (default `~/.claude/skills`). Threaded through `/improve-skill`, `/promote-cluster`, `/promote-skill`, `/learn` Step 9.
+2. `fix(self-improve): rename /self-improve-init -> /self-improve with init subcommand` — slash-command name now matches the documented `/self-improve init` form.
+3. `fix(self-improve): wrap hook command with bash for Windows compatibility` — `hooks.json` now invokes the script via `bash` so Windows runs it.
+4. `fix(self-improve): stop polluting context on neutral prompts` — `UserPromptSubmit` hook gates INDEX injection on at least one signal firing.
+5. `fix(self-improve): prefix /learn lesson filename with YYYY-MM-DD date` — matches README + integration-test expectations.
+6. *(Bundled into #1)* `/improve-skill` step ordering + dynamic default-branch detection.
+7. `fix(self-improve): pre-push hook - drop substring fallback, fix YAML scoping` — `pre-push.sh` cleanup.
+8. `fix(self-improve): UserPromptSubmit hook YAML parsing + set -u defense` — independent strictness per detection type; date comparison rewritten without `-o`; stanza variables initialised.
+9. `fix(self-improve): tighten regex pre-filter patterns` — drop overly broad patterns (`instead of`, `impacts?`, `needs ... when`), tighten `if X changes` to require an identifier-like subject. Test cases updated.
+10. `fix(self-improve): /learn skill-threshold count skips lessons/promoted/` — already-absorbed lessons no longer re-trigger the nag.
+11. *(Bundled into #1)* `[skill-name]` square-bracket placeholders in bash commands.
+12. `fix(self-improve): /promote --to claude-md preserves lesson frontmatter` — promoted lessons still readable by contradiction-check.
+13. `fix(self-improve): /self-improve init scaffolds .gitignore for agent-private state` — `fallback-counts.json`, `*.bak`, `.DS_Store`.
+14. `fix(marketplace): drop alemtuzlak-skills entry; fill self-improve fields` — entry referenced a non-existent plugin manifest at repo root.
+15. `docs(self-improve): clean up stale notes and fix plugin cache path` — SKILL.md, VERIFICATION.md, README troubleshooting glob.
+16. `fix(self-improve): integration test plan portability fixes` — git identity, bare-repo for Test 5, portable yesterday-date, explicit `git add` paths, GNU-grep note.
