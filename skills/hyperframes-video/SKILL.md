@@ -312,7 +312,7 @@ In interactive mode, present findings (the block above) and ask for confirmation
 Present findings as:
 
 > "I found:
-> - Logo: `public/logo.svg`
+> - Logo: `media/header_ai.png` (copied from `public/logo.svg`)
 > - Primary: `#0066ff` (from `tailwind.config.js`)
 > - Font: `Inter` (from `next/font`)
 >
