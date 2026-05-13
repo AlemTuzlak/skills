@@ -16,9 +16,16 @@ mkdir -p "$repo/packages/foo-a/src" "$repo/packages/foo-b/src" "$repo/packages/f
 echo "export const a = 1" > "$repo/packages/foo-a/src/index.ts"
 echo "export const b = 1" > "$repo/packages/foo-b/src/index.ts"
 echo "export const c = 1" > "$repo/packages/foo-c/src/index.ts"
-git -C "$repo" init && git -C "$repo" add -A && git -C "$repo" commit -m "initial"
+git -C "$repo" init
+# Set a local git identity so `git commit` doesn't fail on a fresh machine that
+# has no global user.email / user.name configured.
+git -C "$repo" config user.email "test@example.com"
+git -C "$repo" config user.name "Test"
+git -C "$repo" add -A && git -C "$repo" commit -m "initial"
 echo "Test repo at $repo"
 ```
+
+Note: the regex-test helper (`tests/test-regex.sh`) and the pre-push hook both rely on GNU grep's `\b` word-boundary anchor. On macOS, install GNU grep via Homebrew (`brew install grep`) and ensure `ggrep` is on PATH (or alias `grep=ggrep`) before running Tests 3, 4, or 5.
 
 The three sibling `packages/foo-*` directories give the bootstrap coupling scan something realistic to detect.
 
@@ -28,7 +35,7 @@ The three sibling `packages/foo-*` directories give the bootstrap coupling scan 
 
 **Action:**
 ```bash
-claude --plugin-dir F:/projects/skills/skills/self-improve
+claude --plugin-dir <path-to-skills-repo>/skills/self-improve
 ```
 
 Once CC starts, list loaded plugins. Use whichever of these the current CC build supports — confirm in the menu:
@@ -112,13 +119,26 @@ Once CC starts, list loaded plugins. Use whichever of these the current CC build
 **Action:**
 ```bash
 cd "$repo"
+# `git push` only invokes the pre-push hook when a remote is configured.
+# Create a local bare repo so the hook actually runs without a network call.
+bare="$repo.git"
+if [ ! -d "$bare" ]; then
+  git init --bare "$bare"
+  git -C "$repo" remote add origin "$bare"
+  git -C "$repo" push origin HEAD 2>/dev/null || true   # seed the bare repo
+fi
 echo "export const a2 = 2" >> packages/foo-a/src/index.ts
 git add packages/foo-a/src/index.ts
 git commit -m "modify foo-a only"
 git push 2>&1 || echo "push exited non-zero (expected)"
 ```
 
-(`git push` with no remote will still trigger the hook; if it fails on the remote step, that's fine — we're checking the pre-push gate, not the network push.)
+(If you'd rather not create a bare repo, invoke the hook directly:
+```bash
+sha="$(git -C "$repo" rev-parse HEAD)"
+echo "refs/heads/main $sha refs/heads/main 0000000000000000000000000000000000000000" \
+  | bash "$repo/.git/hooks/pre-push" origin "file://$repo"
+```)
 
 **Pass criteria:**
 - Output contains a message naming the missing impact: `packages/foo-b/src/index.ts` not modified.
@@ -133,7 +153,12 @@ git push 2>&1 || echo "push exited non-zero (expected)"
 **Setup:** Throwaway repo, post-Test 5, with at least one lesson in `lessons/`.
 
 **Action:**
-1. Edit `$repo/.agent/self-learning/curation-state.yml` and set `next_nag` to yesterday's date (e.g. `2026-05-12`).
+1. Edit `$repo/.agent/self-learning/curation-state.yml` and set `next_nag` to yesterday's date. Compute it portably:
+   ```bash
+   yday="$(date -d 'yesterday' +%F 2>/dev/null || date -v-1d +%F)"
+   echo "yesterday: $yday"
+   ```
+   then substitute `$yday` into the YAML.
 2. In Claude Code, type any prompt — e.g. `hello`.
 3. Read the response.
 
@@ -145,11 +170,12 @@ git push 2>&1 || echo "push exited non-zero (expected)"
 
 ## Test 7: Skill self-improvement test
 
-**Setup:** Throwaway repo, post-Test 6. This test exercises the `F:/projects/skills/skills/<name>/` mirror flow, so pick a skill you don't mind temporarily modifying — recommendation: create a disposable test skill first:
+**Setup:** Throwaway repo, post-Test 6. This test exercises the `${SKILLS_REPO}/<name>/` mirror flow (where `SKILLS_REPO` comes from `.agent/self-learning/config.yml`'s `skills_repo` field — default `~/.claude/skills`). Pick a skill you don't mind temporarily modifying — recommendation: create a disposable test skill first:
 
 ```bash
-mkdir -p F:/projects/skills/skills/_test-skill-throwaway
-cat > F:/projects/skills/skills/_test-skill-throwaway/SKILL.md <<'EOF'
+SKILLS_REPO="${SKILLS_REPO:-$HOME/.claude/skills}"
+mkdir -p "$SKILLS_REPO/_test-skill-throwaway"
+cat > "$SKILLS_REPO/_test-skill-throwaway/SKILL.md" <<'EOF'
 ---
 name: _test-skill-throwaway
 description: Disposable test skill for self-improve integration. Delete after.
@@ -157,7 +183,10 @@ description: Disposable test skill for self-improve integration. Delete after.
 # Test skill
 Original body.
 EOF
-git -C F:/projects/skills add skills/_test-skill-throwaway && git -C F:/projects/skills commit -m "temp: test skill"
+# Commit the test skill in the skills repo (if it's git-tracked).
+git -C "$SKILLS_REPO" add "_test-skill-throwaway" 2>/dev/null && \
+  git -C "$SKILLS_REPO" commit -m "temp: test skill" 2>/dev/null || \
+  echo "(skills repo not git-tracked at $SKILLS_REPO — skipping commit)"
 ```
 
 **Action:**
@@ -172,23 +201,28 @@ git -C F:/projects/skills add skills/_test-skill-throwaway && git -C F:/projects
 - Step 2 produces the threshold nudge.
 - Step 3 produces a diff preview without modifying any file.
 - Step 4:
-  - `cat F:/projects/skills/skills/_test-skill-throwaway/SKILL.md` shows the absorbed rules from the 3 lessons.
-  - `cat $HOME/.claude/skills/_test-skill-throwaway/SKILL.md` is byte-identical to the source.
-  - `git -C F:/projects/skills log -1` shows a new commit referencing the skill.
-  - `git -C F:/projects/skills status` is clean (push completed if remote is configured; if not, the local commit is enough).
+  - `cat "$SKILLS_REPO/_test-skill-throwaway/SKILL.md"` shows the absorbed rules from the 3 lessons.
+  - `cat "$HOME/.claude/skills/_test-skill-throwaway/SKILL.md"` is byte-identical to the source (skipped when `SKILLS_REPO == $HOME/.claude/skills` — same path).
+  - `git -C "$SKILLS_REPO" log -1` shows a new commit referencing the skill (only when `SKILLS_REPO` is a separate git-tracked repo).
+  - `git -C "$SKILLS_REPO" status` is clean (push completed if remote is configured; if not, the local commit is enough).
 - The 3 lessons are moved to `.agent/self-learning/lessons/promoted/` (archived).
 
 **Cleanup:**
 ```bash
-rm -rf F:/projects/skills/skills/_test-skill-throwaway "$HOME/.claude/skills/_test-skill-throwaway"
-git -C F:/projects/skills add -A && git -C F:/projects/skills commit -m "cleanup: remove test skill"
+# Resolve the skills repo path from the plugin's config (or substitute literally).
+SKILLS_REPO="${SKILLS_REPO:-$HOME/.claude/skills}"
+rm -rf "$SKILLS_REPO/_test-skill-throwaway" "$HOME/.claude/skills/_test-skill-throwaway"
+# Stage explicit paths instead of -A so unrelated working-tree changes aren't
+# accidentally swept into the cleanup commit.
+git -C "$SKILLS_REPO" add "_test-skill-throwaway" 2>/dev/null || true
+git -C "$SKILLS_REPO" commit -m "cleanup: remove test skill" 2>/dev/null || true
 ```
 
 ---
 
 ## Reporting
 
-For each test record: PASS / FAIL / SKIPPED + one-line note. File any failure as a follow-up issue on the plugin tracker (or `F:/projects/skills` issues) with:
+For each test record: PASS / FAIL / SKIPPED + one-line note. File any failure as a follow-up issue on the plugin tracker (or the skills repo's issues) with:
 - Test number
 - CC build / version
 - OS + `jq --version`
