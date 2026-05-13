@@ -30,6 +30,7 @@ Output a single JSON object:
 
 ```json
 {
+  "proposed_skill_md": "<full SKILL.md content after the merge, including frontmatter and body>",
   "unified_diff": "--- a/SKILL.md\n+++ b/SKILL.md\n@@ ... @@\n ...\n+ ...\n",
   "conflicts": [
     {
@@ -41,6 +42,8 @@ Output a single JSON object:
 }
 ```
 
-`unified_diff` is a single string containing the full diff (use real newline characters in the JSON string). An empty diff is the empty string `""`. `conflicts` is an array, empty when no conflicts were found.
+`proposed_skill_md` is the **full, post-merge** `SKILL.md` file content as a single string (frontmatter + body, with real newlines in the JSON string). Emit this so the caller can write the file atomically rather than relying on diff application. You are already drafting the new file in order to produce the diff in step 2, so emitting it is free.
+
+`unified_diff` is a single string containing the full diff between the current and proposed `SKILL.md` (use real newline characters in the JSON string). An empty diff is the empty string `""`; in that case `proposed_skill_md` should equal the input `current_skill_md` verbatim. `conflicts` is an array, empty when no conflicts were found.
 
 Output only the JSON object. No prose, no code fences.
