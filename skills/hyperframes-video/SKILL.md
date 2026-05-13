@@ -651,7 +651,7 @@ It is not skipped by "use sane defaults", "don't ask questions", "non-interactiv
 
 **Required actions in this phase, in order:**
 
-1. Start `npx hyperframes preview --port 3002` as a background process (fall through 3003/3004/3005 if busy).
+1. Start `npx hyperframes preview --port 3010` as a background process (fall through 3011/3012/3013 if busy).
 2. Wait for `Studio running` in the process output before proceeding.
 3. **Open the URL in the user's browser** with the platform-appropriate command (`open` on macOS, `xdg-open` on Linux, `start` on Windows). Do this once, automatically — do not just print the URL and assume the user will click it.
 4. Tell the user the URL is open and ask for freeform feedback (in interactive mode) or proceed straight to the standard render after a short visible pause (in non-interactive mode — but the preview tab is still opened so the user can intervene).
@@ -664,25 +664,25 @@ If the user has explicitly disabled the preview gate in advance (e.g., a CLAUDE.
 Run as a background process, scoped to the scaffolded project directory:
 
 ```bash
-npx hyperframes preview --port 3002
+npx hyperframes preview --port 3010
 ```
 
-(Fall back: try 3003, 3004, 3005 if 3002 is in use. Fail loud if all taken.)
+(Fall back: try 3011, 3012, 3013 if 3010 is in use. Fail loud if all taken.)
 
 Wait for `Studio running` in the preview process output, then open the URL in the user's browser:
 
 ```bash
 # macOS
-open http://localhost:3002
+open http://localhost:3010
 # Linux
-xdg-open http://localhost:3002
+xdg-open http://localhost:3010
 # Windows
-start http://localhost:3002
+start http://localhost:3010
 ```
 
 Then present to the user:
 
-> "Preview is running and I've opened http://localhost:3002 in your browser. Review the first draft.
+> "Preview is running and I've opened http://localhost:3010 in your browser. Review the first draft.
 >
 > What do you want to change? (freeform — 'make the hook punchier', 'swap scenes 2 and 3', 'use arktype instead of yup', 'drop the problem scene', 'longer pause on the code', anything you want.)"
 
@@ -1262,7 +1262,7 @@ The compile error is the punchline; make sure the setup earns it. Look at the li
 | `npx hyperframes lint` fails after 2 self-correct attempts | Show errors, ask user to describe fix in freeform, retry |
 | `npx hyperframes inspect` reports overflow / off-canvas after 2 self-correct attempts | Same fall-through |
 | Render crashes | Show hyperframes' error; offer (a) retry, (b) simplify failing scene, (c) abort |
-| Port 3002 in use | Try 3003, 3004, 3005 in order; fail loud if all taken |
+| Port 3010 in use | Try 3011, 3012, 3013 in order; fail loud if all taken |
 | Preview process crashes mid-iteration | Restart once; if it crashes again, surface the error and ask user |
 | Brand auto-detection finds nothing | Ask user explicitly with sensible defaults (see Phase 2.4 fallback block for the full primary/accent/background/text/font/logo list) |
 | Shiki highlighting fails on a snippet | Show the snippet + error, ask user to fix the code or change the language hint |
