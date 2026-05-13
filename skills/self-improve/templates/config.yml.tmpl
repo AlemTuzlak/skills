@@ -12,3 +12,9 @@ curation:
 promotion:
   auto_suggest_global: true
   skill_improve_threshold: 3
+# Path to the user's skills monorepo (where skills live as <skills_repo>/<skill-name>/).
+# Defaults to ~/.claude/skills which works for users without a separate skills monorepo.
+# Override per-repo (or in the global ~/.agent/self-learning/config.yml) if you keep skills
+# in a dedicated repo (e.g. ~/work/skills). /improve-skill, /promote-cluster, /promote-skill,
+# and /learn's skill-existence check all resolve <skill-name> against this path.
+skills_repo: ~/.claude/skills

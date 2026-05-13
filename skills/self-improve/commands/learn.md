@@ -214,9 +214,9 @@ Otherwise:
 1. Count lessons whose frontmatter has `related_skill: <name>`. Scan both `${CLAUDE_PROJECT_DIR}/.agent/self-learning/lessons/` and `$HOME/.agent/self-learning/lessons/`. Sum the counts.
 2. Read `skill_improve_threshold` from the active `config.yml` (Step 4's `config_path`, falling back to the global config if the repo one omits the key). Default: `3`.
 3. If `count >= threshold`:
-   - **Check whether the skill exists.** Search in this order:
-     1. `F:/projects/skills/skills/<name>/SKILL.md` (this monorepo)
-     2. `$HOME/.claude/skills/<name>/SKILL.md` (global)
+   - **Check whether the skill exists.** First resolve `SKILLS_REPO` from `.agent/self-learning/config.yml`'s `skills_repo` field (repo first, global fallback, default `~/.claude/skills`; expand `~` to `$HOME`). Then search in this order:
+     1. `${SKILLS_REPO}/<name>/SKILL.md` (the user's configured skills repo)
+     2. `$HOME/.claude/skills/<name>/SKILL.md` (global; same as #1 when `SKILLS_REPO` is the default)
      3. Any installed plugin's `skills/<name>/SKILL.md` under `$HOME/.claude/plugins/cache/*/*/*/skills/<name>/SKILL.md`
    - **If a matching SKILL.md is found**, append to your final response:
 

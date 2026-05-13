@@ -5,11 +5,23 @@ disable-model-invocation: true
 
 # /promote-skill
 
-Vector 5 of the promotion hierarchy: copy a skill from the user's skills repo (`F:/projects/skills/skills/<name>/`) into the user-global skills directory (`$HOME/.claude/skills/<name>/`) so it is available across every Claude Code session.
+Vector 5 of the promotion hierarchy: copy a skill from the user's skills repo (`${SKILLS_REPO}/<name>/`) into the user-global skills directory (`$HOME/.claude/skills/<name>/`) so it is available across every Claude Code session.
 
 This is effectively the same sync-mirror behavior the user already does manually after editing a skill — `/promote-skill` just formalizes the first-time copy.
 
 Follow every step in order.
+
+---
+
+## Step 0: Resolve the skills repo path
+
+Read `skills_repo` from `.agent/self-learning/config.yml` (repo first, global fallback, default `~/.claude/skills`). Expand `~` to `$HOME`. Record as `SKILLS_REPO`.
+
+If `SKILLS_REPO == $HOME/.claude/skills`, refuse:
+
+```
+`/promote-skill` copies from your skills repo to $HOME/.claude/skills/ — but `skills_repo` is configured as $HOME/.claude/skills itself, so there's nothing to copy. Configure a separate `skills_repo` in .agent/self-learning/config.yml first.
+```
 
 ---
 
@@ -29,19 +41,19 @@ Refuse with usage on any other shape:
 ```
 Usage: /promote-skill <skill-name> --global
 
-  Copy F:/projects/skills/skills/<name>/ → $HOME/.claude/skills/<name>/.
+  Copy ${SKILLS_REPO}/<name>/ → $HOME/.claude/skills/<name>/.
 ```
 
 ---
 
 ## Step 2: Locate the source
 
-Source path: `F:/projects/skills/skills/<skill-name>/`.
+Source path: `${SKILLS_REPO}/<skill-name>/`.
 
 Verify the directory exists and contains a `SKILL.md`. If not, refuse:
 
 ```
-Skill `<skill-name>` not found at F:/projects/skills/skills/<skill-name>/. Make sure the skill lives in your skills repo before promoting.
+Skill `<skill-name>` not found at ${SKILLS_REPO}/<skill-name>/. Make sure the skill lives in your skills repo before promoting.
 ```
 
 ---
@@ -71,12 +83,14 @@ Wait for an explicit choice:
 
 ## Step 4: Copy source → destination
 
+Substitute `[skill-name]`, `[destination-name]`, and `${SKILLS_REPO}` as literal values before executing:
+
 ```bash
 mkdir -p "$HOME/.claude/skills"
-cp -r "F:/projects/skills/skills/<skill-name>" "$HOME/.claude/skills/<destination-name>"
+cp -r "${SKILLS_REPO}/[skill-name]" "$HOME/.claude/skills/[destination-name]"
 ```
 
-(`<destination-name>` is `<skill-name>` unless the user chose Rename.)
+(`[destination-name]` is `[skill-name]` unless the user chose Rename.)
 
 ---
 
@@ -91,5 +105,5 @@ Skill `<skill-name>` available globally at $HOME/.claude/skills/<destination-nam
 Append a reminder about the standing mirror rule:
 
 ```
-Source of truth remains F:/projects/skills/skills/<skill-name>/. Subsequent edits should happen there, then re-mirror per your standing skill-mirror rule (or re-run `/promote-skill <skill-name> --global` to re-sync).
+Source of truth remains ${SKILLS_REPO}/<skill-name>/. Subsequent edits should happen there, then re-mirror per your standing skill-mirror rule (or re-run `/promote-skill <skill-name> --global` to re-sync).
 ```

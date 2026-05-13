@@ -25,7 +25,7 @@ A `UserPromptSubmit` hook (`hooks/user-prompt-submit.sh`) regex-filters every us
 
 ### (c) Skill self-improvement
 
-Lessons captured against an existing skill (via `related_skill` frontmatter that `/learn` populates automatically from the recent tool-use trace) accumulate over time. Once N≥3 lessons share a `related_skill`, the plugin nudges the user. `/improve-skill <name>` reads every lesson tagged for that skill, drafts a unified diff for the skill's `SKILL.md`, presents it for review, and on `apply` writes the change, mirrors it to `~/.claude/skills/<name>/`, and commits + pushes the `F:/projects/skills` repo. User confirmation is required before the push.
+Lessons captured against an existing skill (via `related_skill` frontmatter that `/learn` populates automatically from the recent tool-use trace) accumulate over time. Once N≥3 lessons share a `related_skill`, the plugin nudges the user. `/improve-skill <name>` reads every lesson tagged for that skill, drafts a unified diff for the skill's `SKILL.md`, presents it for review, and on `apply` writes the change, mirrors it to `~/.claude/skills/<name>/`, and commits + pushes the user's configured skills repo (`skills_repo` in `config.yml`; defaults to `~/.claude/skills`). User confirmation is required before the push.
 
 > Three captured lessons all tag `related_skill: hyperframes-video`.
 > Claude nudges: "3 lessons share `related_skill: hyperframes-video`. `/improve-skill hyperframes-video` to absorb."
@@ -38,7 +38,7 @@ Lessons captured against an existing skill (via `related_skill` frontmatter that
 ### Dev / direct edit (recommended for early iteration)
 
 ```bash
-claude --plugin-dir F:/projects/skills/skills/self-improve
+claude --plugin-dir <path-to-skills-repo>/skills/self-improve
 ```
 
 This loads the plugin directly from source. Edits to hook scripts, sub-prompts, and command files take effect on Claude Code restart.
@@ -46,11 +46,11 @@ This loads the plugin directly from source. Edits to hook scripts, sub-prompts, 
 ### Marketplace install
 
 ```bash
-/plugin marketplace add F:/projects/skills
+/plugin marketplace add <path-to-skills-repo>
 /plugin install self-improve@alemtuzlak
 ```
 
-(The marketplace is the `F:/projects/skills` repo root via its `.claude-plugin/marketplace.json`.)
+(The marketplace is the skills repo root via its `.claude-plugin/marketplace.json`.)
 
 ### Prerequisite: `jq`
 
@@ -88,7 +88,7 @@ After installation, inside any repo where you want lessons + couplings to apply:
 | `/curate <slug>` | Curate a single lesson by its slug. |
 | `/promote <slug> --to claude-md` | Promote a lesson into `CLAUDE.md` prose and delete the lesson file. |
 | `/promote <slug> --global` | Move a repo-scoped lesson to the global pile. |
-| `/promote-cluster <tag> --name <skill-name>` | Promote a tag-cluster of lessons into a brand new skill at `F:/projects/skills/skills/<skill-name>/`. |
+| `/promote-cluster <tag> --name <skill-name>` | Promote a tag-cluster of lessons into a brand new skill at `${skills_repo}/<skill-name>/` (path is configurable, defaults to `~/.claude/skills`). |
 | `/improve-skill <name> [apply]` | Absorb related lessons into an existing skill's `SKILL.md`. First call previews the diff; `apply` writes, mirrors, commits, and pushes. |
 | `/promote-skill <name> --global` | Mirror a skills-repo skill to `~/.claude/skills/<name>/`. |
 
@@ -113,6 +113,7 @@ curation:
 promotion:
   auto_suggest_global: true
   skill_improve_threshold: 3
+skills_repo: ~/.claude/skills
 ```
 
 Knobs:
@@ -125,6 +126,7 @@ Knobs:
 - **`curation.default_interval_days`** — days between curation nags. Used to compute `next_nag` in `curation-state.yml`.
 - **`promotion.auto_suggest_global`** — when capturing a lesson the model judges as universal, suggest the global scope inline.
 - **`promotion.skill_improve_threshold`** — N lessons sharing a `related_skill` before `/improve-skill <name>` is nudged.
+- **`skills_repo`** — path to the user's skills monorepo (where skills live as `<skills_repo>/<skill-name>/`). Defaults to `~/.claude/skills`. Override if you keep skills in a separate versioned repo (e.g. `~/work/skills`); `/improve-skill`, `/promote-cluster`, `/promote-skill`, and `/learn`'s skill-existence check all resolve `<skill-name>` against this path. When `skills_repo == ~/.claude/skills`, the mirror-copy + commit/push branches in `/improve-skill` and `/promote-cluster` are skipped (the source of truth and the global mirror are the same path).
 
 ---
 
@@ -166,13 +168,13 @@ Same shape, different scope. The hook reads both piles when the user is in a rep
 
 ## Mirror sync flow (for skills the user manages)
 
-When `/improve-skill <name>` or `/promote-cluster <tag> --name <name>` writes or modifies a skill, it follows the user's standing convention:
+When `/improve-skill <name>` or `/promote-cluster <tag> --name <name>` writes or modifies a skill, it follows the user's standing convention. The source of truth path is **configurable** via the `skills_repo` field in `.agent/self-learning/config.yml`:
 
-- **Source of truth for skills:** `F:/projects/skills/skills/<name>/`
-- **Mirror to:** `$HOME/.claude/skills/<name>/` (so the change takes effect immediately in the running Claude Code)
-- **Commit + push** from `F:/projects/skills/` to `origin`
+- **Source of truth for skills:** `${skills_repo}/<name>/` — defaults to `~/.claude/skills` if not configured. Set it to a dedicated skills monorepo path (e.g. `~/work/skills`) if you keep skills separately versioned.
+- **Mirror to:** `$HOME/.claude/skills/<name>/` (so the change takes effect immediately in the running Claude Code). Skipped when `skills_repo` already resolves to `$HOME/.claude/skills`.
+- **Commit + push** from the skills repo's git working tree to `origin`. The default branch is detected dynamically (works for `main`, `master`, or any configured default). Skipped when `skills_repo == $HOME/.claude/skills` since there's no separate repo to push.
 
-Both `/improve-skill` and `/promote-cluster` gate the push on **explicit user confirmation** — the diff is previewed first, the apply-step writes locally and mirrors, and the push happens only after a second confirmation.
+Both `/improve-skill` and `/promote-cluster` gate the push on **explicit user confirmation** — `/improve-skill` asks once up front for all of (write, mirror, push), while `/promote-cluster` asks before commit+push at Step 8b.
 
 ---
 
@@ -186,7 +188,7 @@ Each design choice maps to a documented failure mode of Claude's built-in auto-m
 | Lessons get buried, model glosses them. | Instruction memory (`CLAUDE.md`) stays small; learning memory (`lessons/`) is loaded on-demand via the routing descriptions in `INDEX.md`. Each rule in `CLAUDE.md` has weight because the pile is curated. |
 | Pile bloats with noise / contradictions. | Capture-time contradiction check (see `references/contradiction-check.md`) + scheduled-nag curation in `curation-state.yml`. No autonomous edits. |
 | User forgets to enforce coupling on PRs. | Pre-push hook gates the push; plan-time hook injection front-loads the work when the user is still describing the feature. |
-| Plugin only works for me; team can't benefit. | Marketplace publishing via `F:/projects/skills/.claude-plugin/marketplace.json`; portable `.agent/` data layer; `AGENTS.md` cross-pointer for non-CC agents. |
+| Plugin only works for me; team can't benefit. | Marketplace publishing via the parent marketplace repo's `.claude-plugin/marketplace.json`; portable `.agent/` data layer; `AGENTS.md` cross-pointer for non-CC agents. |
 | Different agents (Cursor, Cline, Aider) can't read the lessons. | `.agent/self-learning/` is plain files referenced from `AGENTS.md` — any agent following the standard reads the same pile. Only the automation is CC-specific. |
 
 ---

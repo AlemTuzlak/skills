@@ -9,9 +9,23 @@ Vector 4 of the promotion hierarchy: absorb `related_skill: <name>`-tagged lesso
 
 **Two-step confirmation.** The first invocation shows a diff preview. The second invocation (with the `apply` subcommand) writes the changes, syncs the mirror, and commits+pushes the skills repo.
 
-The plugin's own files live under `${CLAUDE_PLUGIN_ROOT}`. The user's skills repo lives at `F:/projects/skills/`.
+The plugin's own files live under `${CLAUDE_PLUGIN_ROOT}`. The user's skills repo path is configurable — see Step 0.
 
 Follow every step in order.
+
+---
+
+## Step 0: Resolve the skills repo path
+
+Read the `skills_repo` field from `.agent/self-learning/config.yml`. Lookup order:
+
+1. `${CLAUDE_PROJECT_DIR}/.agent/self-learning/config.yml` (repo-local, preferred).
+2. `$HOME/.agent/self-learning/config.yml` (global fallback).
+3. If neither is set, default to `~/.claude/skills`.
+
+Expand `~` to `$HOME`. Record the resolved absolute path as `SKILLS_REPO`. Subsequent steps that reference the user's skills repo MUST use `${SKILLS_REPO}` (i.e. `${SKILLS_REPO}/<skill-name>/`), not a hard-coded path.
+
+Note: when `SKILLS_REPO` resolves to `$HOME/.claude/skills` (the default), there is no separate "repo" location — the global mirror and the source of truth are the same path, so the mirror-sync + commit+push branch in Step 6 is a no-op. Detect this case via `[ "$SKILLS_REPO" = "$HOME/.claude/skills" ]` and treat `skill_location` accordingly (see Step 2).
 
 ---
 
@@ -46,7 +60,7 @@ Record `apply_mode = (second token == "apply")`.
 
 Search in this order, stopping at the first match. The first match is the **edit target**.
 
-1. `F:/projects/skills/skills/<skill-name>/SKILL.md` — user's skills repo. **Mirror flow applies.**
+1. `${SKILLS_REPO}/<skill-name>/SKILL.md` — user's skills repo (from Step 0). **Mirror flow applies** when `SKILLS_REPO` is distinct from `$HOME/.claude/skills`.
 2. `$HOME/.claude/skills/<skill-name>/SKILL.md` — user-global. No mirror flow; edit in place.
 3. `$HOME/.claude/plugins/cache/*/*/*/skills/<skill-name>/SKILL.md` — installed plugin. **Refuse**:
 
@@ -57,10 +71,12 @@ Search in this order, stopping at the first match. The first match is the **edit
 If no match anywhere, refuse:
 
 ```
-Skill `<skill-name>` not found in F:/projects/skills/skills/, $HOME/.claude/skills/, or installed plugins. Did you mean `/promote-cluster <tag> --name <skill-name>` to create it?
+Skill `<skill-name>` not found in ${SKILLS_REPO}/, $HOME/.claude/skills/, or installed plugins. Did you mean `/promote-cluster <tag> --name <skill-name>` to create it?
 ```
 
-Record `skill_location` ∈ {`repo`, `global`} (matching cases 1 or 2 respectively).
+Record `skill_location`:
+- `repo` if the match was case 1 AND `SKILLS_REPO != $HOME/.claude/skills` (mirror + commit+push branch applies).
+- `global` if the match was case 2, OR case 1 when `SKILLS_REPO == $HOME/.claude/skills` (edit in place, no mirror/push).
 
 Read the current `SKILL.md` content (frontmatter + body) into `current_skill_md`.
 
@@ -151,31 +167,42 @@ If `apply_mode == true`, continue to Step 6.
 
 ## Step 6: Apply the changes
 
+### 6.pre Up-front consolidated confirmation
+
+Before writing any file, ask the user verbatim (substitute `[skill-name]`, `<absolute-path>`, and `${SKILLS_REPO}` with literal values; if `skill_location == "global"` omit the mirror + push bullets):
+
+> About to:
+>   (a) write `<absolute-path-to-SKILL.md>`,
+>   (b) mirror to `$HOME/.claude/skills/[skill-name]/`,
+>   (c) commit + push the skills repo (`${SKILLS_REPO}` → origin).
+>
+> Proceed? (yes / no)
+
+If the user says **no**, do **not** modify any file. Print the proposed unified diff (from Step 4) again as a reference so they can apply it manually if desired, and stop.
+
+If the user says **yes**, proceed through 6a–6e without further prompts.
+
 ### 6a. Write the SKILL.md update
 
 Write `proposed_skill_md` to the resolved skill path (Step 2's edit target).
 
 ### 6b. Sync the mirror (only if `skill_location == "repo"`)
 
-If the skill lives in `F:/projects/skills/skills/<skill-name>/`:
+If the skill lives in `${SKILLS_REPO}/<skill-name>/` and `SKILLS_REPO != $HOME/.claude/skills`:
 
-#### 6b-i. Pre-mirror confirmation
+#### 6b-i. Confirmation already obtained in Step 6 prelude (see below)
 
-Before any filesystem mutation under `$HOME/.claude/skills/<skill-name>/`, ask the user verbatim:
-
-> About to overwrite `$HOME/.claude/skills/<skill-name>/` with the updated skill from the repo. Proceed? (yes / no)
-
-Wait for an explicit `yes`. If the user says **no**, leave the repo-side SKILL.md edit (from 6a) in place, **skip** the mirror step **and** the commit+push step (6c), and report the partial outcome in Step 7. Do not touch `$HOME/.claude/skills/`.
+Step 6 (the apply phase) is gated by a single up-front confirmation that covers (a) writing the SKILL.md, (b) mirroring to `$HOME/.claude/skills/`, and (c) committing + pushing the skills repo. By the time control reaches 6b the user has already said yes to all three.
 
 #### 6b-ii. Transactional copy
 
-If the user confirmed, perform the mirror copy transactionally so a mid-copy failure can't leave a destroyed mirror with no replacement. Copy into a sibling temp directory first; only after the copy succeeds, swap it in:
+Perform the mirror copy transactionally so a mid-copy failure can't leave a destroyed mirror with no replacement. Copy into a sibling temp directory first; only after the copy succeeds, swap it in. Substitute `${SKILLS_REPO}` and `[skill-name]` as literal values before executing:
 
 ```bash
-tmp_dir="$HOME/.claude/skills/<skill-name>.new-$$"
-cp -r "F:/projects/skills/skills/<skill-name>/" "$tmp_dir" || { rm -rf "$tmp_dir"; echo "Mirror copy failed; aborted, no changes made to $HOME/.claude/skills/<skill-name>/" >&2; exit 1; }
-rm -rf "$HOME/.claude/skills/<skill-name>"
-mv "$tmp_dir" "$HOME/.claude/skills/<skill-name>"
+tmp_dir="$HOME/.claude/skills/[skill-name].new-$$"
+cp -r "${SKILLS_REPO}/[skill-name]/" "$tmp_dir" || { rm -rf "$tmp_dir"; echo "Mirror copy failed; aborted, no changes made to $HOME/.claude/skills/[skill-name]/" >&2; exit 1; }
+rm -rf "$HOME/.claude/skills/[skill-name]"
+mv "$tmp_dir" "$HOME/.claude/skills/[skill-name]"
 ```
 
 This mirrors the user's standing skill-mirror rule without ever leaving the destination in a half-deleted state.
@@ -183,36 +210,27 @@ This mirrors the user's standing skill-mirror rule without ever leaving the dest
 If `skill_location == "global"`, **skip** the mirror step and the commit-push step. Continue to 6d. After 6d, print a warning in Step 7:
 
 ```
-Skill not in your skills repo (F:/projects/skills/skills/); edit applied to $HOME/.claude/skills/ only — no commit/push.
+Skill not in your skills repo (${SKILLS_REPO}/); edit applied to $HOME/.claude/skills/ only — no commit/push.
 ```
 
 ### 6c. Commit + push the skills repo (only if `skill_location == "repo"`)
 
-#### 6c-i. Stage and show the diff
+The single confirmation in 6.pre already covered the commit + push. Stage, commit, and push in one go. Detect the default branch dynamically so this works on `main`, `master`, or any other configured default. Substitute `[skill-name]` and `${SKILLS_REPO}` as literal values before executing:
 
 ```bash
-git -C F:/projects/skills add skills/<skill-name>
-git -C F:/projects/skills diff --cached
-```
-
-Show the diff to the user.
-
-#### 6c-ii. Ask for confirmation BEFORE pushing
-
-Ask verbatim:
-
-> About to commit and push the updated skill `<skill-name>` to `F:/projects/skills` (origin/main). Proceed? (yes / no)
-
-If the user says **no**, stop here. Leave the SKILL.md edit and the staged git changes in place. Skip 6d and the report's commit-related lines.
-
-If the user says **yes**:
-
-```bash
-git -C F:/projects/skills commit -m "feat(<skill-name>): incorporate captured learnings (N lessons)"
-git -C F:/projects/skills push origin main
+git -C "${SKILLS_REPO}/.." add "skills/[skill-name]"   # if ${SKILLS_REPO} is .../<repo>/skills
+# (If ${SKILLS_REPO} points at the repo root directly, drop the /.. and use:)
+# git -C "${SKILLS_REPO}" add "[skill-name]"
+git -C "${SKILLS_REPO}/.." diff --cached
+default_branch="$(git -C "${SKILLS_REPO}/.." symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|^refs/remotes/origin/||')"
+default_branch="${default_branch:-main}"
+git -C "${SKILLS_REPO}/.." commit -m "feat([skill-name]): incorporate captured learnings (N lessons)"
+git -C "${SKILLS_REPO}/.." push origin "$default_branch"
 ```
 
 Where `N` is the lesson count from Step 3.
+
+Note: the placeholder `[skill-name]` and the env var `${SKILLS_REPO}` MUST be substituted to literal values before running these commands — bash will parse `<...>` as redirection and fail. Use square brackets in the model's rendered commands as a substitution marker that bash treats as literal text.
 
 ### 6d. Archive absorbed lessons
 
@@ -242,17 +260,17 @@ Updated `<skill-name>` SKILL.md. Absorbed N lessons.
 If `skill_location == "repo"` and the push happened:
 
 ```
-Mirror synced to $HOME/.claude/skills/<skill-name>/. Skills repo committed and pushed to origin/main.
+Mirror synced to $HOME/.claude/skills/<skill-name>/. Skills repo (${SKILLS_REPO}) committed and pushed to origin/<default-branch>.
 ```
 
-If `skill_location == "repo"` and the user declined the push:
+If `skill_location == "repo"` and the user declined the up-front confirmation in 6.pre:
 
 ```
-Edits applied locally. Staged for commit in F:/projects/skills — not yet pushed (declined).
+No changes made. Proposed diff printed above for reference — apply manually if desired.
 ```
 
 If `skill_location == "global"`:
 
 ```
-Skill not in your skills repo (F:/projects/skills/skills/); edit applied to $HOME/.claude/skills/ only — no commit/push.
+Skill not in your skills repo (${SKILLS_REPO}/); edit applied to $HOME/.claude/skills/ only — no commit/push.
 ```

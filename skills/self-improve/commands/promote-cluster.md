@@ -9,9 +9,21 @@ Vector 3 of the promotion hierarchy: take a coherent **cluster** of lessons (≥
 
 **Only use this when no skill with the target name exists.** If a skill already exists, use `/improve-skill <name>` instead — that's the correct vector for absorbing new lessons into an existing skill.
 
-The plugin's own files live under `${CLAUDE_PLUGIN_ROOT}`. The target repo is `${CLAUDE_PROJECT_DIR}`. The user's skills repo lives at `F:/projects/skills/`.
+The plugin's own files live under `${CLAUDE_PLUGIN_ROOT}`. The target repo is `${CLAUDE_PROJECT_DIR}`. The user's skills repo path is configurable — see Step 0.
 
 Follow every step in order.
+
+---
+
+## Step 0: Resolve the skills repo path
+
+Read the `skills_repo` field from `.agent/self-learning/config.yml`. Lookup order:
+
+1. `${CLAUDE_PROJECT_DIR}/.agent/self-learning/config.yml` (repo-local, preferred).
+2. `$HOME/.agent/self-learning/config.yml` (global fallback).
+3. Default `~/.claude/skills` if neither sets it.
+
+Expand `~` to `$HOME`. Record as `SKILLS_REPO`. Steps that build paths under the user's skills repo MUST use `${SKILLS_REPO}/<skill-name>/` (no hard-coded path). When `SKILLS_REPO == $HOME/.claude/skills`, the mirror-copy + commit/push branch is a no-op — the user has no separate source-of-truth repo.
 
 ---
 
@@ -36,7 +48,7 @@ Usage: /promote-cluster <tag> --name <skill-name> [--target repo-skills|global-s
 
   <tag>             Cluster identifier — matches `related_skill: <tag>` or `<tag>` in `tags[]`.
   --name <name>     The new skill's directory name (kebab-case).
-  --target          Where to create the skill. Default `repo-skills` (F:/projects/skills/skills/<name>/).
+  --target          Where to create the skill. Default `repo-skills` (${SKILLS_REPO}/<name>/).
 ```
 
 ---
@@ -45,7 +57,7 @@ Usage: /promote-cluster <tag> --name <skill-name> [--target repo-skills|global-s
 
 Search in order:
 
-1. `F:/projects/skills/skills/<name>/SKILL.md` (user's skills repo)
+1. `${SKILLS_REPO}/<name>/SKILL.md` (user's skills repo, from Step 0)
 2. `$HOME/.claude/skills/<name>/SKILL.md` (user-global)
 3. Any installed plugin: `$HOME/.claude/plugins/cache/*/*/*/skills/<name>/SKILL.md`
 
@@ -128,19 +140,21 @@ Build a structured walkthrough that **absorbs every rule** from the cluster:
 
 Determine the target path:
 
-- `--target repo-skills` (default): `F:/projects/skills/skills/<name>/SKILL.md`
+- `--target repo-skills` (default): `${SKILLS_REPO}/<name>/SKILL.md`
 - `--target global-skills`: `$HOME/.claude/skills/<name>/SKILL.md`
 
 Create the directory (`mkdir -p`). Write the composed SKILL.md.
 
-**If `--target repo-skills`**, also mirror to global per the user's standing skill-mirror rule:
+**If `--target repo-skills` AND `${SKILLS_REPO}` is distinct from `$HOME/.claude/skills`**, also mirror to global per the user's standing skill-mirror rule. Substitute `[name]` and `${SKILLS_REPO}` as literal values before running:
 
 ```bash
-mkdir -p "$HOME/.claude/skills/<name>"
-cp -r "F:/projects/skills/skills/<name>/." "$HOME/.claude/skills/<name>/"
+mkdir -p "$HOME/.claude/skills/[name]"
+cp -r "${SKILLS_REPO}/[name]/." "$HOME/.claude/skills/[name]/"
 ```
 
-(For `--target global-skills` there is no mirror flow — the file is already in the global location.)
+If `${SKILLS_REPO} == $HOME/.claude/skills`, skip the mirror copy — the file is already in the global location.
+
+(For `--target global-skills` there is no mirror flow either.)
 
 ---
 
@@ -168,35 +182,41 @@ Inside the `<!-- LESSONS:START --> ... <!-- LESSONS:END -->` block, remove the l
 
 ---
 
-## Step 8: Commit + push the skills repo (only if `--target repo-skills`)
+## Step 8: Commit + push the skills repo (only if `--target repo-skills` AND `${SKILLS_REPO}` is distinct from `$HOME/.claude/skills`)
 
-Skip this step entirely if `--target global-skills`.
+Skip this step entirely if `--target global-skills` OR if `${SKILLS_REPO} == $HOME/.claude/skills` (no separate source-of-truth repo to commit to).
+
+Resolve the skills repo's working tree. `${SKILLS_REPO}` is the path that contains skills as direct children. The git working tree is typically one level up (e.g. `${SKILLS_REPO}/..`) — verify by checking which ancestor contains `.git/`. Record as `SKILLS_REPO_GIT_ROOT`.
 
 ### 8a. Stage and show the diff
 
+Substitute `[name]` and `${SKILLS_REPO_GIT_ROOT}` / `${SKILLS_REPO}` as literal values before executing:
+
 ```bash
-git -C F:/projects/skills add skills/<name>/
-git -C F:/projects/skills diff --cached
+git -C "${SKILLS_REPO_GIT_ROOT}" add "skills/[name]/"
+git -C "${SKILLS_REPO_GIT_ROOT}" diff --cached
 ```
 
 Show the diff to the user.
 
 ### 8b. Ask for confirmation BEFORE committing or pushing
 
-Ask verbatim:
+Ask verbatim (substitute `[name]` and `${SKILLS_REPO_GIT_ROOT}` as literal values):
 
-> About to commit and push the new skill `<name>` to `F:/projects/skills` (origin/main). Proceed? (yes / no)
+> About to commit and push the new skill `[name]` to `${SKILLS_REPO_GIT_ROOT}` (origin/<default-branch>). Proceed? (yes / no)
 
 If the user says **no**, stop here and report what was staged. Leave the staged changes in place so the user can inspect/amend manually.
 
-If the user says **yes**:
+If the user says **yes**, detect the default branch dynamically (works on `main`, `master`, etc.):
 
 ```bash
-git -C F:/projects/skills commit -m "feat(<name>): new skill from cluster \`<tag>\` (N lessons absorbed)"
-git -C F:/projects/skills push origin main
+default_branch="$(git -C "${SKILLS_REPO_GIT_ROOT}" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|^refs/remotes/origin/||')"
+default_branch="${default_branch:-main}"
+git -C "${SKILLS_REPO_GIT_ROOT}" commit -m "feat([name]): new skill from cluster [tag] (N lessons absorbed)"
+git -C "${SKILLS_REPO_GIT_ROOT}" push origin "$default_branch"
 ```
 
-Where `N` is the number of lessons absorbed.
+Where `N` is the number of lessons absorbed and `[tag]` is the cluster tag from Step 1. Substitute the placeholders literally — bash will parse `<...>` as redirection.
 
 ---
 
