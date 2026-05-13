@@ -215,7 +215,7 @@ Determine the resolved `related_skill` from Step 3. If it is `null`, skip this e
 
 Otherwise:
 
-1. Count lessons whose frontmatter has `related_skill: <name>`. Scan both `${CLAUDE_PROJECT_DIR}/.agent/self-learning/lessons/` and `$HOME/.agent/self-learning/lessons/`. Sum the counts.
+1. Count lessons whose frontmatter has `related_skill: <name>`. Scan both `${CLAUDE_PROJECT_DIR}/.agent/self-learning/lessons/` and `$HOME/.agent/self-learning/lessons/`, **skipping any file under `lessons/promoted/`** in either pile (already-absorbed lessons must not be re-counted against the threshold). Sum the counts.
 2. Read `skill_improve_threshold` from the active `config.yml` (Step 4's `config_path`, falling back to the global config if the repo one omits the key). Default: `3`.
 3. If `count >= threshold`:
    - **Check whether the skill exists.** First resolve `SKILLS_REPO` from `.agent/self-learning/config.yml`'s `skills_repo` field (repo first, global fallback, default `~/.claude/skills`; expand `~` to `$HOME`). Then search in this order:
