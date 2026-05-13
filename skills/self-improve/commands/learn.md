@@ -127,16 +127,24 @@ The sub-prompt will return JSON:
 
 If `conflict == false`, continue to Step 7.
 
-If `conflict == true`, surface the result to the user:
+If `conflict == true`, surface the result to the user. Render the option menu **dynamically from the sub-prompt's `resolution_options` array** — present only the options the sub-prompt returned, not a static hardcoded list. For each option in `result.resolution_options`, print its identifier and the matching one-line description from the table below:
+
+| Option id | Description |
+|---|---|
+| `keep_new` | proceed with the new lesson; old lesson(s) untouched |
+| `keep_old` | abort, do not write the new lesson |
+| `merge` | open both files and produce a merged single lesson |
+| `rename_scope` | narrow the new lesson's `description` (routing condition) so it doesn't overlap |
+
+Format (only including the options that appeared in `resolution_options`):
 
 ```
 Contradiction check: <category>
 Conflicts with: <slug-1>, <slug-2>
-Options: <resolution_options joined by " | ">
-  keep_new      — proceed with the new lesson; old lesson(s) untouched
-  keep_old      — abort, do not write the new lesson
-  merge         — open both files and produce a merged single lesson
-  rename_scope  — narrow the new lesson's `description` (routing condition) so it doesn't overlap
+Options:
+  <option-id-1>  — <description-1>
+  <option-id-2>  — <description-2>
+  ...
 
 Which option?
 ```
@@ -147,6 +155,8 @@ Wait for an explicit choice and act accordingly:
 - `keep_old` → stop, report `Aborted — kept existing lesson(s).`
 - `merge` → read each conflicting lesson, produce a merged draft (the new + old rules consolidated into a single lesson), then continue to Step 7 using the merged content. Delete the superseded files after the new file is written, and remove their INDEX entries.
 - `rename_scope` → ask the user for a narrower routing condition, update the draft's `description`, then continue to Step 7.
+
+If the user picks an option that wasn't in `resolution_options`, refuse and re-ask — only the offered options are valid for this conflict.
 
 ---
 
