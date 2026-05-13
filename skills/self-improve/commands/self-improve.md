@@ -1,9 +1,32 @@
 ---
-description: Use when bootstrapping self-improve in a repo for the first time — scaffolds `.agent/self-learning/`, runs the initial coupling scan, wires CLAUDE.md/AGENTS.md, and optionally installs a git pre-push hook.
+description: Dispatcher for self-improve subcommands. Currently supports `/self-improve init` to bootstrap the plugin in a repo (scaffolds `.agent/self-learning/`, runs the initial coupling scan, wires CLAUDE.md/AGENTS.md, optionally installs a git pre-push hook).
 disable-model-invocation: true
 ---
 
-# /self-improve init
+# /self-improve
+
+Dispatcher for self-improve subcommands. Read `$ARGUMENTS`. The first positional token selects the subcommand. The remaining tokens are that subcommand's arguments.
+
+Supported subcommands:
+
+- `init` — bootstrap the plugin in the current repo. See the `## Subcommand: init` section below.
+
+If `$ARGUMENTS` is empty, or the first token is unrecognized, print usage and stop:
+
+```
+Usage: /self-improve <subcommand>
+
+Subcommands:
+  init    Bootstrap self-improve in the current repo: scaffold .agent/self-learning/,
+          run the bootstrap coupling scan, wire CLAUDE.md/AGENTS.md, and offer to
+          install the pre-push hook.
+```
+
+On `init`, execute the workflow in `## Subcommand: init` below.
+
+---
+
+## Subcommand: init
 
 You are bootstrapping the self-improve plugin inside the user's current repository (`${CLAUDE_PROJECT_DIR}`). Follow every step below in order. Do not skip steps. Do not proceed past a step that requires user consent without obtaining it.
 
