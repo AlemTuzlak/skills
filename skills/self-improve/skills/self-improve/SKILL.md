@@ -30,3 +30,16 @@ See the following files in `references/`:
 - `improve-skill-prompt.md`
 
 (These are written in Task 1.9 — they may not exist yet at the time you read this.)
+
+## Consult-lesson behavior (passive missing-reference nudge)
+
+When you load a lesson file (because its `Use when ...` description matched the current task), inspect the body for inline file/symbol references. Heuristic: backtick-quoted strings matching:
+- File extensions: `\.(ts|tsx|js|jsx|md|json|yml|yaml|py|sh|sql)$`
+- Path-like: starting with `/`, `./`, `~/`, or containing `/`
+- Function/method calls: identifiers immediately followed by `(`
+
+For each detected reference:
+1. Verify the file/symbol exists in the current project (or in `$HOME` for path-like `~/...`).
+2. If missing, append a single line to your response: `📌 Lesson \`<slug>\` references missing \`<symbol-or-path>\` — \`/curate <slug>\` to fix.`
+
+Do not surface this for every lesson — only when a missing reference is detected. Skip the check on lessons that don't have inline file/symbol references.
