@@ -159,12 +159,26 @@ Write `proposed_skill_md` to the resolved skill path (Step 2's edit target).
 
 If the skill lives in `F:/projects/skills/skills/<skill-name>/`:
 
+#### 6b-i. Pre-mirror confirmation
+
+Before any filesystem mutation under `$HOME/.claude/skills/<skill-name>/`, ask the user verbatim:
+
+> About to overwrite `$HOME/.claude/skills/<skill-name>/` with the updated skill from the repo. Proceed? (yes / no)
+
+Wait for an explicit `yes`. If the user says **no**, leave the repo-side SKILL.md edit (from 6a) in place, **skip** the mirror step **and** the commit+push step (6c), and report the partial outcome in Step 7. Do not touch `$HOME/.claude/skills/`.
+
+#### 6b-ii. Transactional copy
+
+If the user confirmed, perform the mirror copy transactionally so a mid-copy failure can't leave a destroyed mirror with no replacement. Copy into a sibling temp directory first; only after the copy succeeds, swap it in:
+
 ```bash
+tmp_dir="$HOME/.claude/skills/<skill-name>.new-$$"
+cp -r "F:/projects/skills/skills/<skill-name>/" "$tmp_dir" || { rm -rf "$tmp_dir"; echo "Mirror copy failed; aborted, no changes made to $HOME/.claude/skills/<skill-name>/" >&2; exit 1; }
 rm -rf "$HOME/.claude/skills/<skill-name>"
-cp -r "F:/projects/skills/skills/<skill-name>" "$HOME/.claude/skills/<skill-name>"
+mv "$tmp_dir" "$HOME/.claude/skills/<skill-name>"
 ```
 
-This mirrors the user's standing skill-mirror rule.
+This mirrors the user's standing skill-mirror rule without ever leaving the destination in a half-deleted state.
 
 If `skill_location == "global"`, **skip** the mirror step and the commit-push step. Continue to 6d. After 6d, print a warning in Step 7:
 
