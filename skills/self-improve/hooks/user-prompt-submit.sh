@@ -138,6 +138,28 @@ if [ -n "$prompt" ] && printf '%s' "$prompt" | grep -qiE '\b(write|writing|creat
   plan_signal=1
 fi
 
+# Self-improve mention signal — explicit references to plugin concepts.
+self_improve_signal=0
+if [ -n "$prompt" ] && printf '%s' "$prompt" | grep -qiE '\b(lesson|coupling|curate|INDEX)\b'; then
+  self_improve_signal=1
+fi
+
+# Curation-overdue is also a signal that justifies surfacing the INDEX.
+curation_overdue=0
+if [ "$repo_overdue" = "1" ] || [ "$global_overdue" = "1" ]; then
+  curation_overdue=1
+fi
+
+# Progressive-disclosure gate: if no signal fired, exit silently. Injecting
+# the INDEX on every neutral prompt would pollute context on unrelated turns.
+any_signal=0
+if [ "$correction_hit" = "1" ] || [ "$coupling_hit" = "1" ] || [ "$plan_signal" = "1" ] || [ "$curation_overdue" = "1" ] || [ "$self_improve_signal" = "1" ]; then
+  any_signal=1
+fi
+if [ "$any_signal" -eq 0 ]; then
+  die_silent
+fi
+
 # Compose additionalContext.
 ctx=""
 append_block() {
@@ -148,8 +170,9 @@ append_block() {
   fi
 }
 
-# Always-included INDEX content (the routing layer).
-index_section="## Lessons routing index"$'\n'"The plugin tracks two lesson piles. Consult these every turn — each entry is a routing condition."$'\n'
+# INDEX content (the routing layer). Only included when at least one signal
+# fired — never on neutral prompts.
+index_section="## Lessons routing index"$'\n'"The plugin tracks two lesson piles. Consult these for this turn — each entry is a routing condition."$'\n'
 if [ -n "$REPO_PILE" ]; then
   index_section="$index_section"$'\n'"### Repo INDEX — $REPO_PILE/INDEX.md"$'\n\n'
   if [ -f "$REPO_PILE/INDEX.md" ]; then
