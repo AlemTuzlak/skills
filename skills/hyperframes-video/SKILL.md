@@ -296,9 +296,21 @@ For each snippet the skill plans to include:
 
 If the library isn't available locally and the skill can't verify, **ask the user** before synthesizing. A wrong API in the first draft destroys user trust and wastes a full iteration round.
 
-### Step 3.3 — Present scene plan for approval
+### Step 3.3 — Self-improve the draft, then present for approval
 
-Before presenting, **self-audit the plan against these rules**. Do not skip — failing any of them silently is the fastest path to a generic video:
+This step has two parts: a **silent self-improvement loop** that you run before the user sees anything, and the **user-facing approval gate** that follows.
+
+**Do not show the user the first thing you wrote.** The first version of a scene plan is almost always weaker than the second. The agent's job here is to hand the user the *strongest* plan it can build given the rules in this skill, not the first draft.
+
+#### Self-improvement loop (silent — run before presenting)
+
+After drafting an initial scene plan, run a deliberate improvement pass against the rule sections listed below. Iterate **at least twice**. Stop only when one full pass produces zero further changes — the draft has stabilized.
+
+**On every pass, for each scene and for the plan as a whole, ask:** *"Does this satisfy this rule? If not, can I rewrite, merge, drop, split, or reorder a scene to fix it?"* Apply the fix in-place, then continue the pass.
+
+The five **Core checks** below must be satisfied — every plan, no exceptions. On top of those, scan against the broader rule sections at the end of this step.
+
+**Core checks (every plan must satisfy all five):**
 
 1. **Per-scene payoff**: for each scene, write one sentence of the form *"The new thing a viewer knows at the end of this scene is ___."* If two scenes produce the same sentence, one is redundant — merge or cut. If a scene's sentence is vague (e.g., *"the product is good"*), the scene is filler — redesign.
 2. **Pacing variance**: scene durations must reflect cognitive load, not a uniform slice. Reference shape for a **30s** target — **scale proportionally** for shorter (15–25s) or longer (40–60s) videos:
@@ -321,6 +333,45 @@ Before presenting, **self-audit the plan against these rules**. Do not skip — 
    Every scene must also include a **~0.4s settle hold** between the last animation completing and the transition starting. Cutting on the same frame an animation finishes is forbidden — the eye needs a beat to confirm what it saw, and transitions that arrive on the resolve-frame feel cluttered and amateur. If the proposed scene durations cannot accommodate these minima, **shorten the beat list, do not shrink the dwell times**.
 4. **Value prop by ~t=8s** (or by ~25–30% of total duration, whichever is earlier): by the end of scene 2, the viewer must know what the feature does, who it's for, and why it matters. If that's not true with the current plan, restructure before scaffolding. Do NOT bury the value in the delivery scene.
 5. **Motif presence and state-change**: the signature motif chosen in Phase 3.0 must appear in at least 2 scenes (typically 3: hook + problem + CTA) and visibly change state between at least one adjacent pair (e.g., clean → glitchy → clean again).
+
+**Broader rule sections to scan on every improvement pass.** Search this file (or the linked file) for each section heading and walk it against the current draft:
+
+- **Hook enforcement** (`hooks/hook-rules.md`) — applied to the HookTitle scene. If it fails any check, rewrite the headline; don't just record the failure.
+- **Storytelling & Visual Uniqueness Rules** (the numbered "Rule N" sections later in this file) — generic-test, no plain bullet lists, signature motif as load-bearing element, anti-clickbait, side-by-side contrasts, insight tagline, counter-expectation beat, pattern-interrupt vs information, first-10s value prop, et al.
+- **Code Scene Rules** — chapters mandatory for ≥5s code beats, synchronized per-chapter narration, per-chapter dwell (~3s), line-length per scene type, diagnostic-comment color, elide unimportant config with `/*…*/`, pre-break long imports.
+- **Layout Rules** — single alignment per scene, foreground readability over decoration, no accidental overlap, hero-text size on aspect changes.
+- **Visual Cognition Rules** — ≤4 visual chunks per frame, one pre-attentive cue per focal element, reading-flow matched to scene type, reading-saccade limits.
+- **Anti-padding rule** (Q2.1) — if any scene exists solely to fill time, **cut it and shorten the target**. Do not carry it forward.
+- **Pattern spec** loaded in Step 3.1 (`patterns/<pattern>.md`) — the scene sequence and payoffs should be coherent with the template; deviations must have a clear justification.
+- **Step 3.0 motif & Step 3.2b grounded code** — verify motif state-change still applies and any synthesized code still maps to real exports/signatures after the rewrites.
+
+**Improvements you may apply silently during the loop (no user question needed):**
+
+- Rewrite headlines, payoff sentences, captions, and CTA copy for stronger hook discipline and clearer payoff
+- Merge two scenes whose payoff sentences collapse to the same idea
+- Drop a scene whose only function is to fill time, and shorten the target accordingly
+- Split a delivery scene into chaptered sub-beats when a single block exceeds ~8s
+- Re-assign motif state per scene to produce a visible state-change between at least one adjacent pair
+- Reorder scenes to move the value prop earlier
+- Adjust per-scene durations to satisfy pacing variance and breathing-room minima — only by **trimming**, never by stretching or padding
+- Replace generic bullets with concrete artifacts (real API shapes, real error messages, real metrics) drawn from the input
+
+**Changes that must wait for the user — flag them, do not apply silently:**
+
+- Moving the target duration outside the ±20% band confirmed at Q2.1
+- Changing the signature motif chosen at Step 3.0
+- Changing the story pattern chosen at Step 3.1
+- Adding or removing major scenes that alter the headline narrative claim
+
+**Stop condition.** End the loop when one full pass over all rule sections (Core checks + broader sections) produces zero changes. If you hit five passes without stabilizing, you have a structural problem the loop can't fix — stop and ask the user for guidance instead of churning.
+
+#### Present the (already-improved) scene plan for approval
+
+When presenting to the user, include a brief **"Self-review notes"** line near the top of the response so the user can see the improvement work was actually done. List the 2–5 most material changes the loop applied. Example:
+
+> *Self-review notes: tightened the hook line from "Add validation easily" to "Swap validation libs with one line"; merged a redundant "why it matters" scene into the problem setup; trimmed delivery 14s → 11s so the CTA dwells ≥4s.*
+
+If the loop produced no material changes (rare — usually means the first draft was already strong, or the agent isn't pushing hard enough), say so explicitly: *"Self-review notes: draft was stable on first pass; no rewrites needed."*
 
 Example output:
 
