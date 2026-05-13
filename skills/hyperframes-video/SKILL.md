@@ -45,7 +45,7 @@ When the user invokes the skill with phrasing like *"use sane defaults"*, *"don'
 
 **It DOES override (skip the prompt, pick the default):**
 
-- Q2.1 duration → 30s
+- Q2.1 duration → derive from scope using the ladder in Q2.1 (still in the 15–60s window); pick the midpoint of the matched scope band and proceed without asking
 - Q2.2 aspect ratio → 16:9 landscape
 - Q2.3 project location → `marketing/<feature-slug>/hyperframes/`
 - Q2.4 brand *confirmation* (the "use these / customize / provide your own?" question)
@@ -140,17 +140,34 @@ Before continuing, scan for: security patches, internal pricing, credentials, un
 
 Ask these questions one at a time, in order.
 
-### Q2.1 — Duration target
+### Q2.1 — Duration (derived from scope, never offered as a menu)
 
-> "How long should the video be?
-> 1. **30 seconds** (default) — best for X promo, highest completion rate
-> 2. **45 seconds**
-> 3. **60 seconds** — Fireship-style pace
-> 4. **90 seconds**
->
-> Duration is a target, not a cap. If the story lands in 27s or stretches to 34s, that's fine — optimize for impact."
+**Do not ask the user to pick a fixed length from a menu.** A fixed number becomes a constraint, and the dominant failure mode is padding — freeze-frames, repeated beats, black or empty trailing frames, or filler bullets added solely to reach the chosen target. Instead, derive a duration from the *scope of the change* and present it as a proposal the user can confirm or override.
 
-**Duration is a soft target, not a deadline.** When the user picks a duration, treat it as a midpoint. The rendered video can land roughly ±5s away from the chosen target (formally ±15% — see the audit in Phase 6) without violating the spec. Story coherence trumps clock precision: do NOT pad scenes to hit 30.0s exactly, do NOT compress a scene that needs to breathe just to fit. If the story lands at 27s, ship 27s. If it needs 34s to feel natural, ship 34s. No artificial deadlines.
+**Allowed range: 15–60 seconds.** Anything outside this window is wrong by default. Going under 15s means the story can't breathe; going over 60s means it's two videos.
+
+**Scope → duration ladder:**
+
+| Scope of the PR / feature | Distinct payoff beats | Target |
+|---|---|---|
+| One idea (single API addition, single bug fix, one QoL win) | hook + 1 delivery + CTA | **15–25s** |
+| Typical PR-sized feature (problem → solution → proof, or a multi-chapter code walk) | hook + 2–3 delivery + CTA | **25–40s** |
+| Multi-faceted release (multiple distinct sub-features, or comparison needing problem + solution + proof beats) | hook + 3–4 delivery + CTA | **40–60s** |
+
+A *distinct payoff beat* is one new thing the viewer learns. Two scenes whose payoff sentences (see Phase 3.3 item 1) reduce to the same idea are one beat, not two.
+
+**Sanity check before proposing — do this silently first:**
+1. List the distinct payoff beats the video must contain.
+2. Estimate: hook ≈ 3s, CTA ≈ 5–7s, each delivery beat ≈ 6–10s (longer if it contains a code chapter ladder).
+3. Sum the floor and the ceiling. If the floor is under 15s, you're padding the beat list — cut beats or shrink the scope claim. If the ceiling is over 60s, you have two videos — pick one angle.
+
+**Propose to the user (no menu, no fixed lengths):**
+
+> "Based on the scope of this PR, I'm targeting **~Xs** (range Ys–Zs). Beats: <one short sentence listing the beats>. Confirm, or override with a different length anywhere in 15–60s."
+
+**Hard rule — story sets duration, never the other way around.** If at any later phase a scene needs to be stretched, held on a static frame, repeated, backed by black/empty frames, or filled with filler bullets to reach the chosen target — **stop**, shorten the target, re-confirm with the user, and ship the shorter video. Padding to hit a number is the single behavior this rule exists to forbid. If a 30s scope honestly tells in 18s, ship 18s.
+
+**Breathing-room constraint.** Whatever duration is chosen, it must allow every on-screen text element to (a) finish animating in, (b) dwell long enough to be read, and (c) settle for at least ~0.4s before the next scene begins. Cutting to a new scene the instant a line of text finishes appearing is forbidden. See Phase 3.3 (item 3) and the Phase 6 audit for the concrete dwell-time table.
 
 ### Q2.2 — Aspect ratio
 
@@ -284,15 +301,26 @@ If the library isn't available locally and the skill can't verify, **ask the use
 Before presenting, **self-audit the plan against these rules**. Do not skip — failing any of them silently is the fastest path to a generic video:
 
 1. **Per-scene payoff**: for each scene, write one sentence of the form *"The new thing a viewer knows at the end of this scene is ___."* If two scenes produce the same sentence, one is redundant — merge or cut. If a scene's sentence is vague (e.g., *"the product is good"*), the scene is filler — redesign.
-2. **Pacing variance**: scene durations must reflect cognitive load, not a uniform slice. Targets for a 30s video:
-   - Hook: 2.5–3.5s (a single punch)
-   - Problem / setup: 4–6s (enough to land one concrete claim)
-   - Delivery (code / swap / comparison): 12–16s, with internal chapters if >~8s
-   - CTA: 5–8s (breathes, doesn't rush)
+2. **Pacing variance**: scene durations must reflect cognitive load, not a uniform slice. Reference shape for a **30s** target — **scale proportionally** for shorter (15–25s) or longer (40–60s) videos:
+   - Hook: ~10–12% of total (≈3s @ 30s; ≈1.8s @ 15s; ≈6s @ 60s) — a single punch
+   - Problem / setup: ~15–20% (≈5s @ 30s) — enough to land one concrete claim
+   - Delivery (code / swap / comparison): ~45–55%, with internal chapters if the beat exceeds ~8s
+   - CTA: ~18–25%, **never below 4s** regardless of total — the CTA always breathes and never rushes
 
-   Reject plans where the shortest and longest scene differ by less than ~2×. Equal-slice plans are the single strongest "AI-generated" tell.
-3. **Value prop by ~t=8s**: by the end of scene 2, the viewer must know what the feature does, who it's for, and why it matters. If that's not true with the current plan, restructure before scaffolding. Do NOT bury the value in the delivery scene.
-4. **Motif presence and state-change**: the signature motif chosen in Phase 3.0 must appear in at least 2 scenes (typically 3: hook + problem + CTA) and visibly change state between at least one adjacent pair (e.g., clean → glitchy → clean again).
+   Reject plans where the shortest and longest scene differ by less than ~2×. Equal-slice plans are the single strongest "AI-generated" tell. Reject plans where the CTA is under 4s — a rushed CTA destroys the conversion the rest of the video bought.
+3. **Breathing room (no rush-cuts on text)**: a scene must not transition out while a text element is still being read. Minimum on-screen dwell time, measured from the moment the element *finishes* animating in to the moment the scene *begins* transitioning out:
+
+   | Element | Minimum dwell |
+   |---|---|
+   | Short headline / one phrase (≤6 words) | ≥ 1.5s |
+   | Long headline / single sentence (7–14 words) | ≥ 2.5s |
+   | Two-line text / short paragraph (15–30 words) | ≥ 3.5s |
+   | Code chapter (per chapter, after focus lands) | ≥ 3s |
+   | CTA URL / handle (must be clearly readable) | ≥ 3s |
+
+   Every scene must also include a **~0.4s settle hold** between the last animation completing and the transition starting. Cutting on the same frame an animation finishes is forbidden — the eye needs a beat to confirm what it saw, and transitions that arrive on the resolve-frame feel cluttered and amateur. If the proposed scene durations cannot accommodate these minima, **shorten the beat list, do not shrink the dwell times**.
+4. **Value prop by ~t=8s** (or by ~25–30% of total duration, whichever is earlier): by the end of scene 2, the viewer must know what the feature does, who it's for, and why it matters. If that's not true with the current plan, restructure before scaffolding. Do NOT bury the value in the delivery scene.
+5. **Motif presence and state-change**: the signature motif chosen in Phase 3.0 must appear in at least 2 scenes (typically 3: hook + problem + CTA) and visibly change state between at least one adjacent pair (e.g., clean → glitchy → clean again).
 
 Example output:
 
@@ -594,7 +622,9 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 
 - [ ] `npx hyperframes lint` passes with zero errors
 - [ ] `npx hyperframes inspect --json` finds no overflow / off-canvas / clipped-container issues
-- [ ] Sum of `<clip>.dataset.duration` across the composition is within ±15% of the target duration set at Q2.1
+- [ ] Sum of `<clip>.dataset.duration` across the composition is within the **15–60s** window AND within ±20% of the scope-derived target proposed in Q2.1 (or matches an explicit user override). If the natural story comes in shorter than the proposed target, the target was wrong — re-derive from scope, do not pad.
+- [ ] **No padding scenes**: no scene exists solely to extend duration. A scene fails this check if any of: its payoff sentence (Phase 3.3 item 1) is blank, vague, or duplicates another scene's; the composition contains trailing black/empty/freeze frames after the last animation resolves; any scene holds a static frame with no on-screen change for more than 1.5s without a narrative reason captured in the scene plan
+- [ ] **Dwell-time per text element met**: every text element on every scene satisfies the minimum dwell times in the Breathing Room table (Phase 3.3 item 3), measured from animate-in completion to scene transition start. Every scene includes a ≥0.4s settle hold before its outgoing transition begins. Verify by walking each scene's GSAP timeline and checking the gap between the last `tl.to(...)` resolve and the scene's `data-duration` end
 - [ ] Every scene with code renders without shiki errors at scaffold time (test by running the highlighter on each snippet)
 - [ ] Every brand asset referenced in `DESIGN.md` exists on disk
 - [ ] Render flags include the supersampling + 8-bit yuv420p intent (see Step 6.2 — pass when the CLI exposes them, otherwise post-process via ffmpeg)
