@@ -29,8 +29,6 @@ See the following files in `references/`:
 - `bootstrap-scan-prompt.md`
 - `improve-skill-prompt.md`
 
-(These are written in Task 1.9 — they may not exist yet at the time you read this.)
-
 ## Consult-lesson behavior (passive missing-reference nudge)
 
 When you load a lesson file (because its `Use when ...` description matched the current task), inspect the body for inline file/symbol references. Heuristic: backtick-quoted strings matching:

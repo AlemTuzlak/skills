@@ -202,7 +202,7 @@ Each design choice maps to a documented failure mode of Claude's built-in auto-m
 ## Troubleshooting
 
 - **`jq` not on PATH** — install per Installation section. Verify with `jq --version` in a fresh shell. The hook will silently no-op without it.
-- **Hook not firing** — check the cached plugin path: `ls ~/.claude/plugins/cache/*/self-improve/*/hooks/hooks.json` (or the equivalent under `%USERPROFILE%/.claude/plugins/cache/` on Windows). If missing, the plugin didn't load — re-run `claude --plugin-dir ...` or re-install via `/plugin install`. Restart Claude Code after a fresh install.
+- **Hook not firing** — check the cached plugin path. Claude Code installs plugins under `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`, so the hook config lives at `~/.claude/plugins/cache/*/self-improve/*/hooks/hooks.json` (three glob segments — marketplace, then `self-improve`, then version). On Windows the same path lives under `%USERPROFILE%/.claude/plugins/cache/`. If missing, the plugin didn't load — re-run `claude --plugin-dir ...` or re-install via `/plugin install`. Restart Claude Code after a fresh install.
 - **Pre-push hook missing in a repo** — re-run `/self-improve init` (it offers reinstall), or copy manually: `cp ${CLAUDE_PLUGIN_ROOT}/hooks/pre-push.sh .git/hooks/pre-push && chmod +x .git/hooks/pre-push`.
 - **Capture flow not triggering** — verify `.agent/self-learning/config.yml` has `correction_detection.enabled: true`. If `regex_strictness: strict`, try `loose`. Inspect `lib/regex-patterns.json` to see what phrasing the pre-filter looks for.
 - **Conflicting lessons** — run `/curate <slug>` on the duplicate, or run a full `/curate-lessons` pass which surfaces contradiction pairs automatically.
