@@ -78,19 +78,114 @@ For PRs with 20+ files, filter to user-facing changes only — skip `tests/`, `c
 - Invalid PR/ref → ask user to verify
 - File not found → ask for the correct path
 
+### Step 1.2a — PR deep analysis (when input is a PR)
+
+When the input is a PR, the brief table in Step 1.2 is not enough. PR bodies are routinely vague, outdated, or focused on implementation rather than user value, and a video built off the body alone tends to overclaim or miss the headline angle entirely. Before continuing to Step 1.3, run this structured analysis and produce a written **PR analysis block** that becomes the source of truth for Steps 1.4 (scope confirmation), Q2.1 (duration ladder), and Phase 3 (narrative planning).
+
+**Mandatory steps — do all of them:**
+
+1. **Pull metadata and identify the base branch.**
+   ```
+   gh pr view <n> --json number,title,body,baseRefName,headRefName,files,labels,commits,additions,deletions
+   ```
+   Record `baseRefName` (usually `main` / `master` / `develop`) — that is the diff reference. `gh pr diff <n>` automatically compares the PR head against this base.
+
+2. **Pull the full diff against the base.**
+   ```
+   gh pr diff <n>
+   ```
+   For very large PRs (>500 lines or >20 files), also list changed files via `gh pr view <n> --json files`.
+
+3. **Filter to user-facing surfaces.** Ignore (do not let these shape the headline angle): `tests/`, `__tests__/`, `*.test.*`, `*.spec.*`, `__mocks__/`, `ci/`, `.github/`, lockfiles, dep bumps without behavior change, generated/build artifacts (`dist/`, `build/`, `.next/`), and formatting-only diffs. What remains is the user-facing surface of the PR.
+
+4. **Enumerate the public-API delta.** From the filtered diff, list every change a user could observe or write code against:
+   - New, renamed, or removed `export`s (functions, types, components, hooks, classes, constants)
+   - New CLI commands, flags, or environment variables
+   - New routes, endpoints, or event names
+   - New config keys or schema fields
+   - Changed default values for existing public surfaces
+   - Changed error messages, log shapes, or response shapes the user could rely on
+
+   Grep the diff for added lines beginning with `export `, new top-level `function`/`class`/`const` in `src/` / `lib/` / `packages/*/src/`, new files in those trees, and changes to public type signatures. **If you cannot point at a line in the diff for a claimed API, the claim is wrong — drop it.**
+
+5. **Enumerate the behavior delta.** Beyond API surfaces, list user-visible behavior changes: UI elements added/changed (with file references), CLI / network output that looks different, side effects firing under new conditions, removed limitations, performance characteristics that changed.
+
+6. **Write the before / after value statement.** Exactly two sentences, both grounded in concrete diff evidence:
+   - **Before:** *"Before this PR, a user who wanted to ___ had to ___."*
+   - **After:** *"After this PR, the same user can ___."*
+
+   The "had to" half must be a real prior workflow you can describe — copy-pasting an adapter from the docs, installing a second package, writing boilerplate, hitting an error, switching to a different tool. If the honest "Before" sentence is *"they could already do this"*, the PR has no user-visible value delta — see step 8.
+
+7. **Cross-check the PR body against the diff.** Walk the body's claims and the diff side-by-side:
+   - **Body claims a feature → does the diff confirm?** If the body says "added X" and the diff has no public surface for X (only tests, only docs, only internal helpers), flag it: *"PR body claims X but the diff doesn't expose X to users — should I shift the angle to <what the diff actually shows>?"*
+   - **Diff shows multiple distinct features → body emphasizes one?** Flag the others as candidate angles: *"The body emphasizes A, but the diff also adds B and C. Which is the headline angle?"*
+   - **Body is empty / boilerplate / `[BLANK]`?** Infer from the diff; make the inferred angle explicit and confirm with the user at Step 1.4.
+   - **List "surprises"** — anything in the diff *not* mentioned in the body that affects user-visible behavior. Surprises are often the real story.
+
+8. **Bail-out check: is this PR actually user-visible?** If after steps 4–6 you cannot name a single new thing the user can do or observe, the PR is not video-worthy as a feature launch. **Stop and ask the user:**
+   > "This PR looks like an internal refactor / test-only / dep-bump PR — I can't find a user-visible value delta. Options:
+   > a) shift to a performance / DX / cleanup angle if numbers support it
+   > b) pick a different PR or input
+   > c) cancel"
+
+   Do not invent a feature angle to fill the gap. A confabulated angle wastes a full iteration round and destroys user trust on the very first draft.
+
+9. **Produce the PR analysis block.** Write the result as a short structured block before continuing to Step 1.3. This block — not the PR body — is the source of truth for everything downstream:
+
+   ```
+   PR analysis — #1234 "Add fromZodSchema support"
+   Base: main · Head: feature/zod-schema · Author: <login>
+   User-facing files: 3 (packages/core/src/index.ts, packages/core/src/zod.ts, packages/core/src/types.ts)
+   Filtered out: 5 test files, 2 doc files, lockfile
+
+   Public-API delta:
+     + export function fromZodSchema(schema: ZodSchema): StandardSchema
+     + export type ZodCompatibleSchema
+     ~ default error code for ZodError changed: 'invalid_type' → 'STANDARD/type'
+
+   Behavior delta:
+     - Users importing zod schemas no longer need a manual adapter.
+     - Error messages from zod paths now use the StandardError shape.
+
+   Before / after:
+     Before: copy a 15-line adapter from the docs into every project that mixes zod with this library.
+     After:  one import + one call.
+
+   Surprises (in diff but not in PR body):
+     - Default error shape change (above) — could be the headline angle for migration-aware audiences.
+
+   Headline angle: "drop the 15-line adapter — one import, one call"
+   Scope band for Q2.1: one idea (15–25s)
+   ```
+
+   The "Headline angle" line feeds Phase 3.0's motif derivation and Phase 3.3's hook copy. The "Scope band" line feeds Q2.1's scope-derived duration proposal.
+
+10. **Forbidden shortcuts** (each is a fast path to a wrong video):
+    - Writing the analysis block from the PR title alone — **fail**; you must read the diff.
+    - Skipping the cross-check because the body "looks complete" — bodies often look complete and are wrong.
+    - Treating the PR body as truth when it conflicts with the diff — **the diff wins**.
+    - Filling in a plausible "Before" sentence when the diff doesn't support one — run the bail-out check instead.
+    - Collapsing two genuinely distinct user-visible features into one "feature X" bullet to make the scope band look smaller — record both and pick a headline angle at Step 1.4.
+
+**For git-ref-range and codebase-path inputs**, apply the same structure with the diff coming from `git diff <range>` / direct file reads in place of `gh pr diff`. Steps 4–9 (public-API delta → analysis block) are not PR-specific.
+
 ### Step 1.3 — Read product context
 
 Read if they exist: `README.md`, `docs/`, `package.json`. If nothing found, ask: "Can you briefly describe the product and who it's for?"
 
 ### Step 1.4 — Present understanding + get scope confirmation
 
+**For PR inputs**, the bullets and the compelling angle below **must** be derived from the PR analysis block written in Step 1.2a — not from the PR title or body. Quote the "Headline angle" line directly as the proposed story seed; turn the public-API delta and the before/after statement into the bullets. If the user added clarifying context after Step 1.2a, fold it in here.
+
+**For non-PR inputs**, derive the bullets from the relevant entry in Step 1.2 (marketing brief positioning, blog headline, changelog highlight, codebase reading, freeform description).
+
 Present:
 
 > "Here's what I'll base the video on:
-> - [feature summary bullet 1]
-> - [feature summary bullet 2]
+> - [feature summary bullet 1 — concrete, grounded in the diff / source]
+> - [feature summary bullet 2 — the before → after value, in one line]
 >
-> The compelling angle: [proposed story seed in one sentence]
+> The compelling angle: [proposed story seed — for PRs, the "Headline angle" from the analysis block]
 >
 > Anything to add, remove, or correct?"
 
