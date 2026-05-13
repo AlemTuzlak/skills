@@ -149,7 +149,7 @@ Track which of the two files were modified (created, appended, skipped-because-a
 
 Ask the user verbatim:
 
-> Install a git `pre-push` hook to enforce couplings before push? Recommended — it blocks pushes whose diff violates `coupling.json` unless the user passes `--no-verify`. (yes / no)
+> Install a git `pre-push` hook to enforce couplings before push? Recommended — the hook blocks pushes whose diff violates `coupling.json`. To bypass, pass `--no-verify` (skips ALL hooks) or set `SKIP_COUPLING_CHECK=1` (per-script bypass — leaves other hooks running). (yes / no)
 
 Branch on the answer:
 
