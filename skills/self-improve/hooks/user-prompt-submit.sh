@@ -51,31 +51,63 @@ if [ -z "$REPO_PILE" ] && [ -z "$GLOBAL_PILE" ]; then
   die_silent
 fi
 
-# Load config (prefer repo, fall back to global). Only `regex_strictness` is
-# read here; other knobs are consumed by downstream commands.
-strictness="loose"
+# Load config (prefer repo, fall back to global). Read `regex_strictness`
+# independently for each of `correction_detection:` and `coupling_detection:` —
+# they nest separately in the YAML and may differ. Inline comments are
+# stripped from the value so `regex_strictness: loose   # ...` parses cleanly.
+correction_strictness="loose"
+coupling_strictness="loose"
+
+# Walks $1 line-by-line. Sets correction_strictness / coupling_strictness in
+# the caller's scope (via stdout: two lines, "correction\tcoupling"). Returns
+# 0 if the file existed and was parsed, 1 otherwise.
 read_strictness_from() {
   local cfg="$1"
   [ -f "$cfg" ] || return 1
-  # Very small YAML parser: pull the first occurrence of `regex_strictness:`.
-  local val
-  val="$(grep -E '^\s*regex_strictness:\s*' "$cfg" | head -n1 | sed -E 's/^\s*regex_strictness:\s*//; s/[[:space:]]+$//' | tr -d '\r')"
-  if [ -n "$val" ]; then
-    printf '%s' "$val"
-    return 0
-  fi
-  return 1
+  local section="" corr="" coup=""
+  while IFS= read -r line || [ -n "$line" ]; do
+    # Detect leaving a section: any non-indented key starts a new section.
+    if printf '%s' "$line" | grep -qE '^[A-Za-z_]'; then
+      case "$line" in
+        correction_detection:*) section="correction" ;;
+        coupling_detection:*) section="coupling" ;;
+        *) section="" ;;
+      esac
+      continue
+    fi
+    if [ -n "$section" ] && printf '%s' "$line" | grep -qE '^[[:space:]]+regex_strictness:[[:space:]]*'; then
+      local val
+      val="$(printf '%s' "$line" \
+        | sed -E 's/^[[:space:]]+regex_strictness:[[:space:]]*//' \
+        | sed -E 's/#.*$//' \
+        | sed -E 's/[[:space:]]+$//' \
+        | tr -d '\r')"
+      case "$section" in
+        correction) corr="$val" ;;
+        coupling) coup="$val" ;;
+      esac
+    fi
+  done < "$cfg"
+  printf '%s\t%s' "$corr" "$coup"
+  return 0
 }
 if [ -n "$REPO_PILE" ]; then
-  if v="$(read_strictness_from "$REPO_PILE/config.yml")"; then strictness="$v"; fi
+  IFS=$'\t' read -r repo_corr repo_coup <<< "$(read_strictness_from "$REPO_PILE/config.yml" || printf '\t')"
+  [ -n "${repo_corr:-}" ] && correction_strictness="$repo_corr"
+  [ -n "${repo_coup:-}" ] && coupling_strictness="$repo_coup"
 fi
-if [ "$strictness" = "loose" ] && [ -n "$GLOBAL_PILE" ]; then
-  if v="$(read_strictness_from "$GLOBAL_PILE/config.yml")"; then strictness="$v"; fi
+if [ -n "$GLOBAL_PILE" ]; then
+  IFS=$'\t' read -r glo_corr glo_coup <<< "$(read_strictness_from "$GLOBAL_PILE/config.yml" || printf '\t')"
+  # Only fall back to global when the repo didn't set it.
+  if [ "$correction_strictness" = "loose" ] && [ -n "${glo_corr:-}" ]; then
+    correction_strictness="$glo_corr"
+  fi
+  if [ "$coupling_strictness" = "loose" ] && [ -n "${glo_coup:-}" ]; then
+    coupling_strictness="$glo_coup"
+  fi
 fi
-case "$strictness" in
-  loose|strict) ;;
-  *) strictness="loose" ;;
-esac
+case "$correction_strictness" in loose|strict) ;; *) correction_strictness="loose" ;; esac
+case "$coupling_strictness" in loose|strict) ;; *) coupling_strictness="loose" ;; esac
 
 # Stage 1 — regex pre-filter.
 PATTERNS_FILE="${PLUGIN_ROOT}/lib/regex-patterns.json"
@@ -83,7 +115,7 @@ correction_hit=0
 coupling_hit=0
 if [ -f "$PATTERNS_FILE" ] && [ -n "$prompt" ]; then
   # Correction
-  correction_patterns="$(jq -r --arg s "$strictness" '.correction[$s][]?' "$PATTERNS_FILE" 2>/dev/null | tr -d '\r')"
+  correction_patterns="$(jq -r --arg s "$correction_strictness" '.correction[$s][]?' "$PATTERNS_FILE" 2>/dev/null | tr -d '\r')"
   while IFS= read -r p; do
     [ -z "$p" ] && continue
     if printf '%s' "$prompt" | grep -qE "$p"; then
@@ -93,7 +125,7 @@ if [ -f "$PATTERNS_FILE" ] && [ -n "$prompt" ]; then
   done <<< "$correction_patterns"
 
   # Coupling
-  coupling_patterns="$(jq -r --arg s "$strictness" '.coupling[$s][]?' "$PATTERNS_FILE" 2>/dev/null | tr -d '\r')"
+  coupling_patterns="$(jq -r --arg s "$coupling_strictness" '.coupling[$s][]?' "$PATTERNS_FILE" 2>/dev/null | tr -d '\r')"
   while IFS= read -r p; do
     [ -z "$p" ] && continue
     if printf '%s' "$prompt" | grep -qE "$p"; then
@@ -121,13 +153,13 @@ read_curation() {
 }
 if [ -n "$REPO_PILE" ]; then
   IFS=$'\t' read -r repo_last repo_next <<< "$(read_curation "$REPO_PILE/curation-state.yml" || printf '\t')"
-  if [ -n "$repo_next" ] && [ "$today" \> "$repo_next" -o "$today" = "$repo_next" ]; then
+  if [ -n "$repo_next" ] && { [ "$today" \> "$repo_next" ] || [ "$today" = "$repo_next" ]; }; then
     repo_overdue=1
   fi
 fi
 if [ -n "$GLOBAL_PILE" ]; then
   IFS=$'\t' read -r global_last global_next <<< "$(read_curation "$GLOBAL_PILE/curation-state.yml" || printf '\t')"
-  if [ -n "$global_next" ] && [ "$today" \> "$global_next" -o "$today" = "$global_next" ]; then
+  if [ -n "$global_next" ] && { [ "$today" \> "$global_next" ] || [ "$today" = "$global_next" ]; }; then
     global_overdue=1
   fi
 fi
@@ -192,6 +224,7 @@ fi
 append_block "$index_section"
 
 # Correction stanza.
+corr_stanza=""
 if [ "$correction_hit" = "1" ]; then
   read -r -d '' corr_stanza <<'EOF' || true
 ## Correction detected
@@ -207,6 +240,7 @@ EOF
 fi
 
 # Coupling stanza.
+coup_stanza=""
 if [ "$coupling_hit" = "1" ]; then
   read -r -d '' coup_stanza <<'EOF' || true
 ## Coupling assertion detected
