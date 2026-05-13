@@ -13,6 +13,7 @@
           "trigger": { "type": "string" },
           "impacts": {
             "type": "array",
+            "minItems": 1,
             "items": {
               "type": "object",
               "required": ["target", "kind", "why"],
@@ -20,7 +21,7 @@
                 "target": {
                   "oneOf": [
                     { "type": "string" },
-                    { "type": "array", "items": { "type": "string" } }
+                    { "type": "array", "minItems": 1, "items": { "type": "string" } }
                   ]
                 },
                 "kind": { "enum": ["change-required", "new-code-required"] },
