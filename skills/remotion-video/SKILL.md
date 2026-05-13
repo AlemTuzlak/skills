@@ -28,6 +28,31 @@ Resolve input
 
 Phases 1, 3, 5, and 7 have explicit approval gates. Phase 2 is an interactive Q&A. Phase 5 is a freeform iteration loop that can run many rounds.
 
+## "Use Sane Defaults" / "Don't Ask Questions" — What It Does and Doesn't Override
+
+When the user invokes the skill with phrasing like *"use sane defaults"*, *"don't ask questions"*, *"non-interactive"*, *"just ship it"*, or any equivalent — interpret it precisely:
+
+**It DOES override (skip the prompt, pick the default):**
+
+- Q2.1 duration → derive from scope using the ladder in Q2.1 (still in the 15–60s window); pick the midpoint of the matched scope band and proceed without asking
+- Q2.2 aspect ratio → 16:9 landscape
+- Q2.3 project location → `marketing/<feature-slug>/remotion/`
+- Q2.4 brand *confirmation* (the "use these / customize / provide your own?" question)
+- Phase 1.4 scope confirmation
+- Phase 3.0 motif confirmation
+- Phase 3.1 story-pattern confirmation
+- Phase 3.3 scene-plan approval
+- Phase 5 freeform iteration loop (the "what would you like to change?" prompt)
+
+**It does NOT override (must always run regardless):**
+
+- Brand color/font/logo **scanning** (Q2.4 detection — see HARD-GATE in Q2.4). Hardcoding colors from training-data assumptions about a project is a forbidden shortcut.
+- Phase 5 **preview** (Remotion Studio must start and the studio URL must be opened in the browser before the render runs). Even in fully unattended mode, the user can interrupt; the agent must not pre-decide for them.
+- Phase 6 pre-render audits (storytelling, hook rules, motif presence, pacing variance, value-prop timing, contrast). These exist to prevent shipping a generic video.
+- Phase 7 cleanup question (the user owns project disposition).
+
+If you're tempted to skip a HARD-GATE because the user "said no questions" — re-read this section. The user said no *questions*, not no *gates*.
+
 ## Input Resolution
 
 Resolve the argument (if provided) in this order:
@@ -246,7 +271,42 @@ Frame rate is fixed at 30fps. The audit thresholds throughout this skill are exp
 
 ### Q2.4 — Brand assets (auto-detect → confirm)
 
-Auto-detect using the heuristics documented in `brand-detection.md`. Present findings as:
+<HARD-GATE>
+**The brand scan is mandatory. It is not skippable under any user instruction — including "use sane defaults", "don't ask questions", "just ship it", or "non-interactive". Those instructions affect interactive *confirmation*; they do NOT affect *detection*.**
+
+You MUST run the heuristics in `brand-detection.md` against the actual target repository — the source code that owns the feature, not the `marketing/` output directory — before selecting any color, font, or logo.
+
+**Forbidden shortcuts (these produce wrong colors and waste an iteration):**
+
+- "I know this project — TanStack uses amber, Vercel uses black/white, Stripe uses purple" → **No.** Run the scan. Recall is unreliable; brand details drift between training data and now.
+- "It's a dev tool, dark + neon green is fine" → **No.** Generic vibes ≠ this product's brand.
+- "User said no questions, so I'll skip detection" → **No.** Detection is silent. Confirmation is what the "no questions" instruction skips.
+- Picking from a palette in your head because it "fits the topic" → **No.** Read the repo's CSS/Tailwind/theme files.
+
+**The scan must produce a written record before any composition file is written.** Output a short block listing, for each field: the source file checked, the value found (or `not found`), and the final value used. Example:
+
+```
+Brand scan — TanStack/ai
+  Primary  : checked tailwind.config.* (none) · packages/*/styles.css (--brand: #0a3d2e) → #0a3d2e
+  Accent   : checked theme.json (none) · brand.json (none) · derived from primary → #14b870
+  Logo     : checked public/logo.svg → public/logo.svg (will be referenced from src/brand.ts)
+  Font     : checked next/font (none) · @fontsource (none) · README ref → Inter (fallback)
+```
+
+If the scan finds nothing for a field, fall through to the neutral defaults below — but **only after** the scan ran and is recorded. Skipping the scan and going straight to defaults is the failure mode this gate exists to prevent.
+
+**If you cannot find a logo, ask the user — do NOT invent one.** The same rule applies to any field where detection genuinely turned up nothing and no sensible neutral default exists.
+
+The following are non-negotiable regardless of "no questions" mode:
+- Brand identity (colors, font, logo) — detection always runs
+- Asset locations (where the logo and any referenced media live)
+- File output destination (the `marketing/<feature-slug>/remotion/` path or override)
+- Target audience (carried in from Phase 1's PR/brief analysis)
+
+In interactive mode, present findings (the block above) and ask for confirmation. In non-interactive / "use sane defaults" mode, print the same block and proceed without asking — the *record* is required either way.
+</HARD-GATE>
+
+Present findings as:
 
 > "I found:
 > - Logo: `public/logo.svg`
@@ -255,9 +315,9 @@ Auto-detect using the heuristics documented in `brand-detection.md`. Present fin
 >
 > Use these, customize some, or provide your own?"
 
-**Persistence:** write chosen brand to `.marketing/brand.json` (relative to repo root). On subsequent runs, ask:
+**Persistence:** write chosen brand to `marketing/<feature-slug>/remotion/.marketing/brand.json` (mirrors the hyperframes-video location). On subsequent runs, ask:
 
-> "I loaded brand settings from `.marketing/brand.json`. Use saved, or re-detect?"
+> "I loaded brand settings from `marketing/<feature-slug>/remotion/.marketing/brand.json`. Use saved, or re-detect?"
 
 **Fallback when nothing detected:** ask explicitly with these neutral defaults. These are intentionally neutral — auto-detection of the project's actual brand is always preferred, and these values should only appear when detection turns up nothing.
 - Primary: `#3B82F6` (neutral blue)
