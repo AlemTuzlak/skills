@@ -1,0 +1,36 @@
+{
+  "correction": {
+    "loose": [
+      "\\byou (forgot|should|shouldn't|didn't|never|always|need to)\\b",
+      "\\bwhy (didn't|did|aren't|don't|can't)\\b",
+      "\\bstop (doing|making|using)\\b",
+      "\\bnext time\\b",
+      "\\b(don't|never) (do|use|forget|skip)\\b",
+      "\\bthat's (wrong|incorrect|not right)\\b",
+      "\\bno,? (do|use|let's)\\b",
+      "\\bremember to\\b"
+    ],
+    "strict": [
+      "\\byou (forgot|should have|shouldn't have|didn't|never|always)\\b",
+      "\\b(stop|don't|never) (doing|making|using|do|use)\\b",
+      "\\bnext time\\b"
+    ]
+  },
+  "coupling": {
+    "loose": [
+      "\\bwhenever I\\b",
+      "\\bif [a-zA-Z_][a-zA-Z0-9_./-]* changes?\\b",
+      "\\bcoupled to\\b",
+      "\\bupdate .+ also update\\b",
+      "\\blinked to\\b",
+      "\\btied to\\b",
+      "\\bbreaks if\\b",
+      "\\bwhen .+ changes?,? .+ (also|too|needs?)\\b"
+    ],
+    "strict": [
+      "\\bwhenever I (update|change|modify|add)\\b",
+      "\\bcoupled to\\b",
+      "\\bif [a-zA-Z_][a-zA-Z0-9_./-]* changes?,? then\\b"
+    ]
+  }
+}

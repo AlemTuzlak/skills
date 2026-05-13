@@ -1,31 +1,24 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-plugin-marketplace.json",
   "name": "alemtuzlak",
+  "description": "Alem Tuzlak's personal Claude Code skills and plugins.",
   "owner": {
     "name": "Alem Tuzlak"
   },
   "plugins": [
     {
-      "name": "alemtuzlak-skills",
-      "source": "./",
-      "description": "Marketing and content generation skills — turn a PR, git ref, or freeform idea into briefs, blog posts, changelogs, social copy, newsletters, video scripts, rendered promo videos, and architecture impact docs.",
-      "version": "1.0.0",
+      "name": "self-improve",
+      "description": "Self-improving agent: captures lessons from corrections, enforces architectural couplings, and absorbs learnings back into your skills.",
+      "version": "0.1.0",
+      "source": "./skills/self-improve",
       "author": {
         "name": "Alem Tuzlak"
       },
       "homepage": "https://github.com/alemtuzlak/skills",
       "repository": "https://github.com/alemtuzlak/skills",
       "license": "MIT",
-      "keywords": [
-        "marketing",
-        "content",
-        "blog",
-        "changelog",
-        "newsletter",
-        "social",
-        "video",
-        "skills"
-      ],
-      "category": "marketing"
+      "keywords": ["self-improve", "lessons", "couplings", "skills"],
+      "category": "developer-tools"
     }
   ]
 }

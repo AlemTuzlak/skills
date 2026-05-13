@@ -28,6 +28,31 @@ Resolve input
 
 Phases 1, 3, 5, and 7 have explicit approval gates. Phase 2 is an interactive Q&A. Phase 5 is a freeform iteration loop that can run many rounds.
 
+## "Use Sane Defaults" / "Don't Ask Questions" — What It Does and Doesn't Override
+
+When the user invokes the skill with phrasing like *"use sane defaults"*, *"don't ask questions"*, *"non-interactive"*, *"just ship it"*, or any equivalent — interpret it precisely:
+
+**It DOES override (skip the prompt, pick the default):**
+
+- Q2.1 duration → derive from scope using the ladder in Q2.1 (still in the 15–60s window); pick the midpoint of the matched scope band and proceed without asking
+- Q2.2 aspect ratio → 16:9 landscape
+- Q2.3 project location → `marketing/<feature-slug>/remotion/`
+- Q2.4 brand *confirmation* (the "use these / customize / provide your own?" question)
+- Phase 1.4 scope confirmation
+- Phase 3.0 motif confirmation
+- Phase 3.1 story-pattern confirmation
+- Phase 3.3 scene-plan approval
+- Phase 5 freeform iteration loop (the "what would you like to change?" prompt)
+
+**It does NOT override (must always run regardless):**
+
+- Brand color/font/logo **scanning** (Q2.4 detection — see HARD-GATE in Q2.4). Hardcoding colors from training-data assumptions about a project is a forbidden shortcut.
+- Phase 5 **preview** (Remotion Studio must start and the studio URL must be opened in the browser before the render runs). Even in fully unattended mode, the user can interrupt; the agent must not pre-decide for them.
+- Phase 6 pre-render audits (storytelling, hook rules, motif presence, pacing variance, value-prop timing, contrast). These exist to prevent shipping a generic video.
+- Phase 7 cleanup question (the user owns project disposition).
+
+If you're tempted to skip a HARD-GATE because the user "said no questions" — re-read this section. The user said no *questions*, not no *gates*.
+
 ## Input Resolution
 
 Resolve the argument (if provided) in this order:
@@ -78,19 +103,114 @@ For PRs with 20+ files, filter to user-facing changes only — skip `tests/`, `c
 - Invalid PR/ref → ask user to verify
 - File not found → ask for the correct path
 
+### Step 1.2a — PR deep analysis (when input is a PR)
+
+When the input is a PR, the brief table in Step 1.2 is not enough. PR bodies are routinely vague, outdated, or focused on implementation rather than user value, and a video built off the body alone tends to overclaim or miss the headline angle entirely. Before continuing to Step 1.3, run this structured analysis and produce a written **PR analysis block** that becomes the source of truth for Steps 1.4 (scope confirmation), Q2.1 (duration ladder), and Phase 3 (narrative planning).
+
+**Mandatory steps — do all of them:**
+
+1. **Pull metadata and identify the base branch.**
+   ```
+   gh pr view <n> --json number,title,body,baseRefName,headRefName,files,labels,commits,additions,deletions
+   ```
+   Record `baseRefName` (usually `main` / `master` / `develop`) — that is the diff reference. `gh pr diff <n>` automatically compares the PR head against this base.
+
+2. **Pull the full diff against the base.**
+   ```
+   gh pr diff <n>
+   ```
+   For very large PRs (>500 lines or >20 files), also list changed files via `gh pr view <n> --json files`.
+
+3. **Filter to user-facing surfaces.** Ignore (do not let these shape the headline angle): `tests/`, `__tests__/`, `*.test.*`, `*.spec.*`, `__mocks__/`, `ci/`, `.github/`, lockfiles, dep bumps without behavior change, generated/build artifacts (`dist/`, `build/`, `.next/`), and formatting-only diffs. What remains is the user-facing surface of the PR.
+
+4. **Enumerate the public-API delta.** From the filtered diff, list every change a user could observe or write code against:
+   - New, renamed, or removed `export`s (functions, types, components, hooks, classes, constants)
+   - New CLI commands, flags, or environment variables
+   - New routes, endpoints, or event names
+   - New config keys or schema fields
+   - Changed default values for existing public surfaces
+   - Changed error messages, log shapes, or response shapes the user could rely on
+
+   Grep the diff for added lines beginning with `export `, new top-level `function`/`class`/`const` in `src/` / `lib/` / `packages/*/src/`, new files in those trees, and changes to public type signatures. **If you cannot point at a line in the diff for a claimed API, the claim is wrong — drop it.**
+
+5. **Enumerate the behavior delta.** Beyond API surfaces, list user-visible behavior changes: UI elements added/changed (with file references), CLI / network output that looks different, side effects firing under new conditions, removed limitations, performance characteristics that changed.
+
+6. **Write the before / after value statement.** Exactly two sentences, both grounded in concrete diff evidence:
+   - **Before:** *"Before this PR, a user who wanted to ___ had to ___."*
+   - **After:** *"After this PR, the same user can ___."*
+
+   The "had to" half must be a real prior workflow you can describe — copy-pasting an adapter from the docs, installing a second package, writing boilerplate, hitting an error, switching to a different tool. If the honest "Before" sentence is *"they could already do this"*, the PR has no user-visible value delta — see step 8.
+
+7. **Cross-check the PR body against the diff.** Walk the body's claims and the diff side-by-side:
+   - **Body claims a feature → does the diff confirm?** If the body says "added X" and the diff has no public surface for X (only tests, only docs, only internal helpers), flag it: *"PR body claims X but the diff doesn't expose X to users — should I shift the angle to <what the diff actually shows>?"*
+   - **Diff shows multiple distinct features → body emphasizes one?** Flag the others as candidate angles: *"The body emphasizes A, but the diff also adds B and C. Which is the headline angle?"*
+   - **Body is empty / boilerplate / `[BLANK]`?** Infer from the diff; make the inferred angle explicit and confirm with the user at Step 1.4.
+   - **List "surprises"** — anything in the diff *not* mentioned in the body that affects user-visible behavior. Surprises are often the real story.
+
+8. **Bail-out check: is this PR actually user-visible?** If after steps 4–6 you cannot name a single new thing the user can do or observe, the PR is not video-worthy as a feature launch. **Stop and ask the user:**
+   > "This PR looks like an internal refactor / test-only / dep-bump PR — I can't find a user-visible value delta. Options:
+   > a) shift to a performance / DX / cleanup angle if numbers support it
+   > b) pick a different PR or input
+   > c) cancel"
+
+   Do not invent a feature angle to fill the gap. A confabulated angle wastes a full iteration round and destroys user trust on the very first draft.
+
+9. **Produce the PR analysis block.** Write the result as a short structured block before continuing to Step 1.3. This block — not the PR body — is the source of truth for everything downstream:
+
+   ```
+   PR analysis — #1234 "Add fromZodSchema support"
+   Base: main · Head: feature/zod-schema · Author: <login>
+   User-facing files: 3 (packages/core/src/index.ts, packages/core/src/zod.ts, packages/core/src/types.ts)
+   Filtered out: 5 test files, 2 doc files, lockfile
+
+   Public-API delta:
+     + export function fromZodSchema(schema: ZodSchema): StandardSchema
+     + export type ZodCompatibleSchema
+     ~ default error code for ZodError changed: 'invalid_type' → 'STANDARD/type'
+
+   Behavior delta:
+     - Users importing zod schemas no longer need a manual adapter.
+     - Error messages from zod paths now use the StandardError shape.
+
+   Before / after:
+     Before: copy a 15-line adapter from the docs into every project that mixes zod with this library.
+     After:  one import + one call.
+
+   Surprises (in diff but not in PR body):
+     - Default error shape change (above) — could be the headline angle for migration-aware audiences.
+
+   Headline angle: "drop the 15-line adapter — one import, one call"
+   Scope band for Q2.1: one idea (15–25s)
+   ```
+
+   The "Headline angle" line feeds Phase 3.0's motif derivation and Phase 3.3's hook copy. The "Scope band" line feeds Q2.1's scope-derived duration proposal.
+
+10. **Forbidden shortcuts** (each is a fast path to a wrong video):
+    - Writing the analysis block from the PR title alone — **fail**; you must read the diff.
+    - Skipping the cross-check because the body "looks complete" — bodies often look complete and are wrong.
+    - Treating the PR body as truth when it conflicts with the diff — **the diff wins**.
+    - Filling in a plausible "Before" sentence when the diff doesn't support one — run the bail-out check instead.
+    - Collapsing two genuinely distinct user-visible features into one "feature X" bullet to make the scope band look smaller — record both and pick a headline angle at Step 1.4.
+
+**For git-ref-range and codebase-path inputs**, apply the same structure with the diff coming from `git diff <range>` / direct file reads in place of `gh pr diff`. Steps 4–9 (public-API delta → analysis block) are not PR-specific.
+
 ### Step 1.3 — Read product context
 
 Read if they exist: `README.md`, `docs/`, `package.json`. If nothing found, ask: "Can you briefly describe the product and who it's for?"
 
 ### Step 1.4 — Present understanding + get scope confirmation
 
+**For PR inputs**, the bullets and the compelling angle below **must** be derived from the PR analysis block written in Step 1.2a — not from the PR title or body. Quote the "Headline angle" line directly as the proposed story seed; turn the public-API delta and the before/after statement into the bullets. If the user added clarifying context after Step 1.2a, fold it in here.
+
+**For non-PR inputs**, derive the bullets from the relevant entry in Step 1.2 (marketing brief positioning, blog headline, changelog highlight, codebase reading, freeform description).
+
 Present:
 
 > "Here's what I'll base the video on:
-> - [feature summary bullet 1]
-> - [feature summary bullet 2]
+> - [feature summary bullet 1 — concrete, grounded in the diff / source]
+> - [feature summary bullet 2 — the before → after value, in one line]
 >
-> The compelling angle: [proposed story seed in one sentence]
+> The compelling angle: [proposed story seed — for PRs, the "Headline angle" from the analysis block]
 >
 > Anything to add, remove, or correct?"
 
@@ -104,17 +224,34 @@ Before continuing, scan for: security patches, internal pricing, credentials, un
 
 Ask these questions one at a time, in order.
 
-### Q2.1 — Duration target
+### Q2.1 — Duration (derived from scope, never offered as a menu)
 
-> "How long should the video be?
-> 1. **30 seconds** (default) — best for X promo, highest completion rate
-> 2. **45 seconds**
-> 3. **60 seconds** — Fireship-style pace
-> 4. **90 seconds**
->
-> Duration is a target, not a cap. If the story lands in 27s or stretches to 34s, that's fine — optimize for impact."
+**Do not ask the user to pick a fixed length from a menu.** A fixed number becomes a constraint, and the dominant failure mode is padding — freeze-frames, repeated beats, black or empty trailing frames, or filler bullets added solely to reach the chosen target. Instead, derive a duration from the *scope of the change* and present it as a proposal the user can confirm or override.
 
-**Duration is a soft target, not a deadline.** When the user picks a duration, treat it as a midpoint. The rendered video can land roughly ±5s away from the chosen target (formally ±15% — see the audit in Phase 6) without violating the spec. Story coherence trumps clock precision: do NOT pad scenes to hit 30.0s exactly, do NOT compress a scene that needs to breathe just to fit. If the story lands at 27s, ship 27s. If it needs 34s to feel natural, ship 34s. No artificial deadlines.
+**Allowed range: 15–60 seconds.** Anything outside this window is wrong by default. Going under 15s means the story can't breathe; going over 60s means it's two videos.
+
+**Scope → duration ladder:**
+
+| Scope of the PR / feature | Distinct payoff beats | Target |
+|---|---|---|
+| One idea (single API addition, single bug fix, one QoL win) | hook + 1 delivery + CTA | **15–25s** |
+| Typical PR-sized feature (problem → solution → proof, or a multi-chapter code walk) | hook + 2–3 delivery + CTA | **25–40s** |
+| Multi-faceted release (multiple distinct sub-features, or comparison needing problem + solution + proof beats) | hook + 3–4 delivery + CTA | **40–60s** |
+
+A *distinct payoff beat* is one new thing the viewer learns. Two scenes whose payoff sentences (see Phase 3.3 item 1) reduce to the same idea are one beat, not two.
+
+**Sanity check before proposing — do this silently first:**
+1. List the distinct payoff beats the video must contain.
+2. Estimate: hook ≈ 3s, CTA ≈ 5–7s, each delivery beat ≈ 6–10s (longer if it contains a code chapter ladder).
+3. Sum the floor and the ceiling. If the floor is under 15s, you're padding the beat list — cut beats or shrink the scope claim. If the ceiling is over 60s, you have two videos — pick one angle.
+
+**Propose to the user (no menu, no fixed lengths):**
+
+> "Based on the scope of this PR, I'm targeting **~Xs** (range Ys–Zs). Beats: <one short sentence listing the beats>. Confirm, or override with a different length anywhere in 15–60s."
+
+**Hard rule — story sets duration, never the other way around.** If at any later phase a scene needs to be stretched, held on a static frame, repeated, backed by black/empty frames, or filled with filler bullets to reach the chosen target — **stop**, shorten the target, re-confirm with the user, and ship the shorter video. Padding to hit a number is the single behavior this rule exists to forbid. If a 30s scope honestly tells in 18s, ship 18s.
+
+**Breathing-room constraint.** Whatever duration is chosen, it must allow every on-screen text element to (a) finish animating in, (b) dwell long enough to be read, and (c) settle for at least ~0.4s before the next scene begins. Cutting to a new scene the instant a line of text finishes appearing is forbidden. See Phase 3.3 (item 3) and the Phase 6 audit for the concrete dwell-time table.
 
 ### Q2.2 — Aspect ratio
 
@@ -124,7 +261,7 @@ Ask these questions one at a time, in order.
 > 3. **9:16 vertical** (1080×1920) — Reels/Shorts/TikTok
 > 4. **Multi-format** — render all three from the same story"
 
-Frame rate is fixed at 30fps (users who need 60fps can edit `remotion.config.ts` post-scaffold).
+Frame rate is fixed at 30fps. The audit thresholds throughout this skill are expressed in absolute frame counts assuming 30fps; do NOT change fps in `remotion.config.ts` without simultaneously updating every frame-based threshold (Phase 6 pre-render audit, the dwell-time table, the breathing-room rules, chapters-required threshold).
 
 ### Q2.3 — Remotion project location
 
@@ -134,7 +271,42 @@ Frame rate is fixed at 30fps (users who need 60fps can edit `remotion.config.ts`
 
 ### Q2.4 — Brand assets (auto-detect → confirm)
 
-Auto-detect using the heuristics documented in `brand-detection.md`. Present findings as:
+<HARD-GATE>
+**The brand scan is mandatory. It is not skippable under any user instruction — including "use sane defaults", "don't ask questions", "just ship it", or "non-interactive". Those instructions affect interactive *confirmation*; they do NOT affect *detection*.**
+
+You MUST run the heuristics in `brand-detection.md` against the actual target repository — the source code that owns the feature, not the `marketing/` output directory — before selecting any color, font, or logo.
+
+**Forbidden shortcuts (these produce wrong colors and waste an iteration):**
+
+- "I know this project — TanStack uses amber, Vercel uses black/white, Stripe uses purple" → **No.** Run the scan. Recall is unreliable; brand details drift between training data and now.
+- "It's a dev tool, dark + neon green is fine" → **No.** Generic vibes ≠ this product's brand.
+- "User said no questions, so I'll skip detection" → **No.** Detection is silent. Confirmation is what the "no questions" instruction skips.
+- Picking from a palette in your head because it "fits the topic" → **No.** Read the repo's CSS/Tailwind/theme files.
+
+**The scan must produce a written record before any composition file is written.** Output a short block listing, for each field: the source file checked, the value found (or `not found`), and the final value used. Example:
+
+```
+Brand scan — TanStack/ai
+  Primary  : checked tailwind.config.* (none) · packages/*/styles.css (--brand: #0a3d2e) → #0a3d2e
+  Accent   : checked theme.json (none) · brand.json (none) · derived from primary → #14b870
+  Logo     : checked public/logo.svg → public/logo.svg (will be referenced from src/brand.ts)
+  Font     : checked next/font (none) · @fontsource (none) · README ref → Inter (fallback)
+```
+
+If the scan finds nothing for a field, fall through to the neutral defaults below — but **only after** the scan ran and is recorded. Skipping the scan and going straight to defaults is the failure mode this gate exists to prevent.
+
+**If you cannot find a logo, ask the user — do NOT invent one.** The same rule applies to any field where detection genuinely turned up nothing and no sensible neutral default exists.
+
+The following are non-negotiable regardless of "no questions" mode:
+- Brand identity (colors, font, logo) — detection always runs
+- Asset locations (where the logo and any referenced media live)
+- File output destination (the `marketing/<feature-slug>/remotion/` path or override)
+- Target audience (carried in from Phase 1's PR/brief analysis)
+
+In interactive mode, present findings (the block above) and ask for confirmation. In non-interactive / "use sane defaults" mode, print the same block and proceed without asking — the *record* is required either way.
+</HARD-GATE>
+
+Present findings as:
 
 > "I found:
 > - Logo: `public/logo.svg`
@@ -143,9 +315,9 @@ Auto-detect using the heuristics documented in `brand-detection.md`. Present fin
 >
 > Use these, customize some, or provide your own?"
 
-**Persistence:** write chosen brand to `.marketing/brand.json` (relative to repo root). On subsequent runs, ask:
+**Persistence:** write chosen brand to `marketing/<feature-slug>/remotion/.marketing/brand.json` (mirrors the hyperframes-video location). On subsequent runs, ask:
 
-> "I loaded brand settings from `.marketing/brand.json`. Use saved, or re-detect?"
+> "I loaded brand settings from `marketing/<feature-slug>/remotion/.marketing/brand.json`. Use saved, or re-detect?"
 
 **Fallback when nothing detected:** ask explicitly with these neutral defaults. These are intentionally neutral — auto-detection of the project's actual brand is always preferred, and these values should only appear when detection turns up nothing.
 - Primary: `#3B82F6` (neutral blue)
@@ -216,20 +388,82 @@ For each snippet the skill plans to include:
 
 If the library isn't available locally and the skill can't verify, **ask the user** before synthesizing. A wrong API in the first draft destroys user trust and wastes a full iteration round.
 
-### Step 3.3 — Present scene plan for approval
+### Step 3.3 — Self-improve the draft, then present for approval
 
-Before presenting, **self-audit the plan against these rules**. Do not skip — failing any of them silently is the fastest path to a generic video:
+This step has two parts: a **silent self-improvement loop** that you run before the user sees anything, and the **user-facing approval gate** that follows.
+
+**Do not show the user the first thing you wrote.** The first version of a scene plan is almost always weaker than the second. The agent's job here is to hand the user the *strongest* plan it can build given the rules in this skill, not the first draft.
+
+#### Self-improvement loop (silent — run before presenting)
+
+After drafting an initial scene plan, run a deliberate improvement pass against the rule sections listed below. Iterate **at least twice**. Stop only when one full pass produces zero further changes — the draft has stabilized.
+
+**On every pass, for each scene and for the plan as a whole, ask:** *"Does this satisfy this rule? If not, can I rewrite, merge, drop, split, or reorder a scene to fix it?"* Apply the fix in-place, then continue the pass.
+
+The five **Core checks** below must be satisfied — every plan, no exceptions. On top of those, scan against the broader rule sections at the end of this step.
+
+**Core checks (every plan must satisfy all five):**
 
 1. **Per-scene payoff**: for each scene, write one sentence of the form *"The new thing a viewer knows at the end of this scene is ___."* If two scenes produce the same sentence, one is redundant — merge or cut. If a scene's sentence is vague (e.g., *"the product is good"*), the scene is filler — redesign.
-2. **Pacing variance**: scene durations must reflect cognitive load, not a uniform slice. Targets for a 30s video:
-   - Hook: 2.5–3.5s (a single punch)
-   - Problem / setup: 4–6s (enough to land one concrete claim)
-   - Delivery (code / swap / comparison): 12–16s, with internal chapters if >~8s
-   - CTA: 5–8s (breathes, doesn't rush)
+2. **Pacing variance**: scene durations must reflect cognitive load, not a uniform slice. Reference shape for a **30s** target — **scale proportionally** for shorter (15–25s) or longer (40–60s) videos:
+   - Hook: ~10–12% of total (≈3s @ 30s; ≈1.8s @ 15s; ≈6s @ 60s) — a single punch
+   - Problem / setup: ~15–20% (≈5s @ 30s) — enough to land one concrete claim
+   - Delivery (code / swap / comparison): ~45–55%, with internal chapters if the beat exceeds ~8s (>240 frames at 30fps)
+   - CTA: ~18–25%, **never below 4s** (120 frames at 30fps) regardless of total — the CTA always breathes and never rushes
 
-   Reject plans where the shortest and longest scene differ by less than ~2×. Equal-slice plans are the single strongest "AI-generated" tell.
-3. **Value prop by ~t=8s**: by the end of scene 2, the viewer must know what the feature does, who it's for, and why it matters. If that's not true with the current plan, restructure before scaffolding. Do NOT bury the value in the delivery scene.
-4. **Motif presence and state-change**: the signature motif chosen in Phase 3.0 must appear in at least 2 scenes (typically 3: hook + problem + CTA) and visibly change state between at least one adjacent pair (e.g., clean → glitchy → clean again).
+   Reject plans where the shortest and longest scene differ by less than ~2×. Equal-slice plans are the single strongest "AI-generated" tell. Reject plans where the CTA is under 4s — a rushed CTA destroys the conversion the rest of the video bought.
+3. **Breathing room (no rush-cuts on text)**: a scene must not transition out while a text element is still being read. Minimum on-screen dwell time, measured from the moment the element *finishes* animating in to the moment the scene *begins* transitioning out:
+
+   | Element | Minimum dwell |
+   |---|---|
+   | Short headline / one phrase (≤6 words) | ≥ 1.5s (≥45 frames at 30fps) |
+   | Long headline / single sentence (7–14 words) | ≥ 2.5s (≥75 frames) |
+   | Two-line text / short paragraph (15–30 words) | ≥ 3.5s (≥105 frames) |
+   | Code chapter (per chapter, after focus lands) | ≥ 3s (≥90 frames) |
+   | CTA URL / handle (must be clearly readable) | ≥ 3s (≥90 frames) |
+
+   Every scene must also include a **~0.4s settle hold** (≥12 frames at 30fps) between the last animation completing and the scene transitioning out. Cutting on the same frame an animation finishes is forbidden — the eye needs a beat to confirm what it saw, and transitions that arrive on the resolve-frame feel cluttered and amateur. If the proposed `durationFrames` cannot accommodate these minima, **shorten the beat list, do not shrink the dwell times**.
+4. **Value prop by ~t=8s** (or by ~25–30% of total duration, whichever is earlier): by the end of scene 2, the viewer must know what the feature does, who it's for, and why it matters. If that's not true with the current plan, restructure before scaffolding. Do NOT bury the value in the delivery scene.
+5. **Motif presence and state-change**: the signature motif chosen in Phase 3.0 must appear in at least 2 scenes (typically 3: hook + problem + CTA) and visibly change state between at least one adjacent pair (e.g., clean → glitchy → clean again).
+
+**Broader rule sections to scan on every improvement pass.** Search this file (or the linked file) for each section heading and walk it against the current draft:
+
+- **Hook enforcement** (`hooks/hook-rules.md`) — applied to the HookTitle scene. If it fails any check, rewrite the headline; don't just record the failure.
+- **Storytelling & Visual Uniqueness Rules** (the numbered "Rule N" sections later in this file) — generic-test, no plain bullet lists, signature motif as load-bearing element, anti-clickbait, side-by-side contrasts, insight tagline, counter-expectation beat, pattern-interrupt vs information, first-10s value prop, et al.
+- **Code Scene Rules** — chapters mandatory for ≥5s code beats (>150 frames at 30fps), synchronized per-chapter narration, per-chapter dwell (~3s, ~90 frames), line-length per scene type, diagnostic-comment color, elide unimportant config with `/*…*/`, pre-break long imports.
+- **Layout Rules** — single alignment per scene, foreground readability over decoration, no accidental overlap, hero-text size on aspect changes.
+- **Visual Cognition Rules** — ≤4 visual chunks per frame, one pre-attentive cue per focal element, reading-flow matched to scene type, reading-saccade limits.
+- **Anti-padding rule** (Q2.1) — if any scene exists solely to fill time, **cut it and shorten the target**. Do not carry it forward.
+- **Pattern spec** loaded in Step 3.1 (`patterns/<pattern>.md`) — the scene sequence and payoffs should be coherent with the template; deviations must have a clear justification.
+- **Step 3.0 motif & Step 3.2b grounded code** — verify motif state-change still applies and any synthesized code still maps to real exports/signatures after the rewrites.
+
+**Improvements you may apply silently during the loop (no user question needed):**
+
+- Rewrite headlines, payoff sentences, captions, and CTA copy for stronger hook discipline and clearer payoff
+- Merge two scenes whose payoff sentences collapse to the same idea
+- Drop a scene whose only function is to fill time, and shorten the target accordingly
+- Split a delivery scene into chaptered sub-beats when a single block exceeds ~8s (>240 frames at 30fps)
+- Re-assign motif state per scene to produce a visible state-change between at least one adjacent pair
+- Reorder scenes to move the value prop earlier
+- Adjust per-scene `durationFrames` to satisfy pacing variance and breathing-room minima — only by **trimming**, never by stretching or padding
+- Replace generic bullets with concrete artifacts (real API shapes, real error messages, real metrics) drawn from the input
+
+**Changes that must wait for the user — flag them, do not apply silently:**
+
+- Moving the target duration outside the ±20% band confirmed at Q2.1
+- Changing the signature motif chosen at Step 3.0
+- Changing the story pattern chosen at Step 3.1
+- Adding or removing major scenes that alter the headline narrative claim
+
+**Stop condition.** End the loop when one full pass over all rule sections (Core checks + broader sections) produces zero changes. If you hit five passes without stabilizing, you have a structural problem the loop can't fix — stop and ask the user for guidance instead of churning.
+
+#### Present the (already-improved) scene plan for approval
+
+When presenting to the user, include a brief **"Self-review notes"** line near the top of the response so the user can see the improvement work was actually done. List the 2–5 most material changes the loop applied. Example:
+
+> *Self-review notes: tightened the hook line from "Add validation easily" to "Swap validation libs with one line"; merged a redundant "why it matters" scene into the problem setup; trimmed delivery 14s → 11s so the CTA dwells ≥4s.*
+
+If the loop produced no material changes (rare — usually means the first draft was already strong, or the agent isn't pushing hard enough), say so explicitly: *"Self-review notes: draft was stable on first pass; no rewrites needed."*
 
 Example output:
 
@@ -518,7 +752,9 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 **Technical checks:**
 
 - [ ] `pnpm exec tsc --noEmit` passes
-- [ ] Sum of `scenes[].durationFrames / meta.fps` is within ±15% of the target duration set at Q2.1
+- [ ] Sum of `scenes[].durationFrames / meta.fps` is within the **15–60s** window AND within ±20% of the scope-derived target proposed in Q2.1 (or matches an explicit user override). If the natural story comes in shorter than the proposed target, the target was wrong — re-derive from scope, do not pad.
+- [ ] **No padding scenes**: no scene exists solely to extend duration. A scene fails this check if any of: its payoff sentence (Phase 3.3 item 1) is blank, vague, or duplicates another scene's; the composition contains trailing black/empty/freeze frames after the last animation resolves; any scene holds a static frame with no on-screen change for more than 1.5s (45 frames at 30fps) without a narrative reason captured in the scene plan
+- [ ] **Dwell-time per text element met**: every text element on every scene satisfies the minimum dwell times in the Breathing Room table (Phase 3.3 item 3), measured from animate-in completion to scene-transition start. Every scene includes a ≥0.4s (≥12 frames at 30fps) settle hold before its outgoing transition begins. Verify by walking each scene's frame-driven animations and checking the gap between the last interpolation's resolve frame and the scene's `durationFrames` end
 - [ ] Every scene with `code` renders without `shiki` errors (test by invoking the shiki highlighter on each snippet)
 - [ ] Every brand asset referenced in `src/brand.ts` exists on disk
 - [ ] Render flags include `--scale 2 --pixel-format yuv420p` (or `remotion.config.ts` sets both). 10-bit (`yuv420p10le`) is opt-in only; it breaks Win11 Films & TV and Discord inline playback.
