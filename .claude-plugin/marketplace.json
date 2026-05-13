@@ -1,5 +1,7 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-plugin-marketplace.json",
   "name": "alemtuzlak",
+  "description": "Alem Tuzlak's personal Claude Code skills and plugins.",
   "owner": {
     "name": "Alem Tuzlak"
   },
@@ -26,6 +28,16 @@
         "skills"
       ],
       "category": "marketing"
+    },
+    {
+      "name": "self-improve",
+      "description": "Self-improving agent: captures lessons from corrections, enforces architectural couplings, and absorbs learnings back into your skills.",
+      "version": "0.1.0",
+      "source": "./skills/self-improve",
+      "author": {
+        "name": "Alem Tuzlak"
+      },
+      "keywords": ["self-improve", "lessons", "couplings", "skills"]
     }
   ]
 }
