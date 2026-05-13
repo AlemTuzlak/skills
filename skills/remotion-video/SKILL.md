@@ -236,7 +236,7 @@ A *distinct payoff beat* is one new thing the viewer learns. Two scenes whose pa
 > 3. **9:16 vertical** (1080×1920) — Reels/Shorts/TikTok
 > 4. **Multi-format** — render all three from the same story"
 
-Frame rate is fixed at 30fps (users who need 60fps can edit `remotion.config.ts` post-scaffold).
+Frame rate is fixed at 30fps. The audit thresholds throughout this skill are expressed in absolute frame counts assuming 30fps; do NOT change fps in `remotion.config.ts` without simultaneously updating every frame-based threshold (Phase 6 pre-render audit, the dwell-time table, the breathing-room rules, chapters-required threshold).
 
 ### Q2.3 — Remotion project location
 
