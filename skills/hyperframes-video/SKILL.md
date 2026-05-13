@@ -237,7 +237,7 @@ Ask these questions one at a time, in order.
 
 ### Q2.1 — Duration (derived from scope, never offered as a menu)
 
-**Do not ask the user to pick a fixed length from a menu.** A fixed number becomes a constraint, and the dominant failure mode is padding — freeze-frames, repeated beats, black or empty trailing frames, or filler bullets added solely to reach the chosen target. Instead, derive a duration from the *scope of the change* and present it as a proposal the user can confirm or override.
+**Do not ask the user to pick a fixed length from a menu.** (This restriction is specific to duration; other questions like aspect ratio use a numbered menu.) A fixed number becomes a constraint, and the dominant failure mode is padding — freeze-frames, repeated beats, black or empty trailing frames, or filler bullets added solely to reach the chosen target. Instead, derive a duration from the *scope of the change* and present it as a proposal the user can confirm or override.
 
 **Allowed range: 15–60 seconds.** Anything outside this window is wrong by default. Going under 15s means the story can't breathe; going over 60s means it's two videos.
 
