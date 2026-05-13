@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "self-improve",
+  "version": "0.1.0",
+  "description": "Self-improving agent: captures lessons from corrections, enforces architectural couplings, and absorbs learnings back into your skills.",
+  "author": {
+    "name": "Alem Tuzlak"
+  },
+  "homepage": "https://github.com/AlemTuzlak/skills",
+  "repository": "https://github.com/AlemTuzlak/skills",
+  "license": "MIT",
+  "keywords": ["self-improve", "lessons", "couplings", "skills"]
+}
