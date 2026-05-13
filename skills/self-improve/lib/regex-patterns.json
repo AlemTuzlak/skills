@@ -7,7 +7,6 @@
       "\\bnext time\\b",
       "\\b(don't|never) (do|use|forget|skip)\\b",
       "\\bthat's (wrong|incorrect|not right)\\b",
-      "\\binstead of\\b",
       "\\bno,? (do|use|let's)\\b",
       "\\bremember to\\b"
     ],
@@ -20,11 +19,9 @@
   "coupling": {
     "loose": [
       "\\bwhenever I\\b",
-      "\\bif .+ changes?\\b",
+      "\\bif [a-zA-Z_][a-zA-Z0-9_./-]* changes?\\b",
       "\\bcoupled to\\b",
-      "\\b.+ needs .+ when\\b",
       "\\bupdate .+ also update\\b",
-      "\\bimpacts?\\b",
       "\\blinked to\\b",
       "\\btied to\\b",
       "\\bbreaks if\\b",
@@ -33,7 +30,7 @@
     "strict": [
       "\\bwhenever I (update|change|modify|add)\\b",
       "\\bcoupled to\\b",
-      "\\bif .+ changes?,? then\\b"
+      "\\bif [a-zA-Z_][a-zA-Z0-9_./-]* changes?,? then\\b"
     ]
   }
 }
