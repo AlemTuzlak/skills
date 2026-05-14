@@ -1,11 +1,17 @@
 ---
-description: Use after a correction to capture the lesson. `/learn yes` confirms with predicted scope. Flags: `--global`/`--repo` (override scope), `--skill <name>`/`--no-skill` (override related_skill), `--edit` (open in editor after writing).
+description: Capture a lesson from the most recent correction. Bare `/learn` synthesizes the rule from chat context. `/learn yes` confirms a hook-drafted lesson. Flags: `--global`/`--repo` (override scope), `--skill <name>`/`--no-skill` (override related_skill), `--edit` (open in editor after writing).
 disable-model-invocation: true
 ---
 
 # /learn
 
-You are capturing a durable lesson from the previous correction. The auto-detection that fired in this conversation already drafted the rule, predicted a scope, and predicted a `related_skill`. Your job here is to confirm (with any flag overrides), check for contradictions against the existing lesson pile, write the file, append it to the INDEX, and surface skill-cluster thresholds.
+You are capturing a durable lesson from the most recent correction in this conversation. Three invocation modes:
+
+1. **Bare `/learn`** — you synthesize the rule, scope, and `related_skill` from the chat context yourself (no hook draft required).
+2. **`/learn yes`** — confirm a hook-drafted lesson (the auto-detection that fired surfaced a `📌 Saw you corrected me about [<rule>]. Capture as [<predicted-scope>] lesson? ...` line in a previous response).
+3. **Manual capture** — `/learn yes` with no recoverable draft falls through to asking the user for rule/scope/skill.
+
+In every mode you then check for contradictions against the existing lesson pile, write the file, append it to the INDEX, and surface skill-cluster thresholds.
 
 The plugin's own files live under `${CLAUDE_PLUGIN_ROOT}`. The target repo is `${CLAUDE_PROJECT_DIR}`. The global lesson pile is at `$HOME/.agent/self-learning/`.
 
@@ -17,6 +23,7 @@ Follow every step in order.
 
 Read `$ARGUMENTS`. Expected forms:
 
+- `/learn` (bare — synthesize from chat context)
 - `/learn yes`
 - `/learn yes --global`
 - `/learn yes --repo`
@@ -24,16 +31,24 @@ Read `$ARGUMENTS`. Expected forms:
 - `/learn yes --no-skill`
 - `/learn yes --edit`
 - Any combination of the above flags after `yes`.
+- Flags may also follow bare `/learn` (e.g. `/learn --repo --edit`) — they apply identically.
 
-If the first positional token is **not** `yes`, print usage and stop:
+Decide the invocation mode:
 
-```
-Usage: /learn yes [--global|--repo] [--skill <name>|--no-skill] [--edit]
+- If `$ARGUMENTS` is empty (no positional tokens, no flags) → **mode = `bare`**.
+- If the first positional token is `yes` → **mode = `confirm`**.
+- If the first positional token is anything else AND begins with `--` (a flag) → **mode = `bare`** (the user invoked with flags but no `yes`).
+- If the first positional token is anything else and is not a recognized flag → print usage and stop:
 
-Run /learn after the plugin detected a correction worth capturing. The previous turn drafted the rule and predicted a scope — `yes` confirms it. Use flags to override.
-```
+  ```
+  Usage:
+    /learn [--global|--repo] [--skill <name>|--no-skill] [--edit]
+    /learn yes [--global|--repo] [--skill <name>|--no-skill] [--edit]
 
-Parse flags:
+  Bare /learn synthesizes the lesson from recent chat context. `/learn yes` confirms a hook-drafted lesson surfaced by the auto-detection. Flags override the inferred scope and related_skill.
+  ```
+
+Parse flags (apply to either mode):
 
 - `--global` → `override_scope = global`
 - `--repo` → `override_scope = repo`
@@ -47,9 +62,9 @@ If both `--skill <name>` and `--no-skill` are passed, refuse and ask the user to
 
 ---
 
-## Step 2: Recover the drafted lesson from conversation context
+## Step 2: Recover or synthesize the drafted lesson
 
-Look back through this conversation for the most recent injected `## Correction detected` block (from the UserPromptSubmit hook) followed by your model response containing a line of the form:
+**If mode = `confirm`:** Look back through this conversation for the most recent injected `## Correction detected` block (from the UserPromptSubmit hook) followed by your model response containing a line of the form:
 
 ```
 📌 Saw you corrected me about [<rule>]. Capture as [<predicted-scope>] lesson? ...
@@ -61,10 +76,24 @@ Extract:
 - `predicted_scope` — `repo` or `global`, from the second `[...]`.
 - `predicted_skill` — if your earlier response also surfaced a `related_skill = <name>` line in the correction-detected analysis, use it. Otherwise `null`.
 
-If you cannot locate a recent drafted correction in the conversation, stop and tell the user:
+If you cannot locate a recent drafted correction in the conversation, FALL THROUGH to the bare-mode synthesis below (do **not** abort) — `/learn yes` should still work even when the hook missed the correction. After synthesis, optionally tell the user `(no hook draft found — synthesized from chat context)` so they know which path ran.
+
+**If mode = `bare` (or fallthrough from `confirm`):** Synthesize the lesson from the chat context yourself. Look back through the recent turns for any of:
+
+- An explicit user correction (e.g. "you should have …", "next time …", "you made a mistake …", "stop doing X", "always Y").
+- A user-stated rule of thumb or preference, even if mild (e.g. "I prefer …", "we always …", "from now on …").
+- A recent incident in this session where you took a wrong action and the user pointed it out, with a clear fix in their reply.
+
+Synthesize:
+
+- `rule` — one short imperative sentence capturing what to do (or not do) going forward.
+- `predicted_scope` — `repo` if the rule is specific to this repository (path-specific, build/tooling specific to this monorepo, repo conventions) or `global` if the rule is general-purpose (design principles, communication preferences, language-level rules).
+- `predicted_skill` — the most plausibly matching skill name from `${SKILLS_REPO}` or installed plugin skills, if there's a clean fit; otherwise `null`. Don't force a match.
+
+If no plausible correction or rule can be found in the recent context, stop and tell the user:
 
 ```
-No recent correction draft found in this conversation. /learn is meant to confirm an auto-detected correction. If you want to capture a lesson manually, draft the rule in plain text first and I'll write the file.
+I couldn't find a recent correction or rule in this conversation to capture. Tell me the rule in plain text and I'll write the file — include the routing condition ("Use when …") if you have one.
 ```
 
 (In the manual case, ask the user for: rule text, scope, related_skill, then proceed from Step 3.)

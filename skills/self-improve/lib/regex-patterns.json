@@ -8,12 +8,19 @@
       "\\b(don't|never) (do|use|forget|skip)\\b",
       "\\bthat's (wrong|incorrect|not right)\\b",
       "\\bno,? (do|use|let's)\\b",
-      "\\bremember to\\b"
+      "\\bremember to\\b",
+      "\\b(mistake|error) (by|on) (you|your part)\\b",
+      "\\byou made (a|an) (mistake|error)\\b",
+      "\\b(this|that) was (a|an) mistake( by you)?\\b",
+      "\\byou (screwed|messed) (this |that |it )?up\\b"
     ],
     "strict": [
       "\\byou (forgot|should have|shouldn't have|didn't|never|always)\\b",
       "\\b(stop|don't|never) (doing|making|using|do|use)\\b",
-      "\\bnext time\\b"
+      "\\bnext time\\b",
+      "\\b(mistake|error) by you\\b",
+      "\\byou made (a|an) (mistake|error)\\b",
+      "\\b(this|that) was (a|an) mistake by you\\b"
     ]
   },
   "coupling": {
