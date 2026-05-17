@@ -86,14 +86,21 @@ The instructor authors the exercise material themselves. Outside help is fine fo
 
 ## Workshop structure
 
-Every workshop has these video categories (mirror this structure when planning):
+Every workshop is a **flat list of laser-focused exercises** plus framing videos:
 
 - Workshop welcome
-  - Exercise intro
-    - Exercise step: **Problem**
-    - Exercise step: **Solution**
-  - Exercise outro
+  - Exercise 1 intro
+    - Exercise 1 **problem**
+    - Exercise 1 **solution**
+  - Exercise 1 outro
+  - Exercise 2 intro
+    - Exercise 2 **problem**
+    - Exercise 2 **solution**
+  - Exercise 2 outro
+  - ... (one block per exercise)
 - Workshop outro
+
+Each exercise has **exactly one** problem and **exactly one** solution. There are no "steps" within exercises.
 
 Reference: https://foundations.epicweb.dev/
 
@@ -102,6 +109,29 @@ Exercises are embedded in the workshop app (https://github.com/epicweb-dev/kcdsh
 ```html
 <EpicVideo url="https://www.epicweb.dev/workshops/.../solution" />
 ```
+
+## One exercise = one concept
+
+**Each exercise teaches one specific concept and has exactly one problem/solution pair. No multi-step exercises.**
+
+If you catch yourself drafting "Exercise X has 2 steps: first A, then B" — that's two exercises, not one. Split them: Exercise X teaches A; Exercise X+1 teaches B.
+
+Signs an exercise has been over-packed:
+
+- The title needs the word "and" — "Build X **and** wire Y"
+- Pacing creeps over ~30 minutes of focused work
+- The problem-before-solution framing has more than one "aha" moment
+- The plan uses numbered sub-steps inside the exercise
+- You're tempted to write `01.problem.foo`, `02.problem.bar`, etc. inside the same exercise directory
+
+Why this matters:
+
+- Tighter problem → solution arcs are easier to record, easier to ship as embeddable videos, and easier for learners to consume on-demand
+- Learners hit a success milestone every 15–30 minutes, which builds momentum
+- Each exercise becomes individually skippable for learners who already know one concept but want the next
+- The workshop is easier to remix later (add, remove, reorder) when every exercise is atomic
+
+When in doubt, split. It's almost always easier to merge two short exercises later than to surgically split one bloated one.
 
 ## Logistics defaults
 
