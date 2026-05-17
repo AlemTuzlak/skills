@@ -146,6 +146,29 @@ Why this matters:
 
 When in doubt, split. It's almost always easier to merge two short exercises later than to surgically split one bloated one.
 
+## Write for international beginners
+
+Workshop attendees come from everywhere and their English proficiency varies a lot. Don't assume the reader is a fluent speaker, and don't assume they share your vocabulary outside of the technical terms the workshop is teaching them.
+
+### Voice and vocabulary
+
+- **Default to short sentences.** One idea per sentence. If a sentence is more than ~25 words, look for a place to break it.
+- **Use common words.** Prefer `needed` over `essential`, `standard` over `canonical`, `set up` over `wire`, `happens` over `fires`, `stops` over `halts`, `extra` over `auxiliary`. The technical term stays technical (an `endpoint` is still an `endpoint`); the meta-language around it gets simpler.
+- **Avoid idioms unless they're universal.** `Step by step` is fine. `Footgun`, `bikeshedding`, `down the rabbit hole`, `low-hanging fruit`, `in the weeds`, `boilerplate` — replace with plain descriptions.
+- **Avoid sarcasm and irony.** They don't translate well across cultures and they confuse readers who are still learning the language.
+- **Spell out acronyms the first time** they appear in a given file — write `Server-Sent Events (SSE)` the first time, then `SSE` after. The first appearance is per-file because each `README.mdx` is read on its own.
+- **Define jargon at the point of use.** One short sentence is enough.
+
+### Titles
+
+Section and exercise titles should use **common, descriptive words** that say what the section or exercise is about. `Basic Setup` beats `Foundational Infrastructure`. `Chat with Tools` beats `Augmenting LLM Capabilities via Function Calling`.
+
+Pick the simplest accurate word. If an intermediate-English reader would have to look the word up, find a different word.
+
+### What this rule is not
+
+This is not about dumbing down the technical content. Tools, schemas, streams, hooks, adapters, V8 isolates — those names stay because the learner needs to be fluent in them by the end of the workshop. What gets simpler is everything *around* them: the verbs, the connectives, the descriptive prose, the framing. Keep the technical surface; soften everything else.
+
 ## Title length by level
 
 The level dictates how long the heading `# Title` in each `README.mdx` should be:
