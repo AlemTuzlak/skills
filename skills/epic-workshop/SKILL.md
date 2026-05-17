@@ -254,6 +254,7 @@ Epic Web exercises use a recurring cast of named emoji characters in code commen
 - **Doc links go through 📜 Dominic.** Don't drop bare links into instructions; have Dominic introduce them.
 - **TypeScript-only friction goes through 🦺 Lily.** This keeps the main flow language-agnostic in tone even when the code is TS.
 - **🚨 Alfred lives in test output**, not in instruction prose. Use him in test assertion messages so failure logs read in-character.
+- **💰 Marty's code snippets live in the file the learner is editing, not in the README.** When Marty hands the learner ready-to-use code, the commented snippet goes right where it needs to land — inside the source file, next to the 🐨 comments that point at it. Making the learner switch to the README, copy the code, switch back, and paste it breaks focus and invites typos. The README can *say* "Marty has the snippet for you in the file"; it should not contain the snippet itself.
 
 ## Scope of learner work
 
