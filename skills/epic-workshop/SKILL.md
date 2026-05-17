@@ -220,6 +220,38 @@ When 💣-marking wrong-attempt code, prefer leaving the imports in place (the i
 
 If your project's TS settings flag unused pre-added imports, fix the tsconfig (`"noUnusedLocals": false` or equivalent) rather than asking learners to write imports.
 
+## README.mdx and FINISHED.mdx — what goes where
+
+Every workshop has a recurring pair of special MDX files: `README.mdx` and `FINISHED.mdx`. Their meaning depends on **where in the tree they live**. Get this wrong and the workshop app will surface the wrong content at the wrong moment.
+
+### README.mdx — three levels, three jobs
+
+| Location | Role | Tone & length |
+|----------|------|---------------|
+| `exercises/README.mdx` | **Course entrypoint.** Welcomes the learner, names the workshop, lists the topics covered, names what they'll build, and any prerequisites. The first thing a learner sees. | Warm, brief, bulleted topic list with emoji bullets, ends with a "let's go" hook. ~20 lines. |
+| `exercises/NN.section/README.mdx` | **Section entrypoint.** A conceptual deep-dive on the section's topic. Explains *why* this section matters, walks through the architecture or background, may include code snippets showing the relevant API surface. Sets up the exercises that follow. | Meatier — can be 50–150 lines. Includes prose, code blocks, and Dominic 📜 doc links. |
+| `exercises/NN.section/NN.problem.x/README.mdx` | **Exercise problem instructions.** The actual task. Frames the goal, lists the 🐨 Kody steps, points at the emoji comments in code, includes "How to know it's working" + "🚨 If you get stuck" sections. | Tight, action-oriented. Uses the full emoji cast (🐨 Kody, 💰 Marty, 🦉 Olivia, 📜 Dominic, 🚨 Alfred, 💣 Barry, etc.). |
+| `exercises/NN.section/NN.solution.x/README.mdx` | **Solution debrief.** Congratulates the learner on what they just built, recaps what was learned, sometimes uses Peter 👨‍💼 to set up the next exercise's motivation. Never re-describes the problem. | Short — ~10–20 lines. Conversational. |
+
+### FINISHED.mdx — two levels, two jobs
+
+| Location | Role | Tone & length |
+|----------|------|---------------|
+| `exercises/FINISHED.mdx` | **Course outro.** Big-picture recap of what the learner shipped across the whole workshop, thank-you note, invitation to revisit sections, feedback prompt. | Warm, brief. ~10 lines. |
+| `exercises/NN.section/FINISHED.mdx` | **Section outro.** One-line celebration of the section's outcome, invitation to fill out the feedback form (rendered to the right by the workshop app), pointer to the next exercise. | Very short — 5–8 lines. The form pointer is part of the convention: "Let me know what you think in the form on the right! 👉" |
+
+### Problem/solution directories do NOT have a FINISHED.mdx
+
+Each `NN.problem.x/` and `NN.solution.x/` directory only carries a `README.mdx`. The workshop app composes the problem README, then the solution README, then the section-level `FINISHED.mdx` — there's no per-exercise outro file.
+
+### Authoring rules
+
+- **Match the level.** Don't put exercise instructions in the section README, and don't put a Course-style "Welcome to the workshop" banner inside a section README. The workshop app displays each file in its own context.
+- **Section README is where you teach the *why*.** Exercise READMEs assume the learner has read it — they jump straight to "what you'll do."
+- **Section FINISHED is where feedback lives.** Use the canonical "form on the right" pointer so the workshop app's feedback widget gets surfaced consistently.
+- **Course README is the only place to put prerequisites and the topic overview.** Don't duplicate that material in section READMEs.
+- **Solution README never re-explains the problem.** Recap what was just done, then optionally tee up the next exercise.
+
 ## References
 
 - Workshop app: https://github.com/epicweb-dev/kcdshop
