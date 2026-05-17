@@ -110,28 +110,54 @@ Exercises are embedded in the workshop app (https://github.com/epicweb-dev/kcdsh
 <EpicVideo url="https://www.epicweb.dev/workshops/.../solution" />
 ```
 
+## Three levels: workshop, section, exercise
+
+Workshops are organized in **three** levels, not two:
+
+```
+Workshop  ─→  Section  ─→  Exercise (problem + solution)
+```
+
+- **Workshop** — the whole product (e.g. "AI-Powered Apps with TanStack AI"). One per repo.
+- **Section** — a group of related exercises that share a theme. Lives at `exercises/NN.section-name/`. Has its own `README.mdx` (conceptual intro) and `FINISHED.mdx` (feedback prompt).
+- **Exercise** — one focused concept. Lives at `exercises/NN.section-name/MM.problem.exercise-name/` (paired with `MM.solution.exercise-name/`). Has a `README.mdx` for problem instructions and a `README.mdx` for the solution debrief.
+
+A section typically has 2–5 exercises. One-exercise sections are a smell — either the section is under-scoped or the "exercise" is bigger than one concept and should split.
+
 ## One exercise = one concept
 
 **Each exercise teaches one specific concept and has exactly one problem/solution pair. No multi-step exercises.**
 
-If you catch yourself drafting "Exercise X has 2 steps: first A, then B" — that's two exercises, not one. Split them: Exercise X teaches A; Exercise X+1 teaches B.
+If you catch yourself drafting "Exercise X has 2 steps: first A, then B" — that's two exercises, not one. Split them into `MM.problem.A` and `(MM+1).problem.B` within the same section.
 
 Signs an exercise has been over-packed:
 
 - The title needs the word "and" — "Build X **and** wire Y"
 - Pacing creeps over ~30 minutes of focused work
 - The problem-before-solution framing has more than one "aha" moment
-- The plan uses numbered sub-steps inside the exercise
-- You're tempted to write `01.problem.foo`, `02.problem.bar`, etc. inside the same exercise directory
+- You're tempted to write internal numbered sub-steps inside the exercise
 
 Why this matters:
 
 - Tighter problem → solution arcs are easier to record, easier to ship as embeddable videos, and easier for learners to consume on-demand
 - Learners hit a success milestone every 15–30 minutes, which builds momentum
 - Each exercise becomes individually skippable for learners who already know one concept but want the next
-- The workshop is easier to remix later (add, remove, reorder) when every exercise is atomic
+- The workshop is easier to remix later when every exercise is atomic
 
 When in doubt, split. It's almost always easier to merge two short exercises later than to surgically split one bloated one.
+
+## Title length by level
+
+The level dictates how long the heading `# Title` in each `README.mdx` should be:
+
+| Level | Target length | Example |
+|-------|---------------|---------|
+| Workshop (course) | Whatever reads well, often with an emoji | `# AI-Powered Apps with TanStack AI 🤖` |
+| **Section** | **2–3 words max** | `# Basic Setup` / `# Routing` / `# Page Context` |
+| Exercise (problem) | Action-oriented imperative, 3–6 words | `# Wire the chat endpoint` / `# Register your routes` |
+| Exercise (solution) | Mirror the problem in past tense + an emoji | `# 🏁 Chat endpoint wired` |
+
+If a section title needs the word "and" or has more than three words, the section is probably trying to cover two themes and should split — or the title is over-specified and a tighter abstract name will read better in the workshop app sidebar.
 
 ## Logistics defaults
 
