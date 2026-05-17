@@ -176,6 +176,20 @@ Epic Web exercises use a recurring cast of named emoji characters in code commen
 - **TypeScript-only friction goes through 🦺 Lily.** This keeps the main flow language-agnostic in tone even when the code is TS.
 - **🚨 Alfred lives in test output**, not in instruction prose. Use him in test assertion messages so failure logs read in-character.
 
+## Scope of learner work
+
+The learner's job is to **consume identifiers**, not introduce them. Every problem-step starter must already have:
+
+- **All required `import` lines pre-added** — even if the imported identifier isn't used yet. Learners never write or uncomment imports. They reference identifiers that the scaffold already brought into scope.
+- **All presentational code pre-built** — JSX, styling, layout, dark mode, ARIA, form HTML, animations. None of this is on the learner's plate unless the workshop is explicitly about UI.
+- **All infrastructure pre-built** — DB queries, ORM setup, framework loaders/actions/middleware, env config, route registration, package installs.
+
+The carved-out hole the learner fills is whatever the workshop is *actually about* — the library API, the hook call, the schema, the tool definition, the system prompt, etc. Carve it as small as possible.
+
+When 💣-marking wrong-attempt code, prefer leaving the imports in place (the imports stay legitimate after the new approach lands) and only marking the wrong *usage* for deletion. If an import truly becomes dead, mention it in the README instructions rather than asking the learner to delete an `import` line in code.
+
+If your project's TS settings flag unused pre-added imports, fix the tsconfig (`"noUnusedLocals": false` or equivalent) rather than asking learners to write imports.
+
 ## References
 
 - Workshop app: https://github.com/epicweb-dev/kcdshop
