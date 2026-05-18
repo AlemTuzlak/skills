@@ -235,9 +235,9 @@ Epic Web exercises use a recurring cast of named emoji characters in code commen
 |-------|------|------|
 | 👨‍💼 | Peter the Product Manager | Tells us what our users want |
 | 🧝‍♀️ | Kellie the Co-worker | A co-worker who sometimes does work ahead of your exercises |
-| 🐨 | Kody the Koala | Tells you when there's something specific you should do |
+| 🐨 | Kody the Koala | Tells you **what** you need to do and **why** — the task and its purpose, never the snippet. |
 | 🦺 | Lily the Life Jacket | Helps with TypeScript-specific parts of the exercises |
-| 💰 | Marty the Money Bag | Gives specific tips (and sometimes code) along the way |
+| 💰 | Marty the Money Bag | Tells you **how** to do it — the implementation hint, the literal snippet to plug in, the pattern to follow. |
 | 📝 | Nancy the Notepad | Encourages you to take notes on what you're learning |
 | 🦉 | Olivia the Owl | Gives useful tidbits and best-practice notes |
 | 📜 | Dominic the Document | Gives links to useful documentation |
@@ -248,6 +248,11 @@ Epic Web exercises use a recurring cast of named emoji characters in code commen
 
 ### Authoring rules
 
+- **🐨 vs 💰 is the WHAT/HOW split — keep them strictly separate.** Kody tells the learner *what* needs to happen and *why*; Marty tells them *how* — the snippet, the pattern, the literal code to plug in. A 🐨 line that contains a code snippet is wrong. A 🐨 line that explains *how* to call an API is wrong. Kody states the goal and the reasoning; Marty hands over the means.
+  - ✅ 🐨 Kody: "Register the new tool on the server so the model knows it can call it."
+  - ✅ 💰 Marty: "Add `addToCartDef` to the `tools: [...]` array on the `chat({...})` call."
+  - ❌ Don't write: "🐨 Add `addToCartDef` to the `tools: [...]` array..." — that's Marty's job. Kody would say "🐨 Register the new tool on the server."
+  - The litmus test: read just the 🐨 lines. The learner should know *what they're solving and why it matters*. Read just the 💰 lines. They should know *what to type*.
 - **Match the emoji to the role.** Don't use Kody for a TypeScript hint — that's Lily. Don't use Olivia for a doc link — that's Dominic.
 - **Stay terse.** One sentence per emoji line. The character is the framing; the instruction is what matters.
 - **Wrong-attempt code uses 💣.** When the learner needs to delete the wrong-attempt placeholder before writing the real solution, Barry shows up there.
