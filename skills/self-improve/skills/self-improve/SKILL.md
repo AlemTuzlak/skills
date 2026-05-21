@@ -1,12 +1,11 @@
 ---
 name: self-improve
-description: Use when curating lessons, capturing corrections, capturing couplings, promoting clusters to skills, or improving an existing skill from accumulated lessons. Invoked indirectly via /learn, /couple, /check-couplings, /curate-lessons, /promote, /promote-cluster, /improve-skill, /promote-skill commands.
-disable-model-invocation: true
+description: Use when the user asks to capture a lesson or correction, remember what went wrong, add or check architectural couplings, curate accumulated lessons, promote lessons into AGENTS.md or skills, improve an existing skill from lessons, or run self-improvement after a mistake. Also use for requests equivalent to /learn, /couple, /check-couplings, /curate-lessons, /promote, /promote-cluster, /improve-skill, /promote-skill, or /self-improve.
 ---
 
 # Self-Improve Skill
 
-This skill is the workflow backbone for the self-improve plugin. It is invoked indirectly via slash commands. Each command in `commands/*.md` calls into this skill with a specific sub-task.
+This skill is the workflow backbone for self-improvement tasks. In Claude it may be invoked indirectly via slash commands; in Codex it should trigger directly from the user's request text.
 
 ## Operations
 
