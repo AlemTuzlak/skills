@@ -18,6 +18,7 @@
   const STORAGE_KEY = 'teach-me:' + (courseMeta.slug || 'course') + ':progress';
   const cards = [];
   let currentCardIndex = 0;
+  let currentView = 'card'; // 'card' | 'glossary' | 'resources'
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, function (m) {
@@ -374,6 +375,8 @@
   /* ---------- Rendering ---------- */
 
   function renderCurrentCard() {
+    currentView = 'card';
+    setActiveExtras(null);
     const card = cards[currentCardIndex];
     if (!card) return;
     if (!card.renderedHtml) {
@@ -421,102 +424,148 @@
     if (idx !== -1) goToCard(idx);
   }
 
-  /* ---------- Glossary panel ---------- */
+  /* ---------- Reference views (Glossary, Resources) ---------- */
 
-  function renderGlossary() {
-    const ul = document.getElementById('glossary-list');
-    if (!ul) return;
-    clearChildren(ul);
-    if (!termLedger.length) {
-      const li = document.createElement('li');
-      li.className = 'glossary-item';
-      li.style.color = 'var(--color-text-muted)';
-      li.textContent = 'No terms defined yet.';
-      ul.appendChild(li);
-      return;
-    }
+  function termSourceChapter(t) {
+    return t['first-use-chapter'] || t.firstUseChapter || t.chapter || null;
+  }
+
+  function findChapterMeta(num) {
+    if (!num) return null;
+    return (courseMeta.chapters || []).find(function (c) { return c.number === num; }) || null;
+  }
+
+  function renderGlossaryView() {
+    currentView = 'glossary';
+    const contentEl = document.getElementById('content');
     const sorted = termLedger.slice().sort(function (a, b) { return a.term.localeCompare(b.term); });
-    sorted.forEach(function (t) {
-      const li = document.createElement('li');
-      li.className = 'glossary-item';
-      const term = document.createElement('div');
-      term.className = 'glossary-term';
-      term.textContent = t.term;
-      const def = document.createElement('div');
-      def.className = 'glossary-def';
-      def.textContent = t.definition || '';
-      li.appendChild(term);
-      li.appendChild(def);
-      ul.appendChild(li);
+
+    const head = '<div class="card card-inner view-screen">' +
+      '<h1 class="view-title">📖 Glossary</h1>' +
+      '<p class="view-subtitle">' + sorted.length + ' terms defined across the course. Click any chapter link to jump to where the term was first introduced.</p>' +
+      '<input class="view-filter" id="glossary-filter" type="search" placeholder="Filter terms or definitions…" aria-label="Filter glossary" autocomplete="off" />' +
+      '<ol class="glossary-card-list" id="glossary-card-list">';
+
+    let items = '';
+    if (!sorted.length) {
+      items = '<li class="glossary-card-empty">No glossary terms have been recorded yet.</li>';
+    } else {
+      items = sorted.map(function (t) {
+        const ch = termSourceChapter(t);
+        const chMeta = findChapterMeta(ch);
+        const srcLink = chMeta
+          ? '<p class="glossary-term-source">First defined in <a href="#" class="glossary-source-link" data-chapter="' + chMeta.number + '">Chapter ' + chMeta.number + ': ' + escapeHtml(chMeta.title) + '</a></p>'
+          : '';
+        const initial = (t.term || '').charAt(0).toUpperCase();
+        return '<li class="glossary-card-item" data-search-term="' + escapeHtml((t.term + ' ' + (t.definition || '')).toLowerCase()) + '">' +
+          '<div class="glossary-term-head"><span class="glossary-initial">' + escapeHtml(initial) + '</span><h3>' + escapeHtml(t.term) + '</h3></div>' +
+          '<p class="glossary-term-def">' + escapeHtml(t.definition || '') + '</p>' +
+          srcLink +
+          '</li>';
+      }).join('');
+    }
+    const tail = '</ol></div>';
+    setHtml(contentEl, head + items + tail);
+
+    const filterEl = document.getElementById('glossary-filter');
+    if (filterEl) {
+      filterEl.addEventListener('input', function () {
+        const q = (filterEl.value || '').toLowerCase().trim();
+        const lis = document.querySelectorAll('.glossary-card-item');
+        let visible = 0;
+        lis.forEach(function (li) {
+          const hay = li.dataset.searchTerm || '';
+          const match = !q || hay.indexOf(q) !== -1;
+          li.style.display = match ? '' : 'none';
+          if (match) visible++;
+        });
+        const emptyEl = document.getElementById('glossary-empty-state');
+        if (emptyEl) emptyEl.remove();
+        if (visible === 0 && q) {
+          const ol = document.getElementById('glossary-card-list');
+          if (ol) {
+            const li = document.createElement('li');
+            li.id = 'glossary-empty-state';
+            li.className = 'glossary-card-empty';
+            li.textContent = 'No terms match "' + q + '".';
+            ol.appendChild(li);
+          }
+        }
+      });
+    }
+
+    setActiveExtras('glossary');
+    document.querySelectorAll('.chapter-link, .card-link').forEach(function (el) { el.classList.remove('active'); });
+    document.querySelectorAll('.chapter-item').forEach(function (el) { el.classList.remove('expanded'); });
+    document.getElementById('prev-card').disabled = true;
+    document.getElementById('next-card').disabled = true;
+    document.getElementById('card-counter').textContent = sorted.length + ' terms';
+    contentEl.scrollTop = 0;
+  }
+
+  function renderResourcesView() {
+    currentView = 'resources';
+    const contentEl = document.getElementById('content');
+    const sources = (resourcesData && Array.isArray(resourcesData.sources)) ? resourcesData.sources : [];
+    const influencers = (resourcesData && Array.isArray(resourcesData.influencers)) ? resourcesData.influencers : [];
+
+    function renderSourceCard(s) {
+      const tag = s.type ? '<span class="resource-tag">' + escapeHtml(s.type) + '</span>' : '';
+      const title = escapeHtml(s.title || s.url);
+      const why = s.why ? '<p class="resource-why">' + escapeHtml(s.why) + '</p>' : '';
+      return '<li class="resource-card">' +
+        '<p class="resource-title">' + tag + '<a href="' + escapeHtml(s.url) + '" target="_blank" rel="noopener">' + title + '</a></p>' +
+        why +
+        '</li>';
+    }
+
+    function renderInfluencerCard(i) {
+      const main = '<a href="' + escapeHtml(i.url || '#') + '" target="_blank" rel="noopener"><strong>' + escapeHtml(i.name || '') + '</strong></a>';
+      const sig = i.signature ? ' · <a href="' + escapeHtml(i.signature) + '" target="_blank" rel="noopener">signature post</a>' : '';
+      const why = i.why ? '<p class="resource-why">' + escapeHtml(i.why) + '</p>' : '';
+      return '<li class="resource-card resource-card-influencer">' +
+        '<p class="resource-title">' + main + sig + '</p>' +
+        why +
+        '</li>';
+    }
+
+    const head = '<div class="card card-inner view-screen">' +
+      '<h1 class="view-title">📚 Resources</h1>' +
+      '<p class="view-subtitle">Sources cited across the chapters and niche practitioners worth following.</p>';
+
+    let body = '';
+    if (sources.length) {
+      body += '<section class="resources-section-view"><h2>Sources (' + sources.length + ')</h2><ol class="resources-list">' +
+        sources.map(renderSourceCard).join('') + '</ol></section>';
+    }
+    if (influencers.length) {
+      body += '<section class="resources-section-view"><h2>Niche influencers (' + influencers.length + ')</h2><ol class="resources-list">' +
+        influencers.map(renderInfluencerCard).join('') + '</ol></section>';
+    }
+    if (!sources.length && !influencers.length) {
+      body += '<p style="color:var(--color-text-muted);">No resources recorded for this course.</p>';
+    }
+    const tail = '</div>';
+    setHtml(contentEl, head + body + tail);
+
+    setActiveExtras('resources');
+    document.querySelectorAll('.chapter-link, .card-link').forEach(function (el) { el.classList.remove('active'); });
+    document.querySelectorAll('.chapter-item').forEach(function (el) { el.classList.remove('expanded'); });
+    document.getElementById('prev-card').disabled = true;
+    document.getElementById('next-card').disabled = true;
+    document.getElementById('card-counter').textContent = (sources.length + influencers.length) + ' resources';
+    contentEl.scrollTop = 0;
+  }
+
+  function setActiveExtras(viewName) {
+    document.querySelectorAll('.extras-link').forEach(function (el) {
+      el.classList.toggle('active', el.dataset.view === viewName);
     });
   }
 
-  function renderResources() {
-    const el = document.getElementById('resources-content');
-    if (!el || !resourcesData) return;
-    clearChildren(el);
-
-    function makeLink(href, text) {
-      const a = document.createElement('a');
-      a.href = href;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      a.textContent = text;
-      return a;
-    }
-
-    if (Array.isArray(resourcesData.sources) && resourcesData.sources.length) {
-      const h = document.createElement('h4');
-      h.textContent = 'Sources';
-      el.appendChild(h);
-      resourcesData.sources.forEach(function (s) {
-        const p = document.createElement('p');
-        if (s.type) {
-          const tag = document.createElement('small');
-          tag.style.color = 'var(--color-text-muted)';
-          tag.textContent = '[' + s.type + '] ';
-          p.appendChild(tag);
-        }
-        p.appendChild(makeLink(s.url, s.title || s.url));
-        if (s.why) {
-          p.appendChild(document.createElement('br'));
-          const why = document.createElement('small');
-          why.textContent = s.why;
-          p.appendChild(why);
-        }
-        el.appendChild(p);
-      });
-    }
-    if (Array.isArray(resourcesData.influencers) && resourcesData.influencers.length) {
-      const h = document.createElement('h4');
-      h.textContent = 'Influencers';
-      el.appendChild(h);
-      resourcesData.influencers.forEach(function (i) {
-        const p = document.createElement('p');
-        const a = makeLink(i.url, '');
-        const strong = document.createElement('strong');
-        strong.textContent = i.name;
-        a.appendChild(strong);
-        p.appendChild(a);
-        if (i.signature) {
-          p.appendChild(document.createTextNode(' · '));
-          p.appendChild(makeLink(i.signature, 'signature post'));
-        }
-        if (i.why) {
-          p.appendChild(document.createElement('br'));
-          const why = document.createElement('small');
-          why.textContent = i.why;
-          p.appendChild(why);
-        }
-        el.appendChild(p);
-      });
-    }
-    if (!el.firstChild) {
-      const p = document.createElement('p');
-      p.style.color = 'var(--color-text-muted)';
-      p.textContent = 'No resources listed.';
-      el.appendChild(p);
-    }
+  function setExtrasCounts() {
+    const g = document.getElementById('extras-count-glossary');
+    if (g) g.textContent = termLedger.length ? termLedger.length : '';
   }
 
   /* ---------- Theme ---------- */
@@ -627,6 +676,24 @@
       }
     });
 
+    document.querySelectorAll('.extras-link').forEach(function (el) {
+      el.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        const view = el.dataset.view;
+        if (view === 'glossary') renderGlossaryView();
+        else if (view === 'resources') renderResourcesView();
+      });
+    });
+
+    document.body.addEventListener('click', function (ev) {
+      const src = ev.target.closest('.glossary-source-link');
+      if (src) {
+        ev.preventDefault();
+        const ch = parseInt(src.dataset.chapter, 10);
+        if (!isNaN(ch)) goToChapter(ch);
+      }
+    });
+
     document.getElementById('theme-toggle').addEventListener('click', cycleTheme);
 
     const searchInput = document.getElementById('search-input');
@@ -654,6 +721,7 @@
 
     document.addEventListener('keydown', function (ev) {
       if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA')) return;
+      if (currentView !== 'card') return;
       if (ev.key === 'ArrowRight' || ev.key === 'j') { nextCard(); ev.preventDefault(); }
       else if (ev.key === 'ArrowLeft' || ev.key === 'k') { prevCard(); ev.preventDefault(); }
     });
@@ -687,8 +755,7 @@
 
     buildCards();
     rebuildSidebarNav();
-    renderGlossary();
-    renderResources();
+    setExtrasCounts();
     updateChapterNavProgress();
     updateProgressBar();
     wireEvents();

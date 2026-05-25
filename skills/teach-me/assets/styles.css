@@ -295,83 +295,270 @@ body {
   line-height: 1.3;
 }
 
-/* Glossary section */
+/* ----- Extras nav (Glossary, Resources — full-screen views) ----- */
 
-.glossary-section,
-.resources-section {
-  border-top: 1px solid var(--color-border);
+.extras-nav {
+  margin-top: 0.5rem;
   padding-top: 0.9rem;
-  font-size: 0.85rem;
-}
-
-.glossary-section summary,
-.resources-section summary {
-  cursor: pointer;
-  font-weight: 600;
-  padding: 0.3rem 0;
-  user-select: none;
-}
-
-.glossary-section summary:hover,
-.resources-section summary:hover {
-  color: var(--color-primary);
-}
-
-.glossary-list {
-  list-style: none;
-  padding: 0;
-  margin: 0.5rem 0 0;
+  border-top: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  max-height: 240px;
-  overflow-y: auto;
+  gap: 0.15rem;
 }
 
-.glossary-item {
-  padding: 0.3rem 0.5rem;
-  border-radius: 4px;
-  cursor: help;
-  font-size: 0.82rem;
+.extras-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: var(--transition);
+  border-left: 3px solid transparent;
 }
 
-.glossary-item:hover {
+.extras-link:hover {
   background: var(--color-bg-alt);
+  border-left-color: var(--color-primary);
 }
 
-.glossary-term {
+.extras-link.active {
+  background: var(--color-bg-alt);
+  border-left-color: var(--color-primary);
   font-weight: 600;
-  color: var(--color-primary);
 }
 
-.glossary-def {
+.extras-icon {
+  font-size: 1.05em;
+  width: 1.4em;
+  text-align: center;
+}
+
+.extras-label {
+  flex: 1;
+}
+
+.extras-count {
+  font-size: 0.72rem;
   color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  background: var(--color-bg);
+  padding: 0.05em 0.5em;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+}
+
+/* ----- Full-screen reference views (Glossary, Resources) ----- */
+
+.view-screen { padding-bottom: 0.5rem; }
+
+.view-title {
+  font-size: 2rem;
+  margin: 0 0 0.3em;
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 0.45em;
+  line-height: 1.2;
+}
+
+.view-subtitle {
+  color: var(--color-text-muted);
+  margin: 0 0 1.5em;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.view-filter {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  padding: 0.65em 0.95em;
+  margin: 0 0 1.6em;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.view-filter:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Glossary grid */
+
+.glossary-card-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.9em;
+}
+
+.glossary-card-item {
+  padding: 1em 1.1em 0.9em;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  border-left: 3px solid var(--color-primary);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.glossary-card-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 10px var(--color-shadow);
+  transform: translateY(-1px);
+}
+
+.glossary-term-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55em;
+  margin-bottom: 0.45em;
+}
+
+.glossary-initial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.14);
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.glossary-term-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--color-text);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.glossary-term-def {
+  margin: 0 0 0.6em;
+  color: var(--color-text);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.glossary-term-source {
+  margin: 0;
   font-size: 0.78rem;
-  margin-top: 0.1rem;
-}
-
-.resources-content {
-  font-size: 0.82rem;
-  max-height: 280px;
-  overflow-y: auto;
-  margin-top: 0.4rem;
-}
-
-.resources-content h4 {
-  margin: 0.6rem 0 0.3rem;
-  font-size: 0.82rem;
   color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
-.resources-content a {
+.glossary-source-link {
   color: var(--color-primary);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--color-primary);
+}
+
+.glossary-source-link:hover {
+  border-bottom-style: solid;
+}
+
+.glossary-card-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2em 1em;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Resources list */
+
+.resources-section-view {
+  margin-bottom: 2em;
+}
+
+.resources-section-view h2 {
+  font-size: 1.2rem;
+  margin: 0 0 0.7em;
+  color: var(--color-text);
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.resources-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65em;
+}
+
+.resource-card {
+  padding: 0.85em 1em 0.95em;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  border-left: 3px solid var(--color-accent);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.resource-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+.resource-card-influencer {
+  border-left-color: #14b8a6;
+}
+
+.resource-title {
+  margin: 0 0 0.35em;
+  font-size: 0.98rem;
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45em;
+}
+
+.resource-title a {
+  color: var(--color-text);
   text-decoration: none;
 }
 
-.resources-content a:hover {
+.resource-title a:hover {
+  color: var(--color-primary);
   text-decoration: underline;
+}
+
+.resource-tag {
+  display: inline-block;
+  padding: 0.12em 0.55em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.14);
+  color: var(--color-primary);
+  align-self: center;
+}
+
+.resource-why {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
 }
 
 /* ============================================================ Reading pane ===== */
