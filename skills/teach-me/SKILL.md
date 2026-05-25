@@ -394,41 +394,43 @@ The consistency-pass agent writes the corrected files in place. Returns a summar
 
 ## Phase 9 — Build index.html
 
-Main thread builds the self-contained HTML mini-course.
+The HTML is built by a Node script in the skill's assets folder. It pre-renders code blocks with **Shiki** (dual github-light / github-dark themes, CSS-variable mode) so the runtime needs no highlighting library.
 
-1. **Acquire third-party libs if missing.** Check if `<skill-dir>/assets/marked.min.js` and `<skill-dir>/assets/highlight.min.js` exist.
-   - If not, use `WebFetch` to download from official sources:
-     - marked: `https://cdn.jsdelivr.net/npm/marked/marked.min.js`
-     - highlight.js core + common languages: `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js`
-   - Save with `Write` to `<skill-dir>/assets/marked.min.js` and `<skill-dir>/assets/highlight.min.js`. These are cached for all future runs.
-2. **Read the template** `<skill-dir>/assets/templates/index.template.html`.
-3. **Read** `<skill-dir>/assets/styles.css` and `<skill-dir>/assets/viewer.js`.
-4. **Read all chapter markdown files** in numeric order.
-5. **Read** `course-meta.json`, `concepts.json`, `terms.json`.
-6. **Substitute** these placeholders in the template:
-   - `{{COURSE_TITLE}}` — from course-meta
-   - `{{GOAL_LINE}}` — concise version of the recorded goal
-   - `{{STYLES_CSS}}` — the contents of styles.css
-   - `{{MARKED_JS}}` — the contents of marked.min.js
-   - `{{HIGHLIGHT_JS}}` — the contents of highlight.min.js
-   - `{{VIEWER_JS}}` — the contents of viewer.js
-   - `{{CHAPTER_NAV_HTML}}` — generated HTML `<li>` items for chapter nav (build from course-meta.chapters; each entry includes chapter number, title, and a progress-dot placeholder)
-   - `{{CHAPTER_MARKDOWN_SCRIPTS}}` — for each chapter, a `<script type="text/markdown" data-chapter="NN" id="ch-NN">...raw markdown...</script>` block. **Escape** any `</script>` occurrences in the markdown (use a character-class replacement: `</` → `<\/` inside the script body).
-   - `{{COURSE_META_JSON}}` — contents of course-meta.json
-   - `{{CONCEPTS_JSON}}` — contents of concepts.json
-   - `{{TERMS_JSON}}` — contents of terms.json
-7. **Write** the result to `<output-location>/learn-<slug>/index.html`.
+1. **Acquire `marked.min.js`** if missing (`<skill-dir>/assets/marked.min.js`). Use `WebFetch` from `https://cdn.jsdelivr.net/npm/marked/marked.min.js` and `Write` to disk. One-time cache. No `highlight.min.js` — Shiki replaces it.
 
-The HTML viewer:
-- Parses markdown at page load (marked.js)
-- Splits each chapter on `---` separators into cards
-- Renders cards one at a time with prev/next nav (within chapter) and chapter nav (cross-chapter)
-- Native `<details>` elements render as click-to-reveal (no extra JS needed)
-- Wraps occurrences of glossary terms with hover-tooltip popovers (uses terms.json)
-- Tracks per-card / per-chapter read status in `localStorage` keyed by `teach-me:<slug>:progress`
-- Theme toggle (light/dark/auto-from-system) stored in localStorage
-- Search: substring filter across all chapter markdown, results list jumps to matching card
-- Interactive SVGs: any `<svg data-interactive="hover-explain">` gets tooltips wired to child `[data-explain]` elements
+2. **Install Shiki** if `<skill-dir>/assets/node_modules/shiki/` is missing. Run:
+   ```
+   npm --prefix <skill-dir>/assets install
+   ```
+   This is a one-time setup; subsequent builds reuse the cached install. The `package.json` and `package-lock.json` are committed with the skill.
+
+3. **Run the build script:**
+   ```
+   node <skill-dir>/assets/build-html.mjs <output-location>/learn-<slug>
+   ```
+   The script:
+   - Reads `<skill-dir>/assets/templates/index.template.html`, `styles.css`, `viewer.js`, `marked.min.js`.
+   - Reads the course's `course-meta.json`, `concepts.json`, `terms.json`, `resources.json`.
+   - Reads each chapter markdown file in numeric order.
+   - **Pre-renders every fenced code block** using Shiki's `codeToHtml` with both light and dark themes (CSS-variable mode). Marked.js sees the resulting HTML in the markdown body and passes it through unchanged at runtime.
+   - Builds the sidebar chapter nav from `course-meta.chapters`.
+   - Escapes `</script>` and `<!--` inside inlined markdown and JSON.
+   - Substitutes all `{{PLACEHOLDER}}` tokens in the template.
+   - Writes the final `index.html` to the course folder.
+
+4. If the script fails, capture stderr and report. Common causes: missing chapter file referenced from `course-meta.json`, Shiki not installed (`npm install` step skipped), or an unfamiliar code-fence language (the script falls back to plain `<pre><code>` for unsupported languages — see `SUPPORTED_LANGS` in `build-html.mjs`).
+
+The HTML viewer at runtime:
+- Parses non-code markdown at page load (marked.js).
+- Code blocks are already Shiki HTML — no client-side highlighting work.
+- Splits each chapter on `---` separators into cards.
+- Renders cards one at a time with prev/next nav and chapter nav.
+- Native `<details>` elements render as click-to-reveal.
+- Wraps occurrences of glossary terms with hover-tooltip popovers (uses `terms.json`).
+- Tracks per-card / per-chapter read status in `localStorage` keyed by `teach-me:<slug>:progress`.
+- Theme toggle (light/dark/auto). Shiki's dual-theme output respects `data-theme` automatically via CSS overrides.
+- Search: substring filter across all chapter markdown; results list jumps to matching card.
+- Interactive SVGs: any `<svg data-interactive="hover-explain">` gets tooltips wired to child `[data-explain]` elements.
 
 ## Phase 10 — Finish
 

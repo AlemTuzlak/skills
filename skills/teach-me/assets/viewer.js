@@ -49,13 +49,8 @@
     catch (err) { console.error('Markdown render error', err); return '<pre>' + escapeHtml(src) + '</pre>'; }
   }
 
-  function highlightAll(scope) {
-    if (typeof hljs === 'undefined') return;
-    const blocks = (scope || document).querySelectorAll('pre code');
-    blocks.forEach(function (block) {
-      try { hljs.highlightElement(block); } catch (_) { /* ignore */ }
-    });
-  }
+  // Code highlighting is pre-rendered at build time by Shiki — no runtime work needed.
+  function highlightAll(_scope) { /* no-op */ }
 
   /* ---------- Card extraction ---------- */
 

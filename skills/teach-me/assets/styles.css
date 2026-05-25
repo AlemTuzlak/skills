@@ -612,32 +612,61 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Highlight.js minimal theming */
+/* Shiki dual-theme — code is pre-rendered at build time with github-light + github-dark.
+ * Shiki emits inline styles for the light theme and CSS variables (--shiki-dark, --shiki-dark-bg)
+ * for the dark theme. We swap based on the active data-theme on <html>.
+ */
 
-.hljs {
-  color: var(--color-text);
+pre.shiki,
+pre.shiki code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  line-height: 1.55;
+}
+
+pre.shiki {
+  padding: 1em 1.2em;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin: 1.2em 0;
+  border: 1px solid var(--color-border);
+  tab-size: 2;
+}
+
+pre.shiki code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  display: block;
+}
+
+pre.shiki .line {
+  display: block;
+  min-height: 1em;
+}
+
+html[data-theme="dark"] pre.shiki,
+html[data-theme="auto"][data-system-theme="dark"] pre.shiki {
+  background-color: var(--shiki-dark-bg) !important;
+  color: var(--shiki-dark) !important;
+}
+
+html[data-theme="dark"] pre.shiki span,
+html[data-theme="auto"][data-system-theme="dark"] pre.shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+pre.shiki-plain {
   background: var(--color-code-bg);
+  color: var(--color-text);
 }
 
-.hljs-keyword, .hljs-tag, .hljs-built_in {
-  color: var(--color-primary);
-}
-
-.hljs-string, .hljs-attr {
-  color: var(--color-success);
-}
-
-.hljs-number, .hljs-literal {
-  color: var(--color-accent);
-}
-
-.hljs-comment {
-  color: var(--color-text-muted);
-  font-style: italic;
-}
-
-.hljs-title, .hljs-function .hljs-title, .hljs-section {
-  color: var(--color-accent);
+pre.shiki-plain code {
+  white-space: pre;
 }
 
 /* ============================================================ Responsive ===== */
