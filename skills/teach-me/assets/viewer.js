@@ -69,6 +69,20 @@
     return parts.map(function (p) { return p.trim(); }).filter(function (p) { return p.length > 0; });
   }
 
+  function deriveCardLabel(rawMd, cardIndex) {
+    const m = rawMd.match(/^##\s+(.+)$/m);
+    if (!m) return 'Card ' + (cardIndex + 1);
+    const heading = m[1].trim();
+    if (/^What you'll learn/i.test(heading)) return 'Intro & prereqs';
+    if (/^Prereq/i.test(heading)) return 'Prereq check';
+    const cardMatch = heading.match(/^Card\s+(\d+)\s*:\s*(.+)$/i);
+    if (cardMatch) return cardMatch[1] + '. ' + cardMatch[2];
+    if (/^Recall/i.test(heading)) return 'Recall & recap';
+    if (/^Recap/i.test(heading)) return 'Recap';
+    if (/^Next/i.test(heading)) return 'Next';
+    return heading;
+  }
+
   function buildCards() {
     const chapterScripts = document.querySelectorAll('script[type="text/markdown"][data-chapter]');
     chapterScripts.forEach(function (script) {
@@ -86,12 +100,70 @@
           totalCards: cardSources.length,
           rawMd: rawMd,
           renderedHtml: '',
+          label: deriveCardLabel(rawMd, idx),
         });
       });
     });
     cards.sort(function (a, b) {
       if (a.chapterNum !== b.chapterNum) return a.chapterNum - b.chapterNum;
       return a.cardIndex - b.cardIndex;
+    });
+  }
+
+  function rebuildSidebarNav() {
+    const list = document.getElementById('chapter-list');
+    if (!list) return;
+    clearChildren(list);
+
+    const byChapter = new Map();
+    cards.forEach(function (c, idx) {
+      if (!byChapter.has(c.chapterNum)) byChapter.set(c.chapterNum, []);
+      byChapter.get(c.chapterNum).push({ card: c, globalIdx: idx });
+    });
+
+    (courseMeta.chapters || []).forEach(function (chMeta) {
+      const chNum = chMeta.number;
+      const chCards = byChapter.get(chNum) || [];
+
+      const item = document.createElement('li');
+      item.className = 'chapter-item';
+      item.dataset.chapter = String(chNum);
+
+      const a = document.createElement('a');
+      a.className = 'chapter-link';
+      a.href = '#';
+      a.dataset.chapter = String(chNum);
+
+      const num = document.createElement('span');
+      num.className = 'chapter-number';
+      num.textContent = String(chNum);
+      a.appendChild(num);
+
+      const title = document.createElement('span');
+      title.className = 'chapter-title';
+      title.textContent = chMeta.title || ('Chapter ' + chNum);
+      a.appendChild(title);
+
+      item.appendChild(a);
+
+      if (chCards.length > 0) {
+        const sub = document.createElement('ol');
+        sub.className = 'card-list';
+        chCards.forEach(function (entry) {
+          const li = document.createElement('li');
+          li.className = 'card-list-item';
+          const cardA = document.createElement('a');
+          cardA.className = 'card-link';
+          cardA.href = '#';
+          cardA.dataset.cardIdx = String(entry.globalIdx);
+          cardA.textContent = entry.card.label;
+          li.appendChild(cardA);
+          sub.appendChild(li);
+        });
+        item.appendChild(sub);
+      }
+
+      list.appendChild(item);
     });
   }
 
@@ -310,7 +382,7 @@
     const contentEl = document.getElementById('content');
     const meta = '<div class="card-meta" style="color:var(--color-text-muted);font-size:0.85rem;margin-bottom:0.5rem;">Chapter ' +
       card.chapterNum + ' · ' + escapeHtml(card.chapterTitle) + ' · Card ' + (card.cardIndex + 1) + ' of ' + card.totalCards + '</div>';
-    setHtml(contentEl, '<div class="card-inner">' + meta + card.renderedHtml + '</div>');
+    setHtml(contentEl, '<div class="card card-inner">' + meta + card.renderedHtml + '</div>');
     highlightAll(contentEl);
     wrapTerms(contentEl);
     wireInteractiveSvg(contentEl);
@@ -320,8 +392,15 @@
     document.getElementById('next-card').disabled = currentCardIndex === cards.length - 1;
     document.getElementById('card-counter').textContent = (currentCardIndex + 1) + ' / ' + cards.length;
 
-    document.querySelectorAll('.chapter-link').forEach(function (el) {
-      el.classList.toggle('active', parseInt(el.dataset.chapter, 10) === card.chapterNum);
+    document.querySelectorAll('.chapter-item').forEach(function (item) {
+      const isActive = parseInt(item.dataset.chapter, 10) === card.chapterNum;
+      item.classList.toggle('expanded', isActive);
+      const link = item.querySelector('.chapter-link');
+      if (link) link.classList.toggle('active', isActive);
+    });
+    document.querySelectorAll('.card-link').forEach(function (el) {
+      const idx = parseInt(el.dataset.cardIdx, 10);
+      el.classList.toggle('active', idx === currentCardIndex);
     });
 
     contentEl.scrollTop = 0;
@@ -533,11 +612,19 @@
     document.getElementById('next-card').addEventListener('click', nextCard);
     document.getElementById('prev-card').addEventListener('click', prevCard);
 
-    document.querySelectorAll('.chapter-link').forEach(function (el) {
-      el.addEventListener('click', function (ev) {
+    document.getElementById('chapter-list').addEventListener('click', function (ev) {
+      const cardLink = ev.target.closest('.card-link');
+      if (cardLink) {
         ev.preventDefault();
-        goToChapter(parseInt(el.dataset.chapter, 10));
-      });
+        const idx = parseInt(cardLink.dataset.cardIdx, 10);
+        if (!isNaN(idx)) goToCard(idx);
+        return;
+      }
+      const chapterLink = ev.target.closest('.chapter-link');
+      if (chapterLink) {
+        ev.preventDefault();
+        goToChapter(parseInt(chapterLink.dataset.chapter, 10));
+      }
     });
 
     document.getElementById('theme-toggle').addEventListener('click', cycleTheme);
@@ -599,6 +686,7 @@
     applyTheme(savedTheme);
 
     buildCards();
+    rebuildSidebarNav();
     renderGlossary();
     renderResources();
     updateChapterNavProgress();
