@@ -66,7 +66,14 @@ Diagrams support text. Text fills the gaps the diagram can't carry (the *why*, t
 
 ### 4. Diagram conventions
 
-- **Contrast is non-negotiable.** Diagrams are auto-wrapped in a light-backgrounded **`.diagram-card`** that stays light in both light AND dark themes. Your strokes and text MUST use the dark color `#1f2937` so they read clearly against that light card. Never use `currentColor` for strokes/text in diagrams — it would invert badly in dark mode.
+- **Contrast is non-negotiable.** Every diagram renders on a light-backgrounded card that stays light in BOTH light and dark themes:
+  - Top-level diagrams auto-wrap in `.diagram-card` (light bg, dark strokes).
+  - Diagrams inside a `.state-step` get the same light-card treatment applied directly to the `<img>` / `<svg>`.
+  - Diagrams inside callouts inherit the callout's surface — if the strokes would clash, wrap the diagram in `<figure class="diagram-card">` explicitly.
+
+  Your strokes and text MUST use the dark color `#1f2937` so they read against the light card. **Never use `currentColor` for strokes/text in diagrams** — it would invert badly in dark mode.
+
+  **Quick contrast check** before submitting: imagine the page in dark mode. If the diagram is rendering against `#1e293b` (the dark surface) instead of a near-white card, the dark strokes vanish. Use `<img>` / `<svg>` only inside elements that have light-card CSS applied; otherwise wrap explicitly in `<figure class="diagram-card">`.
 - ViewBox: `0 0 800 480` (or smaller — never larger)
 - Colors (4-color palette only — these are fixed hex values, not CSS variables):
   - `#1f2937` — text and strokes (dark slate; reads on the light diagram card in both themes)
@@ -176,7 +183,83 @@ const result = await handle.result();
 This kicks off `myWorkflow` with one argument and waits until it finishes before continuing.
 ```
 
-### 12. Worked examples with backward fading
+### 12. Show state changes; don't narrate them
+
+**Default to a state-sequence diagram whenever you'd otherwise narrate evolution over time.** Prose forces the reader to *rebuild* the state in their head from a sequential parse (Larkin & Simon 1987). A diagram shows the state directly. By the time the reader reaches the third sentence of a state walkthrough, the contents of the first state have already faded from working memory (Sweller's transient-information effect — Wong et al. 2012).
+
+❌ Bad — narrating evolution in prose:
+
+> Suppose the server crashes after `sendWelcomeEmail` returns and the timer is set. The event history now holds: Started, Activity scheduled, Result: `em_1`, Timer set: wake at 03:00. When a new worker picks the workflow up, it runs `welcomeFlow` from line 1 again. But each `await activity.…` does not actually call the email service. Instead, the engine intercepts the call and asks: "Is there already a result for this in the event history?" Yes — `em_1`. So the await resolves with `em_1`. No network call.
+
+✅ Good — 3 labeled panels showing each state (small multiples, Tufte):
+
+```html
+<div class="state-sequence">
+  <figure class="state-step">
+    <p class="state-step-label">Before the crash</p>
+    <img src="./diagrams/chNN-state-1.svg" alt="...">
+    <figcaption>Server crashes. Event history is durable; worker memory is gone.</figcaption>
+  </figure>
+  <figure class="state-step">
+    <p class="state-step-label">Replay begins</p>
+    <img src="./diagrams/chNN-state-2.svg" alt="...">
+    <figcaption>New worker re-runs the code; each await reads the history first.</figcaption>
+  </figure>
+  <figure class="state-step">
+    <p class="state-step-label">After replay</p>
+    <img src="./diagrams/chNN-state-3.svg" alt="...">
+    <figcaption>State reconstructed without re-sending the email.</figcaption>
+  </figure>
+</div>
+```
+
+**Trigger detection** — when a paragraph hits any of these, stop writing prose and convert to a state-sequence:
+
+- **Temporal-marker density** — 3+ of: "first", "then", "now", "after", "before", "finally", "next", "once", "when", "suppose".
+- **State-update verbs** — `the <noun> (now|then) <verb-past>` or `the <noun> is now <state>` or `the <noun> holds: <list>`.
+- **Enumerated event lists in prose** — 3+ comma-separated event tokens (`Started, Activity scheduled, Result: …, Timer set: …`). That list is a table; render it as one.
+- **Hypothetical thought-experiments** — "Suppose X. Then Y. Then Z." — these are step-by-step thought experiments. Storyboard them.
+- **Pronoun-state drift** — 3+ sentences in a row whose subject is the same entity behaving at successive moments (`the worker… the worker… it…`).
+- **State-change verb clusters** with no nearby figure — `crashes / replays / resumes / retries / restarts / fails over / rolls back / commits / reconciles` appear and the nearest figure is more than ~200 words away.
+
+**Rules** (from Tufte's small multiples + Tversky & Morrison's Apprehension Principle + the dual-coding / segmenting / transient-information research):
+
+1. **State sequences are panels, not paragraphs.** If you can write "Step 1: … Step 2: … Step 3: …" about observable state, render one labeled panel per step.
+2. **Small-multiples discipline — same shape in every panel.** Use identical layout, columns, axes, and visual encoding across the sequence. The eye diffs pre-attentively. Reformatting between panels destroys that.
+3. **Persist, don't transit.** Static side-by-side panels beat animation. If you must animate, require pause/scrub controls. For novices, default to static (Tversky & Morrison 2002; Sweller transient-information).
+4. **Annotate the delta.** In each panel after the first, highlight what changed — new row, modified value, moved pointer, struck-out entry. The delta is the lesson; the rest is anchor context.
+5. **Caption = trigger + invariant.** Each panel's caption names what *caused* the transition AND what stays true ("Server crashes; event history is durable"). This is where prose belongs — anchoring the diagram, not replacing it.
+6. **2–5 panels.** Fewer than 2 isn't a sequence; more than 5 exceeds working-memory comparison budget (~4 elements; Cowan 2001). Split into two figures if you need more.
+7. **Show the actual data structure**, not a metaphor. A box labeled "history" with no contents shown forces the reader to remember; defeats the point. End at the real shape (concreteness fading, Fyfe et al. 2014).
+8. **No "after" without "before".** A single post-state panel forces the reader to reconstruct the prior state in prose. Always show the starting point.
+
+**What NOT to do**:
+
+- Decorative cartooning that hides the actual state behind a mascot.
+- Animation without pause/scrub controls (Apprehension Principle).
+- Reformatting columns or fields between panels.
+- Prose that re-narrates exactly what the panels show — that's double cognitive load, not dual coding. Prose should add the causal / invariant layer.
+- More than ~5 panels — split.
+
+**Research basis**:
+
+- Larkin & Simon, ["Why a Diagram is (Sometimes) Worth Ten Thousand Words"](https://onlinelibrary.wiley.com/doi/10.1111/j.1551-6708.1987.tb00863.x), *Cognitive Science* 1987 — diagrammatic representations are indexed by location; sentential representations require sequential search.
+- Tversky & Morrison, ["Animation: can it facilitate?"](https://hci.stanford.edu/courses/cs448b/papers/Tversky_AnimationFacilitate_IJHCS02.pdf), *IJHCS* 2002 — the Apprehension Principle; equated-information static graphics ≥ animation.
+- Wong, Leahy, Marcus, Sweller, ["The transient information effect"](https://www.sciencedirect.com/science/article/abs/pii/S0959475212000369), *Learning and Instruction* 2012.
+- Mayer, Segmenting Principle, *Cambridge Handbook of Multimedia Learning* ch. 9.
+- Tufte, *Envisioning Information* — small multiples.
+- Bret Victor, ["Up and Down the Ladder of Abstraction"](https://worrydream.com/LadderOfAbstraction/) — show all states at once.
+- Fyfe, McNeil, Son, Goldstone, [Concreteness Fading systematic review](https://www.researchgate.net/publication/262943993).
+
+**Worked examples in the wild** (study these as references):
+
+- Lin Clark, ["A Cartoon Intro to Fiber"](https://www.youtube.com/watch?v=ZCuYPiUIONs) — fiber tree redrawn at each phase.
+- Julia Evans / Wizard Zines, ["How Git Works"](https://wizardzines.com/zines/git/) — branch / index / working-tree as 3 columns redrawn per command.
+- React docs, ["Thinking in React"](https://react.dev/learn/thinking-in-react) — same UI mock redrawn at each step.
+- Stripe, [Payments API tour](https://docs.stripe.com/payments-api/tour) — PaymentIntent lifecycle as a state-marker timeline.
+- Maggie Appleton, ["How to Draw Invisible Programming Concepts"](https://maggieappleton.com/drawinginvisibles1).
+
+### 13. Worked examples with backward fading
 
 Your assigned **fading stage** is given in the chapter brief. Match it:
 

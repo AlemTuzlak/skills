@@ -29,6 +29,7 @@ This skill is grounded in well-replicated learning science. The rules below are 
 10. **Constrained self-explanation prompts** (Chi et al.; Bisra et al. 2018 g≈0.55). Between cards: "Finish this sentence: X works because ___" with model answer in a toggle.
 11. **Plain language for B1 readers**. Mean sentence ≤18 words, max 25. ≤1 subordinate clause per sentence. Passive ≤10%. Active voice. Second person. No idioms.
 12. **Build on what the learner already knows** (Ausubel). The pre-interview captures the user's known domains; the writing guide turns them into an analogy bank.
+13. **Show state changes; don't narrate them** (Larkin & Simon 1987; Tversky & Morrison 2002 Apprehension Principle; Wong/Leahy/Marcus/Sweller 2012 transient-information effect; Tufte small multiples; Mayer's segmenting). When prose would walk through successive states ("first this, then that, after the crash…"), use a 2–5 panel `<div class="state-sequence">` instead. Same shape in every panel, delta annotated, caption = trigger + invariant. The reader sees the evolution; they don't read a story about it.
 
 **Debunked — never use:** learning styles (VAK), 10,000-hours framing, gamification streaks/badges, decorative imagery for "engagement", "right-brain/left-brain", "digital natives".
 

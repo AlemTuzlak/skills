@@ -140,6 +140,45 @@ const id = workflow.uuid4();
 
 The two columns stack on mobile.
 
+### State sequence ("show, don't tell")
+
+Whenever you'd otherwise write a prose walkthrough of state evolution over time ("first this, then that, after the crash..."), use this component instead. 2–5 labeled panels, each showing one state. The reader sees the evolution, not a story about it.
+
+```html
+<div class="state-sequence">
+  <figure class="state-step">
+    <p class="state-step-label">Before the crash</p>
+    <img src="./diagrams/chNN-state-1.svg" alt="...">
+    <figcaption>Event history has 4 entries; worker holding the workflow.</figcaption>
+  </figure>
+  <figure class="state-step">
+    <p class="state-step-label">Crash &rarr; restart</p>
+    <img src="./diagrams/chNN-state-2.svg" alt="...">
+    <figcaption>Worker dies; event history survives.</figcaption>
+  </figure>
+  <figure class="state-step">
+    <p class="state-step-label">After replay</p>
+    <img src="./diagrams/chNN-state-3.svg" alt="...">
+    <figcaption>New worker rebuilds state from the history. No duplicate send.</figcaption>
+  </figure>
+</div>
+```
+
+Each panel auto-numbers itself (`1`, `2`, `3`) with a small primary-colored chip in the top-left corner. **Panels stack vertically by default** so each diagram renders at full reading-width — readable text, no awkward horizontal cramming. The eye still diffs vertically because every panel uses identical layout (small-multiples discipline). Optional `with-arrows` adds downward connector arrows between panels.
+
+**Variants**:
+- Add the `with-arrows` class to the wrapper for explicit connector arrows between panels: `<div class="state-sequence with-arrows">`.
+- Each `.state-step` is a `<figure>` with a `.state-step-label` heading, a diagram (image or inline SVG), and a `<figcaption>` (or a `.state-step-body` for prose-only steps).
+- Diagrams inside state-steps don't double-wrap — the CSS flattens any nested `.diagram-card` automatically.
+
+**Rules** (also enforced by `WRITING_GUIDE.md` rule 12):
+- 2–5 panels. Fewer isn't a sequence; more overwhelms.
+- Each panel reveals a meaningfully different state.
+- Labels are short and noun-shaped ("After replay", not "What happens next").
+- Captions ≤15 words, naming the change.
+
+**When to reach for this** — any paragraph with 3+ temporal markers (first / then / now / after / before / finally / next / previously) or step counters (step 1, step 2, step 3) is a candidate. Same for "Suppose X. Then Y. Then Z." patterns.
+
 ### Comparison table
 
 Side-by-side feature matrix for comparing platforms, libraries, frameworks, or approaches. Markdown tables don't carry enough structure — use raw HTML with `class="comparison"`. The build script auto-wraps the table in `<div class="comparison-wrap">` for horizontal scroll on narrow viewports, and the first column / header row both stick when you scroll.
@@ -316,6 +355,7 @@ Hidden content here, parsed as markdown.
 | Compare bad vs good code | `<div class="compare">` |
 | Show same idea across platforms | `<div class="tabs">` |
 | Feature matrix / platform comparison | `<table class="comparison">` |
+| State evolution over time / "show, don't tell" | `<div class="state-sequence">` |
 | Mark a source type | `<span class="tag tag-blue">` |
 | Reference a workflow platform | `<span class="platform-pill" data-platform="...">` |
 | Numbered procedure | `<ol class="step-list">` |

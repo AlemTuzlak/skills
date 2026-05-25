@@ -1519,6 +1519,164 @@ table.comparison td .cell-note {
 
 .card table:not(.comparison) tbody tr:hover { background: var(--color-bg-alt); }
 
+/* ----- State sequence (show, don't tell) ----- */
+/* Strip of 2–5 labeled panels showing successive states. Use whenever you'd
+ * otherwise write a prose walkthrough of state evolution ("first this, then
+ * that, after the crash..."). The reader sees the evolution, not a story
+ * about it. Implements Tufte's "small multiples" and Mayer's segmenting
+ * principle applied to state changes. */
+
+.state-sequence {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15em;
+  margin: 1.8em 0 1.4em;
+  counter-reset: state-step;
+}
+
+.state-step {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 10px;
+  padding: 1em 1.1em 0.9em;
+  margin: 0.5em 0 0;
+  display: flex;
+  flex-direction: column;
+  counter-increment: state-step;
+  position: relative;
+  box-shadow: 0 1px 3px var(--color-shadow);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.state-step:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 3px 12px var(--color-shadow);
+  transform: translateY(-1px);
+}
+
+.state-step::before {
+  content: counter(state-step);
+  position: absolute;
+  top: -0.8em;
+  left: 0.85em;
+  background: var(--color-primary);
+  color: white;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0.2em 0.65em;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 3px var(--color-shadow);
+  font-variant-numeric: tabular-nums;
+}
+
+.state-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 0.1em 0 0.55em;
+}
+
+.state-step > p:first-of-type,
+.state-step > .state-step-body {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.state-step > *:last-child { margin-bottom: 0; }
+.state-step > p:last-child { margin-bottom: 0; }
+
+/* Diagrams inside a state-step always render on a light card background,
+ * even in dark mode — the SVG palette uses dark text/strokes (#1f2937)
+ * that would vanish on the surface color. This mirrors how .diagram-card
+ * works for top-level diagrams. */
+.state-step > img,
+.state-step > svg,
+.state-step > figure.diagram-card > img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.5em auto 0.2em;
+  background: #ffffff;
+  padding: 0.7em;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="dark"] .state-step > img,
+html[data-theme="dark"] .state-step > svg,
+html[data-theme="dark"] .state-step > figure.diagram-card > img,
+html[data-theme="auto"][data-system-theme="dark"] .state-step > img,
+html[data-theme="auto"][data-system-theme="dark"] .state-step > svg,
+html[data-theme="auto"][data-system-theme="dark"] .state-step > figure.diagram-card > img {
+  background: #f8fafc;
+  border-color: #475569;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.state-step figcaption {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+  margin-top: 0.5em;
+}
+
+/* When a diagram-card lands inside a state-step (because the build script
+ * auto-wraps any markdown image), flatten its outer chrome — the inner img
+ * carries the light card on its own. */
+.state-step > figure.diagram-card {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  text-align: left;
+}
+
+.state-step > figure.diagram-card > figcaption {
+  font-size: 0.78rem;
+  text-align: left;
+  margin-top: 0.4em;
+  color: var(--color-text-muted);
+}
+
+/* When an author tags the sequence as a transition, render connecting arrows
+ * between panels. CSS-only; uses ::after on each panel except the last. */
+.state-sequence.with-arrows .state-step:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  right: -0.95em;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-bg);
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 1.1rem;
+  width: 1.5em;
+  height: 1.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  z-index: 2;
+}
+
+/* Arrows always point down in the column layout. */
+.state-sequence.with-arrows .state-step:not(:last-child)::after {
+  top: auto;
+  bottom: -1em;
+  right: 50%;
+  transform: translateX(50%);
+  content: "↓";
+}
+
 /* ----- Pills / tags ----- */
 
 .tag {
