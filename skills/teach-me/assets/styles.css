@@ -243,7 +243,7 @@ body {
 .card-list {
   list-style: none;
   margin: 0.15em 0 0.45em;
-  padding: 0 0 0 1.7em;
+  padding: 0 0 0 0.65em;
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.25s ease;
@@ -594,44 +594,29 @@ body {
   opacity: 1;
 }
 
-/* Body content padding — applied to every direct child except summary. */
-.card details > *:not(summary) {
-  padding-left: 1.3em;
-  padding-right: 1.3em;
+/* Body wrapper — auto-inserted by the build script via transformDetailsBodies.
+ * Carries the real padding for the disclosed content. */
+.card details > .details-body {
+  padding: 1em 1.3em 1.15em;
+  color: var(--color-text);
+  line-height: 1.6;
 }
 
-.card details > *:not(summary):first-of-type {
-  margin-top: 1.1em;
-  padding-top: 0.1em;
+.card details > .details-body > *:first-child { margin-top: 0; }
+.card details > .details-body > *:last-child  { margin-bottom: 0; }
+
+.card details > .details-body > p,
+.card details > .details-body > ul,
+.card details > .details-body > ol {
+  margin: 0.55em 0;
 }
 
-.card details > *:not(summary):last-child {
-  padding-bottom: 1.15em;
-  margin-bottom: 0;
-}
-
-.card details > p,
-.card details > ul,
-.card details > ol {
-  margin-top: 0.6em;
-  margin-bottom: 0.6em;
+.card details > .details-body > pre.shiki {
+  margin: 0.75em 0;
 }
 
 /* Tighten spacing when details are stacked siblings (Recall / Prereq lists). */
 .card details + details { margin-top: 0.5em; }
-
-/* Code/pre inside details should not double-pad. */
-.card details > pre {
-  margin-left: 1.3em;
-  margin-right: 1.3em;
-  padding-left: 1.2em;
-  padding-right: 1.2em;
-}
-
-.card details > pre.shiki {
-  margin-top: 0.75em;
-  margin-bottom: 0.75em;
-}
 
 /* ----- Details inside callouts: more subtle, contextual ----- */
 
@@ -667,20 +652,12 @@ body {
   height: 0.45em;
 }
 
-.callout details > *:not(summary) {
-  padding-left: 1.1em;
-  padding-right: 1.1em;
+.callout details > .details-body {
+  padding: 0.85em 1.1em 0.95em;
 }
 
-.callout details > *:not(summary):first-of-type {
-  margin-top: 0.85em;
-  padding-top: 0.1em;
-}
-
-.callout details > *:not(summary):last-child {
-  padding-bottom: 0.95em;
-  margin-bottom: 0;
-}
+.callout details > .details-body > *:first-child { margin-top: 0; }
+.callout details > .details-body > *:last-child  { margin-bottom: 0; }
 
 /* Self-explain context: tint summary indigo to match callout. */
 .callout-self-explain details > summary { color: #6366f1; }

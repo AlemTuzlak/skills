@@ -172,6 +172,51 @@ function renderCallout(type, body) {
 }
 
 // ---------------------------------------------------------------------------
+// Details body wrapper
+// ---------------------------------------------------------------------------
+// Wraps the content of every <details> block (after </summary>) in a
+// <div class="details-body"> so CSS can apply real padding. Without this,
+// inline writing like:
+//
+//     <details><summary>Q?</summary>Bare text answer</details>
+//
+// leaves the body as a raw text node — `> *:not(summary)` selectors miss it
+// entirely. Wrapping forces an element child that styles can target.
+
+const DETAILS_BLOCK_RE = /<details([^>]*)>([\s\S]*?)<\/details>/gi;
+const SUMMARY_BLOCK_RE = /<summary[^>]*>[\s\S]*?<\/summary>/i;
+
+function transformDetailsBodies(markdown) {
+  return markdown.replace(DETAILS_BLOCK_RE, function (_full, attrs, inner) {
+    if (/<div\s+class=["']details-body["']/i.test(inner)) {
+      return `<details${attrs}>${inner}</details>`;
+    }
+    const sm = inner.match(SUMMARY_BLOCK_RE);
+    if (!sm) {
+      return `<details${attrs}>${inner}</details>`;
+    }
+    const summaryHtml = sm[0];
+    const summaryEnd = inner.indexOf(summaryHtml) + summaryHtml.length;
+    const body = inner.slice(summaryEnd).replace(/^[\s\n]+/, '').replace(/[\s\n]+$/, '');
+    if (!body) {
+      return `<details${attrs}>${inner}</details>`;
+    }
+    return [
+      `<details${attrs}>`,
+      summaryHtml,
+      '',
+      '<div class="details-body">',
+      '',
+      body,
+      '',
+      '</div>',
+      '',
+      '</details>',
+    ].join('\n');
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Diagram figure wrapper
 // ---------------------------------------------------------------------------
 // Detects ![alt](path.svg) followed (optionally) by a `*caption*` line and
@@ -277,7 +322,8 @@ async function buildChapterMarkdownScripts(courseDir, meta, highlighter) {
       continue;
     }
     const withCallouts = transformCallouts(raw);
-    const withFigures = transformDiagramFigures(withCallouts);
+    const withDetails = transformDetailsBodies(withCallouts);
+    const withFigures = transformDiagramFigures(withDetails);
     const withShiki = highlightChapterCode(withFigures, highlighter);
     const safe = escapeForScriptTag(withShiki);
     scripts.push(`<script type="text/markdown" data-chapter="${c.number}" id="ch-${c.number}">${safe}</script>`);
