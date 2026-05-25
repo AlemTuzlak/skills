@@ -219,6 +219,8 @@ Write `<output-location>/learn-<slug>/WRITING_GUIDE.md`. This file is the **shar
 
 Use the template at `<skill-dir>/assets/templates/WRITING_GUIDE.template.md` as the starting point — substitute the user's recorded interview answers into the placeholders (`{{TOPIC}}`, `{{CURRENT_LEVEL}}`, `{{TARGET_PROFICIENCY}}`, `{{PRACTICE_LOAD}}`, `{{KNOWN_DOMAINS}}`, `{{SCOPE}}`, `{{CANONICAL_LANGUAGE}}`).
 
+Also point chapter writers at the component library reference at `<skill-dir>/assets/COMPONENTS.md` — they should skim it before writing. Callouts, diagram cards, compare blocks, tabs, stat cards, platform pills, and step lists are all available; some are auto-generated from markdown conventions, the rest are explicit HTML inside markdown.
+
 Verify the generated file enforces all 12 pedagogy rules listed in the "Pedagogy Foundation" section at the top of this SKILL.md. If any rule isn't represented in the guide, add it before continuing.
 
 ## Phase 7 — Chapter generation (parallel batches)

@@ -26,6 +26,20 @@ This file is the shared brief for every chapter writer. **Read all of it before 
 
 If no domain in the bank fits cleanly, **skip the analogy**. A bad analogy is worse than no analogy — it teaches the wrong relational structure (Gentner 1983).
 
+## Component library
+
+The viewer ships a curated component library. **Read `<skill-dir>/assets/COMPONENTS.md` for the full reference** before writing your chapter. Quick highlights:
+
+- **Callouts**: use `> [!NOTE]`, `> [!TIP]`, `> [!WARNING]`, `> [!IMPORTANT]`, `> [!INSIGHT]`, `> [!ANALOGY]`, `> [!BREAKDOWN]`, `> [!QUOTE]`, `> [!HISTORY]` — all auto-styled. The legacy `> **Self-explain**:`, `> **Analogy**:`, `> **Where this breaks down**:` patterns are also auto-detected and styled — keep using them.
+- **Diagram cards**: any `![alt](./diagrams/...)` followed optionally by an italic `*caption*` line is auto-wrapped in a light-backgrounded card that reads well in both themes. **Just write plain markdown** — no `<figure>` needed.
+- **Compare**: `<div class="compare">` with two `<aside class="compare-bad">` / `<aside class="compare-good">` columns for Do/Don't or Before/After.
+- **Tabs**: `<div class="tabs">` with `<nav class="tab-nav">` buttons and `<div class="tab-panel" data-content="...">` panels — use for showing the same concept across multiple platforms.
+- **Stat card**: `<aside class="stat"><strong>50,000</strong><span>events limit</span></aside>` for numeric highlights.
+- **Platform pill**: `<span class="platform-pill" data-platform="temporal">Temporal</span>` — color-coded chips for `temporal`, `trigger`, `inngest`, `restate`, `step-functions`, `dbos`.
+- **Step list**: `<ol class="step-list">` for procedures with prominent number badges.
+
+Prefer auto-styled callouts over plain blockquotes when you're flagging information. The components are theme-aware and visually consistent across the course.
+
 ## The 12 non-negotiable rules
 
 ### 1. Concrete before abstract
@@ -52,17 +66,19 @@ Diagrams support text. Text fills the gaps the diagram can't carry (the *why*, t
 
 ### 4. Diagram conventions
 
+- **Contrast is non-negotiable.** Diagrams are auto-wrapped in a light-backgrounded **`.diagram-card`** that stays light in both light AND dark themes. Your strokes and text MUST use the dark color `#1f2937` so they read clearly against that light card. Never use `currentColor` for strokes/text in diagrams — it would invert badly in dark mode.
 - ViewBox: `0 0 800 480` (or smaller — never larger)
-- Colors (4-color palette only):
-  - `#1f2937` — text and strokes
-  - `#3b82f6` — primary fill
-  - `#f59e0b` — accent
-  - `#10b981` — positive/success
-- Font: `system-ui, -apple-system, sans-serif`, 14–18px
-- Strokes: 1.5px or 2px
-- Padding: ≥16px around any text label
+- Colors (4-color palette only — these are fixed hex values, not CSS variables):
+  - `#1f2937` — text and strokes (dark slate; reads on the light diagram card in both themes)
+  - `#3b82f6` — primary fill (blue)
+  - `#f59e0b` — accent (amber)
+  - `#10b981` — positive/success (emerald)
+- Font: `system-ui, -apple-system, sans-serif`, 14–18px (bigger is fine if there's room)
+- Strokes: 1.5px or 2px (1px reads too faint inside the card)
+- Padding: ≥24px around any text label so they don't crowd the card's edge
 - **Labels are inline annotations on the diagram, not in a separate legend block.** No `## Legend` headers anywhere.
-- Caption: every diagram has a one-sentence caption directly below.
+- **Backgrounds** inside the SVG: if you need a fill, use a tinted version of the palette (e.g. `#3b82f615` for a 8%-alpha primary). Never use pure white as a fill — it disappears against the card.
+- Caption: every diagram has a one-sentence caption directly below the image as `*italic*` — the build script auto-wraps it into a `<figcaption>`.
 - Opt-in interactivity: add `data-interactive="hover-explain"` on the root `<svg>` and `data-explain="<text>"` attrs on labeled elements to enable tooltips in the HTML viewer.
 
 Files go in `./diagrams/chNN-<short-name>.svg`. Referenced from chapter as `![alt](./diagrams/chNN-<name>.svg)`.

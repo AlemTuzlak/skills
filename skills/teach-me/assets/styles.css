@@ -669,6 +669,375 @@ pre.shiki-plain code {
   white-space: pre;
 }
 
+/* ============================================================ Component library ===== */
+/* Reusable components for chapter authors. See COMPONENTS.md in the skill assets. */
+
+/* ----- Callouts (auto-generated from `> [!TYPE]` or `> **Label**:` patterns) ----- */
+
+.callout {
+  margin: 1.4em 0;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  overflow: hidden;
+  box-shadow: 0 1px 2px var(--color-shadow);
+}
+
+.callout-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.55em 0.95em;
+  font-weight: 600;
+  font-size: 0.92em;
+  border-bottom: 1px solid var(--color-border);
+  letter-spacing: 0.01em;
+}
+
+.callout-icon {
+  font-size: 1.05em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3em;
+  height: 1.3em;
+}
+
+.callout-body {
+  padding: 0.85em 1em 0.1em;
+}
+
+.callout-body > *:last-child { margin-bottom: 0.85em; }
+.callout-body > p { margin: 0 0 0.85em; }
+.callout-body pre { margin: 0.6em 0; }
+
+/* Per-type accent colors */
+.callout-note         { border-left: 4px solid #3b82f6; }
+.callout-note .callout-header { background: rgba(59, 130, 246, 0.10); color: #1e40af; }
+html[data-theme="dark"] .callout-note .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-note .callout-header { color: #93c5fd; }
+
+.callout-tip          { border-left: 4px solid #10b981; }
+.callout-tip .callout-header { background: rgba(16, 185, 129, 0.10); color: #065f46; }
+html[data-theme="dark"] .callout-tip .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-tip .callout-header { color: #6ee7b7; }
+
+.callout-important    { border-left: 4px solid #8b5cf6; }
+.callout-important .callout-header { background: rgba(139, 92, 246, 0.12); color: #5b21b6; }
+html[data-theme="dark"] .callout-important .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-important .callout-header { color: #c4b5fd; }
+
+.callout-warning,
+.callout-caution,
+.callout-danger       { border-left: 4px solid #f59e0b; }
+.callout-warning .callout-header,
+.callout-caution .callout-header,
+.callout-danger .callout-header { background: rgba(245, 158, 11, 0.12); color: #92400e; }
+html[data-theme="dark"] .callout-warning .callout-header,
+html[data-theme="dark"] .callout-caution .callout-header,
+html[data-theme="dark"] .callout-danger .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-warning .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-caution .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-danger .callout-header { color: #fcd34d; }
+
+.callout-insight      { border-left: 4px solid #facc15; }
+.callout-insight .callout-header { background: rgba(250, 204, 21, 0.14); color: #854d0e; }
+html[data-theme="dark"] .callout-insight .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-insight .callout-header { color: #fde68a; }
+
+.callout-analogy      { border-left: 4px solid #14b8a6; }
+.callout-analogy .callout-header { background: rgba(20, 184, 166, 0.10); color: #115e59; }
+html[data-theme="dark"] .callout-analogy .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-analogy .callout-header { color: #5eead4; }
+
+.callout-breakdown    { border-left: 4px solid #ef4444; }
+.callout-breakdown .callout-header { background: rgba(239, 68, 68, 0.10); color: #991b1b; }
+html[data-theme="dark"] .callout-breakdown .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-breakdown .callout-header { color: #fca5a5; }
+
+.callout-self-explain { border-left: 4px solid #6366f1; }
+.callout-self-explain .callout-header { background: rgba(99, 102, 241, 0.10); color: #3730a3; }
+html[data-theme="dark"] .callout-self-explain .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-self-explain .callout-header { color: #a5b4fc; }
+
+.callout-quote        { border-left: 4px solid #64748b; font-style: italic; }
+.callout-quote .callout-header { background: rgba(100, 116, 139, 0.10); color: #334155; }
+html[data-theme="dark"] .callout-quote .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-quote .callout-header { color: #cbd5e1; }
+
+.callout-history      { border-left: 4px solid #a3a3a3; }
+.callout-history .callout-header { background: rgba(163, 163, 163, 0.10); color: #404040; }
+html[data-theme="dark"] .callout-history .callout-header,
+html[data-theme="auto"][data-system-theme="dark"] .callout-history .callout-header { color: #d4d4d4; }
+
+/* ----- Diagram card (auto-wraps every <img src="*.svg">) ----- */
+
+.diagram-card {
+  margin: 1.8em 0;
+  padding: 1.3em 1.4em 0.9em;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
+  text-align: center;
+}
+
+.diagram-card img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.diagram-card figcaption {
+  margin-top: 0.7em;
+  font-size: 0.88rem;
+  color: #475569;
+  font-style: italic;
+  text-align: center;
+}
+
+/* In dark mode, keep the diagram card light (the SVG strokes are dark-on-light) —
+ * but darken the border, soften the shadow, and lighten the caption to match the page. */
+html[data-theme="dark"] .diagram-card,
+html[data-theme="auto"][data-system-theme="dark"] .diagram-card {
+  background: #f8fafc;
+  border-color: #475569;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="dark"] .diagram-card figcaption,
+html[data-theme="auto"][data-system-theme="dark"] .diagram-card figcaption {
+  color: #475569;
+}
+
+/* ----- Info card ----- */
+
+.info-card {
+  margin: 1.4em 0;
+  padding: 1em 1.2em;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg-alt);
+}
+
+.info-card h4 {
+  margin: 0 0 0.5em;
+  font-size: 1rem;
+  color: var(--color-primary);
+}
+
+.info-card > *:last-child { margin-bottom: 0; }
+
+/* ----- Definition card ----- */
+
+aside.def {
+  margin: 1.2em 0;
+  padding: 0.85em 1em;
+  border-left: 4px solid var(--color-primary);
+  background: var(--color-bg-alt);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+aside.def dfn {
+  font-weight: 700;
+  font-style: normal;
+  color: var(--color-primary);
+}
+
+/* ----- Stat card ----- */
+
+aside.stat {
+  margin: 1.4em 0;
+  padding: 1.1em 1.3em;
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+aside.stat strong {
+  display: block;
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+aside.stat span {
+  display: block;
+  margin-top: 0.3em;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+/* ----- Compare (side-by-side bad / good) ----- */
+
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1em;
+  margin: 1.4em 0;
+}
+
+.compare > aside {
+  padding: 0.9em 1em;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.compare-bad  { border-left: 4px solid #ef4444; }
+.compare-good { border-left: 4px solid #10b981; }
+
+.compare > aside h4 {
+  margin: 0 0 0.5em;
+  font-size: 0.95rem;
+}
+
+.compare > aside > *:last-child { margin-bottom: 0; }
+
+@media (max-width: 720px) {
+  .compare { grid-template-columns: 1fr; }
+}
+
+/* ----- Tabs (interactive — wired by viewer.js) ----- */
+
+.tabs {
+  margin: 1.4em 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.tab-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  background: var(--color-bg-alt);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.2em 0.4em 0;
+}
+
+.tab-nav button {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.55em 0.95em;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  margin-bottom: -1px;
+}
+
+.tab-nav button:hover { color: var(--color-text); }
+.tab-nav button.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.tab-panel { padding: 1em 1.2em; }
+.tab-panel > *:last-child { margin-bottom: 0; }
+.tab-panel.hidden { display: none; }
+
+/* ----- Pills / tags ----- */
+
+.tag {
+  display: inline-block;
+  padding: 0.12em 0.55em;
+  font-size: 0.78em;
+  font-weight: 600;
+  border-radius: 999px;
+  background: var(--color-bg-alt);
+  color: var(--color-text-muted);
+  letter-spacing: 0.01em;
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.tag-blue   { background: rgba(59, 130, 246, 0.14); color: #1e40af; border-color: transparent; }
+.tag-green  { background: rgba(16, 185, 129, 0.14); color: #065f46; border-color: transparent; }
+.tag-amber  { background: rgba(245, 158, 11, 0.14); color: #92400e; border-color: transparent; }
+.tag-red    { background: rgba(239, 68, 68, 0.14); color: #991b1b; border-color: transparent; }
+.tag-purple { background: rgba(139, 92, 246, 0.14); color: #5b21b6; border-color: transparent; }
+
+html[data-theme="dark"] .tag-blue,
+html[data-theme="auto"][data-system-theme="dark"] .tag-blue   { color: #93c5fd; }
+html[data-theme="dark"] .tag-green,
+html[data-theme="auto"][data-system-theme="dark"] .tag-green  { color: #6ee7b7; }
+html[data-theme="dark"] .tag-amber,
+html[data-theme="auto"][data-system-theme="dark"] .tag-amber  { color: #fcd34d; }
+html[data-theme="dark"] .tag-red,
+html[data-theme="auto"][data-system-theme="dark"] .tag-red    { color: #fca5a5; }
+html[data-theme="dark"] .tag-purple,
+html[data-theme="auto"][data-system-theme="dark"] .tag-purple { color: #c4b5fd; }
+
+/* ----- Step list (numbered with badges) ----- */
+
+ol.step-list {
+  list-style: none;
+  counter-reset: steps;
+  padding-left: 0;
+  margin: 1.2em 0;
+}
+
+ol.step-list > li {
+  counter-increment: steps;
+  position: relative;
+  padding: 0.7em 0.9em 0.7em 3em;
+  margin: 0.5em 0;
+  background: var(--color-bg-alt);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+ol.step-list > li::before {
+  content: counter(steps);
+  position: absolute;
+  left: 0.6em;
+  top: 0.55em;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+
+ol.step-list > li > *:last-child { margin-bottom: 0; }
+
+/* ----- Platform pill (color-coded chips for workflow platforms etc.) ----- */
+
+.platform-pill {
+  display: inline-block;
+  padding: 0.15em 0.65em;
+  font-size: 0.78em;
+  font-weight: 700;
+  border-radius: 6px;
+  white-space: nowrap;
+  background: var(--color-bg-alt);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.platform-pill[data-platform="temporal"]   { background: rgba(20, 184, 166, 0.16); color: #0f766e; border-color: transparent; }
+.platform-pill[data-platform="trigger"]    { background: rgba(59, 130, 246, 0.16); color: #1e40af; border-color: transparent; }
+.platform-pill[data-platform="inngest"]    { background: rgba(99, 102, 241, 0.16); color: #3730a3; border-color: transparent; }
+.platform-pill[data-platform="restate"]    { background: rgba(139, 92, 246, 0.16); color: #5b21b6; border-color: transparent; }
+.platform-pill[data-platform="step-functions"] { background: rgba(245, 158, 11, 0.16); color: #92400e; border-color: transparent; }
+.platform-pill[data-platform="dbos"]       { background: rgba(16, 185, 129, 0.16); color: #065f46; border-color: transparent; }
+
 /* ============================================================ Responsive ===== */
 
 @media (max-width: 900px) {

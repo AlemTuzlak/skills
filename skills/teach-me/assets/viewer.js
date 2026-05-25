@@ -185,6 +185,33 @@
     popover.hidden = true;
   }
 
+  /* ---------- Tabs ---------- */
+
+  function wireTabs(rootEl) {
+    const containers = rootEl.querySelectorAll('.tabs');
+    containers.forEach(function (c) {
+      const buttons = c.querySelectorAll('.tab-nav button');
+      const panels = c.querySelectorAll('.tab-panel');
+      if (!buttons.length || !panels.length) return;
+      // Ensure exactly one is active.
+      const activeIdx = Math.max(0, Array.prototype.findIndex.call(buttons, function (b) { return b.classList.contains('active'); }));
+      buttons.forEach(function (b, idx) {
+        b.classList.toggle('active', idx === activeIdx);
+        b.addEventListener('click', function () {
+          buttons.forEach(function (bb) { bb.classList.remove('active'); });
+          b.classList.add('active');
+          const target = b.dataset.tab;
+          panels.forEach(function (p) {
+            p.classList.toggle('hidden', p.dataset.content !== target);
+          });
+        });
+      });
+      panels.forEach(function (p, idx) {
+        p.classList.toggle('hidden', idx !== activeIdx);
+      });
+    });
+  }
+
   /* ---------- SVG interactivity ---------- */
 
   function wireInteractiveSvg(rootEl) {
@@ -287,6 +314,7 @@
     highlightAll(contentEl);
     wrapTerms(contentEl);
     wireInteractiveSvg(contentEl);
+    wireTabs(contentEl);
 
     document.getElementById('prev-card').disabled = currentCardIndex === 0;
     document.getElementById('next-card').disabled = currentCardIndex === cards.length - 1;

@@ -54,6 +54,170 @@ function htmlEscape(s) {
 
 const CODE_FENCE_RE = /```([a-zA-Z0-9_+-]*)\n([\s\S]*?)```/g;
 
+// ---------------------------------------------------------------------------
+// Callout pre-processor
+// ---------------------------------------------------------------------------
+// Detects GFM-style `> [!TYPE]` alerts AND legacy conventions like
+// `> **Analogy**:`, `> **Self-explain**:`, `> **Where this breaks down**:`,
+// `> **Note**:`, `> **Tip**:`, `> **Warning**:`. Transforms each into a
+// styled <aside class="callout callout-X"> block.
+
+const CALLOUT_TYPES = {
+  note: { label: 'Note', icon: 'ℹ' },
+  tip: { label: 'Tip', icon: '✦' },
+  important: { label: 'Important', icon: '★' },
+  warning: { label: 'Warning', icon: '⚠' },
+  caution: { label: 'Caution', icon: '⚠' },
+  danger: { label: 'Danger', icon: '⚠' },
+  insight: { label: 'Insight', icon: '💡' },
+  analogy: { label: 'Analogy', icon: '🔗' },
+  breakdown: { label: 'Where this breaks down', icon: '🔧' },
+  'self-explain': { label: 'Self-explain', icon: '✎' },
+  quote: { label: 'Quote', icon: '❝' },
+  history: { label: 'War story', icon: '📜' },
+};
+
+// Loose-pattern detection: first line of a blockquote starts with **Label**:
+const LOOSE_PATTERNS = [
+  { regex: /^\*\*Self-explain\*\*:?/i, type: 'self-explain' },
+  { regex: /^\*\*Analogy\*\*:?/i, type: 'analogy' },
+  { regex: /^\*\*Where this breaks down\*\*:?/i, type: 'breakdown' },
+  { regex: /^\*\*Insight\*\*:?/i, type: 'insight' },
+  { regex: /^\*\*Note\*\*:?/i, type: 'note' },
+  { regex: /^\*\*Tip\*\*:?/i, type: 'tip' },
+  { regex: /^\*\*Warning\*\*:?/i, type: 'warning' },
+  { regex: /^\*\*Important\*\*:?/i, type: 'important' },
+  { regex: /^\*\*Caution\*\*:?/i, type: 'caution' },
+];
+
+function transformCallouts(markdown) {
+  const lines = markdown.split('\n');
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    // Detect start of a blockquote.
+    if (line.startsWith('> ') || line === '>') {
+      // Collect the whole blockquote (consecutive `>` lines).
+      const blockLines = [];
+      while (i < lines.length && (lines[i].startsWith('> ') || lines[i] === '>')) {
+        blockLines.push(lines[i].replace(/^> ?/, ''));
+        i++;
+      }
+      const inner = blockLines.join('\n');
+      // Split the blockquote into paragraphs (blank-line separated). If each
+      // paragraph starts with its own label, emit each as a separate callout.
+      const paragraphs = inner.split(/\n\s*\n/);
+      const detected = paragraphs.map((p) => ({ p, c: detectCalloutType(p) }));
+      const labeled = detected.filter((d) => d.c);
+      if (labeled.length >= 2 && labeled.length === detected.length) {
+        // Every paragraph is labeled — emit a callout per paragraph.
+        for (const d of detected) {
+          out.push(renderCallout(d.c.type, d.c.cleanedBody));
+          out.push('');
+        }
+        continue;
+      }
+      const calloutType = detectCalloutType(inner);
+      if (calloutType) {
+        out.push(renderCallout(calloutType.type, calloutType.cleanedBody));
+        out.push('');
+        continue;
+      }
+      // Not a callout — emit the blockquote unchanged.
+      for (const bl of blockLines) {
+        out.push('> ' + bl);
+      }
+      continue;
+    }
+    out.push(line);
+    i++;
+  }
+  return out.join('\n');
+}
+
+function detectCalloutType(inner) {
+  // GFM alert: `[!TYPE]` on the first line.
+  const gfm = inner.match(/^\[!(\w[-\w]*)\]\s*\n?/);
+  if (gfm) {
+    const t = gfm[1].toLowerCase();
+    if (CALLOUT_TYPES[t]) {
+      return { type: t, cleanedBody: inner.slice(gfm[0].length).trimStart() };
+    }
+  }
+  // Loose pattern: first line starts with `**Label**:`.
+  const firstLine = inner.split('\n', 1)[0];
+  for (const { regex, type } of LOOSE_PATTERNS) {
+    if (regex.test(firstLine)) {
+      const cleaned = inner.replace(regex, '').replace(/^[:\s]+/, '').trimStart();
+      return { type, cleanedBody: cleaned };
+    }
+  }
+  return null;
+}
+
+function renderCallout(type, body) {
+  const meta = CALLOUT_TYPES[type] ?? { label: type, icon: '•' };
+  // Use a markdown-friendly inner: blank lines around so marked.js still parses inside.
+  return [
+    `<aside class="callout callout-${type}">`,
+    `  <header class="callout-header"><span class="callout-icon" aria-hidden="true">${meta.icon}</span><span class="callout-title">${htmlEscape(meta.label)}</span></header>`,
+    `  <div class="callout-body">`,
+    '',
+    body,
+    '',
+    `  </div>`,
+    `</aside>`,
+  ].join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Diagram figure wrapper
+// ---------------------------------------------------------------------------
+// Detects ![alt](path.svg) followed (optionally) by a `*caption*` line and
+// replaces with <figure class="diagram-card"><img ...><figcaption>...</figcaption></figure>.
+// This gives every diagram a high-contrast card that reads well in both themes,
+// without asking chapter writers to write raw HTML.
+
+const DIAGRAM_IMG_LINE_RE = /^!\[([^\]]*)\]\(([^)]+\.svgx?)\)\s*$/gm;
+
+function transformDiagramFigures(markdown) {
+  const lines = markdown.split('\n');
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    const m = line.match(/^!\[([^\]]*)\]\(([^)]+\.svg)\)\s*$/);
+    if (m) {
+      const alt = m[1];
+      const src = m[2];
+      // Look ahead for a caption: optional blank lines then `*caption*`.
+      let j = i + 1;
+      while (j < lines.length && lines[j].trim() === '') j++;
+      let caption = '';
+      let consumed = i + 1;
+      if (j < lines.length) {
+        const capMatch = lines[j].match(/^\*([^*][\s\S]*?)\*\s*$/);
+        if (capMatch) {
+          caption = capMatch[1];
+          consumed = j + 1;
+        }
+      }
+      out.push('<figure class="diagram-card">');
+      out.push(`  <img src="${htmlEscape(src)}" alt="${htmlEscape(alt)}" loading="lazy">`);
+      if (caption) {
+        out.push(`  <figcaption>${caption}</figcaption>`);
+      }
+      out.push('</figure>');
+      i = consumed;
+      continue;
+    }
+    out.push(line);
+    i++;
+  }
+  return out.join('\n');
+}
+
 function highlightChapterCode(markdown, highlighter) {
   // Walk all fenced code blocks via matchAll and replace each with Shiki HTML.
   // Marked.js will see the raw HTML and pass it through.
@@ -112,7 +276,9 @@ async function buildChapterMarkdownScripts(courseDir, meta, highlighter) {
       console.warn(`  warn: chapter file missing: ${file}`);
       continue;
     }
-    const withShiki = highlightChapterCode(raw, highlighter);
+    const withCallouts = transformCallouts(raw);
+    const withFigures = transformDiagramFigures(withCallouts);
+    const withShiki = highlightChapterCode(withFigures, highlighter);
     const safe = escapeForScriptTag(withShiki);
     scripts.push(`<script type="text/markdown" data-chapter="${c.number}" id="ch-${c.number}">${safe}</script>`);
   }
