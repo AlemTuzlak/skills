@@ -827,9 +827,11 @@ pre.shiki code {
   display: block;
 }
 
+/* Shiki emits <span class="line">...</span>\n between lines. <pre> preserves
+ * those literal newlines, so giving .line display:block would double-break.
+ * Leave .line as default inline; the literal newlines do the line breaking. */
 pre.shiki .line {
-  display: block;
-  min-height: 1em;
+  display: inline;
 }
 
 html[data-theme="dark"] pre.shiki,
