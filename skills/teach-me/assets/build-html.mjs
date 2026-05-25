@@ -217,6 +217,26 @@ function transformDetailsBodies(markdown) {
 }
 
 // ---------------------------------------------------------------------------
+// Comparison-table auto-wrap
+// ---------------------------------------------------------------------------
+// Any <table class="comparison"> that isn't already inside a
+// <div class="comparison-wrap"> gets wrapped automatically, so the sticky
+// first column + horizontal scroll work on narrow viewports.
+
+const COMPARISON_TABLE_RE = /<table\b[^>]*class=("|')[^"']*\bcomparison\b[^"']*\1[^>]*>[\s\S]*?<\/table>/gi;
+
+function transformComparisonTables(markdown) {
+  return markdown.replace(COMPARISON_TABLE_RE, function (full, _q, offset, src) {
+    // Look at the ~120 chars before this match for an unclosed comparison-wrap.
+    const before = src.slice(Math.max(0, offset - 200), offset);
+    if (/<div\s+class=["'][^"']*\bcomparison-wrap\b[^"']*["'][^>]*>\s*$/.test(before)) {
+      return full;
+    }
+    return '<div class="comparison-wrap">\n\n' + full + '\n\n</div>';
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Diagram figure wrapper
 // ---------------------------------------------------------------------------
 // Detects ![alt](path.svg) followed (optionally) by a `*caption*` line and
@@ -323,7 +343,8 @@ async function buildChapterMarkdownScripts(courseDir, meta, highlighter) {
     }
     const withCallouts = transformCallouts(raw);
     const withDetails = transformDetailsBodies(withCallouts);
-    const withFigures = transformDiagramFigures(withDetails);
+    const withTables = transformComparisonTables(withDetails);
+    const withFigures = transformDiagramFigures(withTables);
     const withShiki = highlightChapterCode(withFigures, highlighter);
     const safe = escapeForScriptTag(withShiki);
     scripts.push(`<script type="text/markdown" data-chapter="${c.number}" id="ch-${c.number}">${safe}</script>`);

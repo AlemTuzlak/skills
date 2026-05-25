@@ -140,6 +140,61 @@ const id = workflow.uuid4();
 
 The two columns stack on mobile.
 
+### Comparison table
+
+Side-by-side feature matrix for comparing platforms, libraries, frameworks, or approaches. Markdown tables don't carry enough structure — use raw HTML with `class="comparison"`. The build script auto-wraps the table in `<div class="comparison-wrap">` for horizontal scroll on narrow viewports, and the first column / header row both stick when you scroll.
+
+```html
+<table class="comparison">
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>Temporal</th>
+      <th>trigger.dev</th>
+      <th>Inngest</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Polyglot SDKs</th>
+      <td class="yes">✅</td>
+      <td class="no">❌ TS-only</td>
+      <td class="partial">⚠ TS-first</td>
+    </tr>
+    <tr>
+      <th scope="row">Built-in saga</th>
+      <td class="partial">⚠ pattern</td>
+      <td class="partial">⚠ pattern</td>
+      <td class="partial">⚠ pattern</td>
+    </tr>
+    <tr class="comparison-row-summary">
+      <th scope="row">Best fit</th>
+      <td>Polyglot, long, ops-heavy</td>
+      <td>TS-first, AI, no time limits</td>
+      <td>Event-first, Next.js</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+**Cell classes**:
+- `td.yes` — ✅ supported, green tint
+- `td.no` — ❌ not supported, red tint
+- `td.partial` — ⚠ partial / library-level, amber tint
+- `td.best` — 🏆 best-in-class, blue tint
+- `td.text` — left-aligned, wraps freely (use for prose cells)
+
+**Row classes**:
+- `tr.comparison-row-summary` — emphasizes a "Best fit" / takeaway row; prominent primary-colored row header.
+
+Cells can carry an extra `<span class="cell-note">` for a small qualifier below the main label:
+
+```html
+<td class="yes">✅ <span class="cell-note">via patched()</span></td>
+```
+
+Plain markdown tables (without `class="comparison"`) get a softer default style — no sticky columns, just clean borders and a hover row. Use those for simple data tables.
+
 ### Tabs (interactive)
 
 For showing the same concept across multiple platforms or languages.
@@ -260,6 +315,7 @@ Hidden content here, parsed as markdown.
 | Highlight a number / limit | `<aside class="stat">` |
 | Compare bad vs good code | `<div class="compare">` |
 | Show same idea across platforms | `<div class="tabs">` |
+| Feature matrix / platform comparison | `<table class="comparison">` |
 | Mark a source type | `<span class="tag tag-blue">` |
 | Reference a workflow platform | `<span class="platform-pill" data-platform="...">` |
 | Numbered procedure | `<ol class="step-list">` |

@@ -566,9 +566,10 @@ body {
 .reading-pane {
   position: relative;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: 1fr auto;
   background: var(--color-bg);
+  min-height: 0;
 }
 
 .progress-rail {
@@ -589,16 +590,20 @@ body {
 }
 
 .content {
-  flex: 1;
   overflow-y: auto;
-  padding: 3rem 2rem 5.5rem;
+  padding: 3rem 2rem 0;
   display: flex;
-  justify-content: center;
-  scroll-padding-bottom: 5.5rem;
+  flex-direction: column;
+  align-items: center;
+  scroll-padding-bottom: 6rem;
+  min-height: 0;
 }
 
+/* Bottom breathing room lives on .card-inner because Chromium swallows the
+ * padding-bottom of an overflow:auto element when the scrollHeight already
+ * fills the container. Padding on a flow child reliably extends scrollHeight. */
 .card-inner {
-  padding-bottom: 1.5rem;
+  padding-bottom: 6rem;
 }
 
 .content > * {
@@ -956,10 +961,13 @@ html[data-theme="auto"][data-system-theme="dark"] .callout-self-explain details 
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.9rem 1.5rem;
+  padding: 1.1rem 1.5rem 1.2rem;
+  min-height: 68px;
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
   gap: 0.8rem;
+  box-shadow: 0 -4px 16px var(--color-shadow), 0 -1px 0 var(--color-border);
+  z-index: 4;
 }
 
 .card-nav-btn {
@@ -1326,6 +1334,190 @@ aside.stat span {
 .tab-panel { padding: 1em 1.2em; }
 .tab-panel > *:last-child { margin-bottom: 0; }
 .tab-panel.hidden { display: none; }
+
+/* ----- Comparison table ----- */
+/* Side-by-side feature matrix for comparing platforms, libraries, approaches.
+ * Authors wrap a regular HTML table with <div class="comparison-wrap"> for
+ * horizontal scroll on narrow screens, and tag the table with class="comparison"
+ * for the visual treatment. The build script auto-wraps unwrapped tables. */
+
+.comparison-wrap {
+  margin: 1.6em 0;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow-x: auto;
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px var(--color-shadow);
+}
+
+table.comparison {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  background: var(--color-surface);
+}
+
+table.comparison thead th {
+  background: var(--color-bg-alt);
+  color: var(--color-text);
+  font-weight: 700;
+  text-align: left;
+  padding: 0.75em 0.95em;
+  border-bottom: 2px solid var(--color-border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+table.comparison thead th:not(:first-child) {
+  text-align: center;
+  font-size: 0.83rem;
+  letter-spacing: 0.01em;
+}
+
+table.comparison tbody th {
+  background: var(--color-bg-alt);
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: left;
+  padding: 0.65em 0.95em;
+  vertical-align: top;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 180px;
+}
+
+table.comparison thead th:first-child {
+  z-index: 3;
+  left: 0;
+  position: sticky;
+  border-right: 1px solid var(--color-border);
+  min-width: 180px;
+}
+
+table.comparison tbody td {
+  padding: 0.65em 0.95em;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+  text-align: center;
+  white-space: nowrap;
+  background: var(--color-surface);
+}
+
+table.comparison tbody td.text {
+  text-align: left;
+  white-space: normal;
+  min-width: 160px;
+}
+
+table.comparison tbody tr:last-child th,
+table.comparison tbody tr:last-child td {
+  border-bottom: none;
+}
+
+table.comparison tbody tr:hover th { background: var(--color-bg); }
+table.comparison tbody tr:hover td { background: var(--color-bg-alt); }
+
+/* Yes / no / partial cell treatments — tinted background + emoji + label. */
+table.comparison td.yes {
+  background: rgba(16, 185, 129, 0.10);
+  color: #065f46;
+  font-weight: 600;
+}
+table.comparison td.no {
+  background: rgba(239, 68, 68, 0.08);
+  color: #991b1b;
+  font-weight: 600;
+}
+table.comparison td.partial {
+  background: rgba(245, 158, 11, 0.10);
+  color: #92400e;
+  font-weight: 600;
+}
+table.comparison td.best {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1e40af;
+  font-weight: 700;
+}
+
+html[data-theme="dark"] table.comparison td.yes,
+html[data-theme="auto"][data-system-theme="dark"] table.comparison td.yes {
+  background: rgba(16, 185, 129, 0.16);
+  color: #6ee7b7;
+}
+html[data-theme="dark"] table.comparison td.no,
+html[data-theme="auto"][data-system-theme="dark"] table.comparison td.no {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+}
+html[data-theme="dark"] table.comparison td.partial,
+html[data-theme="auto"][data-system-theme="dark"] table.comparison td.partial {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+}
+html[data-theme="dark"] table.comparison td.best,
+html[data-theme="auto"][data-system-theme="dark"] table.comparison td.best {
+  background: rgba(59, 130, 246, 0.20);
+  color: #93c5fd;
+}
+
+/* "Best fit" / summary row gets prominent treatment. */
+table.comparison tbody tr.comparison-row-summary th {
+  background: var(--color-primary);
+  color: white;
+  font-weight: 700;
+}
+
+table.comparison tbody tr.comparison-row-summary td {
+  background: var(--color-bg-alt);
+  font-weight: 500;
+  text-align: left;
+  white-space: normal;
+  font-size: 0.85rem;
+}
+
+table.comparison tbody tr.comparison-row-summary:hover th { background: var(--color-primary-hover); }
+table.comparison tbody tr.comparison-row-summary:hover td { background: var(--color-bg); }
+
+/* Subtle small label on cells with both icon + text — e.g. `<td class="yes">✅ via patched</td>`. */
+table.comparison td .cell-note {
+  display: block;
+  font-weight: 400;
+  font-size: 0.78em;
+  margin-top: 0.15em;
+  opacity: 0.82;
+}
+
+/* Plain markdown tables (without .comparison class) get a softer default. */
+.card table:not(.comparison) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.2em 0;
+  font-size: 0.9rem;
+}
+
+.card table:not(.comparison) th,
+.card table:not(.comparison) td {
+  padding: 0.55em 0.8em;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.card table:not(.comparison) thead th {
+  background: var(--color-bg-alt);
+  font-weight: 700;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.card table:not(.comparison) tbody tr:hover { background: var(--color-bg-alt); }
 
 /* ----- Pills / tags ----- */
 
