@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{COURSE_TITLE}}</title>
+  <style>{{STYLES_CSS}}</style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Course navigation">
+      <header class="sidebar-header">
+        <h1 class="course-title">{{COURSE_TITLE}}</h1>
+        <p class="course-goal">{{GOAL_LINE}}</p>
+        <div class="controls">
+          <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme" title="Toggle light/dark">
+            <span class="theme-icon">◐</span>
+          </button>
+          <input class="search-input" id="search-input" type="search" placeholder="Search…" aria-label="Search the course" />
+        </div>
+        <div class="search-results" id="search-results" hidden></div>
+      </header>
+
+      <nav class="chapter-nav" aria-label="Chapters">
+        <ol class="chapter-list" id="chapter-list">
+          {{CHAPTER_NAV_HTML}}
+        </ol>
+      </nav>
+
+      <nav class="extras-nav" aria-label="Reference views">
+        <a class="extras-link" data-view="glossary" href="#">
+          <span class="extras-icon" aria-hidden="true">📖</span>
+          <span class="extras-label">Glossary</span>
+          <span class="extras-count" id="extras-count-glossary"></span>
+        </a>
+        <a class="extras-link" data-view="resources" href="#">
+          <span class="extras-icon" aria-hidden="true">📚</span>
+          <span class="extras-label">Resources</span>
+        </a>
+      </nav>
+    </aside>
+
+    <main class="reading-pane">
+      <div class="progress-rail" aria-hidden="true">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+
+      <article id="content" class="content" aria-live="polite">
+        <div class="welcome-card">
+          <h1>Welcome</h1>
+          <p>Pick a chapter from the left to begin. Your progress is saved automatically on this device.</p>
+        </div>
+      </article>
+
+      <nav class="card-nav" aria-label="Card navigation">
+        <button id="prev-card" class="card-nav-btn" disabled>← Previous</button>
+        <span id="card-counter" class="card-counter">—</span>
+        <button id="next-card" class="card-nav-btn" disabled>Next →</button>
+      </nav>
+    </main>
+  </div>
+
+  <div class="popover" id="term-popover" hidden role="tooltip"></div>
+
+  {{CHAPTER_MARKDOWN_SCRIPTS}}
+
+  <script type="application/json" id="course-meta">{{COURSE_META_JSON}}</script>
+  <script type="application/json" id="concept-ledger">{{CONCEPTS_JSON}}</script>
+  <script type="application/json" id="term-ledger">{{TERMS_JSON}}</script>
+  <script type="application/json" id="resources-data">{{RESOURCES_JSON}}</script>
+
+  <script>{{MARKED_JS}}</script>
+  <script>{{VIEWER_JS}}</script>
+</body>
+</html>

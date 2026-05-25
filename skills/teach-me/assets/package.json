@@ -1,0 +1,10 @@
+{
+  "name": "teach-me-build",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Build helpers for the /teach-me skill (Shiki code highlighting + HTML assembly).",
+  "dependencies": {
+    "shiki": "^1.24.0"
+  }
+}
