@@ -199,16 +199,32 @@ Supported `data-platform` values: `temporal`, `trigger`, `inngest`, `restate`, `
 
 ### Step list
 
-Numbered list with prominent badges per step. Use for ordered procedures.
+Numbered list with prominent badges per step. Use for ordered procedures. **Supports nesting up to 3 levels** — sub-steps render as `1.1`, `1.2`, and sub-sub-steps as `1.1.1`, `1.1.2`. CSS counters take care of the numbering; you just nest `<ol class="step-list">`.
 
 ```html
 <ol class="step-list">
-  <li>Describe what should happen.</li>
-  <li>Identify the side effects.</li>
+  <li>Describe what should happen.
+    <ol class="step-list">
+      <li>List every external side effect.</li>
+      <li>List every workflow-internal effect.</li>
+    </ol>
+  </li>
   <li>Wrap each side effect in <code>step.run</code>.</li>
-  <li>Add idempotency keys to downstream calls.</li>
+  <li>Add idempotency keys.
+    <ol class="step-list">
+      <li>For downstream API calls.
+        <ol class="step-list">
+          <li>Use the platform's <code>Idempotency-Key</code> header where supported.</li>
+          <li>Fall back to a deterministic fingerprint otherwise.</li>
+        </ol>
+      </li>
+      <li>For workflow starts.</li>
+    </ol>
+  </li>
 </ol>
 ```
+
+Renders as `1`, `1.1`, `1.2`, `2`, `3`, `3.1`, `3.1.1`, `3.1.2`, `3.2`. Each level uses a smaller badge with a different color, so the hierarchy reads at a glance.
 
 ### Keyboard keys
 

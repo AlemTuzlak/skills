@@ -459,33 +459,179 @@ body {
   color: var(--color-primary);
 }
 
+/* ----- Details / summary cards ----- */
+/* Click-to-reveal cards used for prereq questions, recall, sample answers,
+ * faded-step reveals, and stuck-on hints. Default browser styling is replaced
+ * with a card-like disclosure: custom chevron, hover lift, two-tone open. */
+
+@supports (interpolate-size: allow-keywords) {
+  :root { interpolate-size: allow-keywords; }
+}
+
 .card details {
-  margin: 0.8em 0;
-  padding: 0.7em 1em;
+  margin: 0.75em 0;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: 10px;
   background: var(--color-surface);
-  transition: var(--transition);
+  overflow: clip;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.card details:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px var(--color-shadow);
+  transform: translateY(-1px);
 }
 
 .card details[open] {
-  background: var(--color-bg-alt);
   border-color: var(--color-primary);
+  background: var(--color-bg-alt);
+  box-shadow: 0 3px 12px var(--color-shadow);
 }
 
-.card details summary {
+/* Strip default markers across browsers. */
+.card details > summary {
+  list-style: none;
+}
+.card details > summary::-webkit-details-marker { display: none; }
+.card details > summary::marker { display: none; }
+
+/* Summary as a clickable header with a custom left-side chevron. */
+.card details > summary {
   cursor: pointer;
+  padding: 0.75em 1em 0.75em 2.55em;
   font-weight: 500;
-  user-select: none;
   line-height: 1.5;
+  user-select: none;
+  position: relative;
+  transition: color 0.18s ease, background 0.18s ease;
+  border-radius: 9px;
+  color: var(--color-text);
 }
 
-.card details summary:hover {
+.card details > summary:hover {
   color: var(--color-primary);
+  background: var(--color-bg-alt);
 }
 
+.card details[open] > summary {
+  color: var(--color-primary);
+  background: transparent;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 9px 9px 0 0;
+  font-weight: 600;
+}
+
+/* Custom chevron (CSS-only). Rotates -45deg → 45deg on open. */
+.card details > summary::before {
+  content: "";
+  position: absolute;
+  left: 1em;
+  top: 50%;
+  width: 0.5em;
+  height: 0.5em;
+  margin-top: -0.35em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease;
+  opacity: 0.55;
+  border-radius: 1px;
+}
+
+.card details:hover > summary::before { opacity: 0.85; }
+
+.card details[open] > summary::before {
+  transform: rotate(45deg) translate(-0.15em, -0.15em);
+  opacity: 1;
+}
+
+/* Body content padding — applied to every direct child except summary. */
 .card details > *:not(summary) {
-  margin-top: 0.7em;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.card details > *:not(summary):first-of-type {
+  margin-top: 0.85em;
+}
+
+.card details > *:not(summary):last-child {
+  padding-bottom: 0.85em;
+  margin-bottom: 0;
+}
+
+/* Tighten spacing when details are stacked siblings (Recall / Prereq lists). */
+.card details + details { margin-top: 0.5em; }
+
+/* Code/pre inside details should not double-pad. */
+.card details > pre {
+  margin-left: 1em;
+  margin-right: 1em;
+  padding-left: 1.2em;
+  padding-right: 1.2em;
+}
+
+/* ----- Details inside callouts: more subtle, contextual ----- */
+
+.callout details {
+  margin: 0.6em 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.callout details:hover {
+  border-color: var(--color-primary);
+  box-shadow: none;
+  transform: none;
+}
+
+.callout details[open] {
+  background: var(--color-bg);
+  border-color: var(--color-primary);
+  box-shadow: 0 1px 4px var(--color-shadow);
+}
+
+.callout details > summary {
+  padding: 0.55em 1em 0.55em 2.3em;
+  font-size: 0.94em;
+  font-weight: 500;
+}
+
+.callout details > summary::before {
+  left: 0.9em;
+  width: 0.45em;
+  height: 0.45em;
+}
+
+.callout details > *:not(summary):first-of-type {
+  margin-top: 0.55em;
+}
+
+.callout details > *:not(summary):last-child {
+  padding-bottom: 0.55em;
+}
+
+/* Self-explain context: tint summary indigo to match callout. */
+.callout-self-explain details > summary { color: #6366f1; }
+.callout-self-explain details[open] > summary { color: #4f46e5; }
+html[data-theme="dark"] .callout-self-explain details > summary,
+html[data-theme="auto"][data-system-theme="dark"] .callout-self-explain details > summary { color: #a5b4fc; }
+
+/* Reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .card details,
+  .card details > summary,
+  .card details > summary::before {
+    transition: none !important;
+  }
+  .card details:hover { transform: none; }
 }
 
 .card code {
@@ -990,7 +1136,7 @@ ol.step-list {
 ol.step-list > li {
   counter-increment: steps;
   position: relative;
-  padding: 0.7em 0.9em 0.7em 3em;
+  padding: 0.7em 0.9em 0.7em 3.2em;
   margin: 0.5em 0;
   background: var(--color-bg-alt);
   border-left: 3px solid var(--color-primary);
@@ -1002,9 +1148,10 @@ ol.step-list > li::before {
   position: absolute;
   left: 0.6em;
   top: 0.55em;
-  width: 1.7em;
-  height: 1.7em;
-  border-radius: 50%;
+  min-width: 1.8em;
+  height: 1.8em;
+  padding: 0 0.45em;
+  border-radius: 999px;
   background: var(--color-primary);
   color: white;
   display: flex;
@@ -1013,9 +1160,58 @@ ol.step-list > li::before {
   font-weight: 700;
   font-size: 0.85em;
   font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
 }
 
 ol.step-list > li > *:last-child { margin-bottom: 0; }
+
+/* Second-level nesting → renders 1.1, 1.2, 2.1, ... */
+ol.step-list ol.step-list {
+  counter-reset: substeps;
+  margin: 0.75em 0 0.2em;
+  padding-left: 0.5em;
+}
+
+ol.step-list ol.step-list > li {
+  counter-increment: substeps;
+  padding: 0.55em 0.85em 0.55em 3.4em;
+  margin: 0.35em 0;
+  background: var(--color-bg);
+  border-left-color: var(--color-accent);
+}
+
+ol.step-list ol.step-list > li::before {
+  content: counter(steps) "." counter(substeps);
+  min-width: 2.1em;
+  height: 1.6em;
+  background: var(--color-accent);
+  font-size: 0.78em;
+  left: 0.55em;
+  top: 0.55em;
+}
+
+/* Third-level nesting → 1.1.1, 1.1.2, ... */
+ol.step-list ol.step-list ol.step-list {
+  counter-reset: subsubsteps;
+  margin: 0.5em 0 0.15em;
+}
+
+ol.step-list ol.step-list ol.step-list > li {
+  counter-increment: subsubsteps;
+  padding: 0.45em 0.75em 0.45em 3.85em;
+  margin: 0.3em 0;
+  background: var(--color-bg-alt);
+  border-left-color: var(--color-text-muted);
+}
+
+ol.step-list ol.step-list ol.step-list > li::before {
+  content: counter(steps) "." counter(substeps) "." counter(subsubsteps);
+  min-width: 2.5em;
+  height: 1.5em;
+  background: var(--color-text-muted);
+  font-size: 0.72em;
+  padding: 0 0.4em;
+}
 
 /* ----- Platform pill (color-coded chips for workflow platforms etc.) ----- */
 
