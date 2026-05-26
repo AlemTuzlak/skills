@@ -361,6 +361,12 @@ fading-stage: full-worked | backward-faded | prompt-only
   - Code must be runnable / copy-pasteable. No abstract pseudocode.
 - **Density rule**: if a card has more than 600 words without a diagram, that's a defect — find what should have been visualized.
 - **Fading stage**: respect the assigned fading stage for worked examples.
+- **Write like a human** (see WRITING_GUIDE.md rule 13). Short paragraphs, plain ASCII punctuation, minimal markdown emphasis. **Banned everywhere in chapter prose, captions, recall answers, and summaries:**
+  - em-dash `—` (U+2014) and en-dash `–` (U+2013). Restructure the sentence.
+  - decorative glyph separators including `x` used as a multiplier in prose.
+  - "It is not X, it is Y" / "It's not X: it's Y" / "Not just X, but Y" framing. State the point directly.
+  - "Key insight", "Key takeaway", "Pro tip", "Bottom line", "TL;DR" and any phrase that announces an insight. Just state it.
+  - Bolded `**Label**:` mini-headings sprayed across paragraphs. Bold is for the one term that matters, not for visual structure.
 
 ### Diagram SVG conventions
 
@@ -378,7 +384,13 @@ Dispatch **one `general-purpose` subagent** with this brief:
 > Read every chapter file in `<output-location>/learn-<slug>/`. Validate and fix:
 >
 > 1. **Concrete-first openers** — first sentence of every chapter must name a concrete instance. Patch openers that start with abstract definitions.
-> 2. **Banned phrases** — scan for the banned-phrase list in WRITING_GUIDE.md. Rewrite offending sentences.
+> 2. **Banned phrases and constructs**. Scan for the banned-phrase list in WRITING_GUIDE.md. Rewrite offending sentences. This includes:
+>    - All idioms and filler from rule 7 and rule 8.
+>    - Every em-dash `—` and en-dash `–` in chapter prose, captions, recall answers, and summaries. Restructure the sentence (split, comma, parentheses).
+>    - "It is not X, it is Y" / "It's not X: it's Y" / "Not just X, but Y" framing. Rewrite as a direct statement.
+>    - "Key insight", "The key insight", "Key takeaway", "Pro tip", "Bottom line", "TL;DR" and similar insight-announcer phrases. Drop the announcer; keep the claim.
+>    - Glyph separators like `x` used as a multiplier in prose. Use the word `by`.
+>    - Bolded `**Label**:` mini-headings sprayed across paragraphs of a single card (more than 2 in a card). Flatten into prose.
 > 3. **Sentence length** — flag sentences >25 words. Rewrite them.
 > 4. **Card length** — flag cards >600 words. Either split into two cards or compress.
 > 5. **Diagram references** — every `![](./diagrams/...)` must resolve to an actual file. If a chapter references a missing SVG, write a minimal SVG into `diagrams/`.

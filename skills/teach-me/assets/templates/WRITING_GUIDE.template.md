@@ -40,7 +40,7 @@ The viewer ships a curated component library. **Read `<skill-dir>/assets/COMPONE
 
 Prefer auto-styled callouts over plain blockquotes when you're flagging information. The components are theme-aware and visually consistent across the course.
 
-## The 12 non-negotiable rules
+## The non-negotiable rules
 
 ### 1. Concrete before abstract
 
@@ -259,7 +259,64 @@ This kicks off `myWorkflow` with one argument and waits until it finishes before
 - Stripe, [Payments API tour](https://docs.stripe.com/payments-api/tour) — PaymentIntent lifecycle as a state-marker timeline.
 - Maggie Appleton, ["How to Draw Invisible Programming Concepts"](https://maggieappleton.com/drawinginvisibles1).
 
-### 13. Worked examples with backward fading
+### 13. Write like a human, not a thesis
+
+The reader is a person scrolling. Make the text easy on the eyes.
+
+**Be digestible.**
+
+- Short paragraphs. 1 to 3 sentences each, then a blank line.
+- No walls of text. If a paragraph runs longer than 4 lines on screen, split it.
+- Break concepts down. One idea per paragraph. One paragraph per beat.
+- Lists are fine when there really is a list. Do not turn every paragraph into bullets.
+
+**Plain glyphs only.**
+
+- Use ASCII and simple Latin script. Write as a person types on a normal keyboard.
+- Allowed punctuation: regular hyphen `-`, comma, period, colon, semicolon, parentheses, quotes, exclamation, question mark.
+- No fancy separators. Banned glyphs include `x` used as a multiplier between things (write the word `by`), bullet glyphs in prose, decorative arrows in body text.
+
+**Keep markdown light.**
+
+- Lists, code blocks, inline code, and links are fine.
+- Do not bold every other phrase. Bold is for the one term that matters in the paragraph, not for emphasis sprayed across the page.
+- Bold headings are only for actual headings (the `##` and `###` lines). Do not turn paragraphs into `**Title**:` mini-headings on every block.
+- Legibility wins over structure. If a section looks like a checklist of bold labels, flatten it into prose.
+
+**Forbidden syntactic and grammatical constructs. Never use these.**
+
+1. **No em-dash and no en-dash.** The characters `—` (U+2014) and `–` (U+2013) are banned everywhere in chapter prose, captions, summaries, and recall answers. Break the sentence into two sentences, use a comma, use parentheses, or restructure.
+
+   Bad: `Replay is fast - the engine just reads the history.`
+   (with an em-dash there)
+
+   Good: `Replay is fast. The engine just reads the history.`
+
+   Good: `Replay is fast (the engine just reads the history).`
+
+2. **No glyph separators.** Do not use `x` as a separator like `before x after`, do not use middle dots, do not use heavy bullets in running text. Words and ordinary punctuation only.
+
+3. **No "It is not X: it is Y." construction.** Same for "It's not X, it's Y" and its variants. State what the thing is. The reader does not need the negation first.
+
+   Bad: `Replay is not magic: it is bookkeeping.`
+
+   Good: `Replay is bookkeeping. The engine reads the event history and skips the work it has already recorded.`
+
+4. **No "Not just X, but Y" tricolon.** Same family of construction. Drop the contrast frame and write the actual point.
+
+   Bad: `Not just durable, but replayable.`
+
+   Good: `Workflows are replayable. The engine reconstructs state from the event history.`
+
+5. **No "Key insight", "The key insight", "Key takeaway", "Pro tip", "Bottom line", "TL;DR", or any phrase that announces that an insight is coming.** State the insight. The reader can tell it is important because it is in the chapter.
+
+   Bad: `Key insight: the worker has no memory between replays.`
+
+   Good: `The worker has no memory between replays. Every value the code needs has to come from the event history.`
+
+If you catch yourself reaching for any of these patterns, rewrite the sentence. The patterns are easy to detect with grep; the consistency pass will flag every occurrence.
+
+### 14. Worked examples with backward fading
 
 Your assigned **fading stage** is given in the chapter brief. Match it:
 
@@ -350,5 +407,9 @@ fading-stage: full-worked | backward-faded | prompt-only
 - Required sections present: `## What you'll learn`, `## Prereq check`, ≥3 cards, `## Recall`, `## Recap`, `## Next` → flagged if missing
 - ≥1 callback to a concept from ≥2 chapters back in the Recall section → flagged if missing
 - No banned phrases or filler → flagged if found
+- No em-dash `—` or en-dash `–` anywhere in the chapter (rule 13) → flagged if found
+- No "It is not X, it is Y" / "It's not X: it's Y" / "Not just X, but Y" construction (rule 13) → flagged if found
+- No "Key insight", "Key takeaway", "Pro tip", "Bottom line", "TL;DR" or similar insight-announcer phrases (rule 13) → flagged if found
+- No paragraph longer than 4 sentences without a break, no run of 3+ bolded sub-headings inside a single card (rule 13) → flagged if found
 
 Patch your chapter before submitting if any of these would fire.

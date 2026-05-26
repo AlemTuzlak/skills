@@ -410,10 +410,25 @@
     markCardCompleted(currentCardIndex);
   }
 
-  function goToCard(idx) {
-    if (idx < 0 || idx >= cards.length) return;
+  function _renderCardAt(idx) {
     currentCardIndex = idx;
     renderCurrentCard();
+  }
+
+  function cardHash(idx) {
+    const card = cards[idx];
+    if (!card) return '';
+    return '#/c' + card.chapterNum + '/' + (card.cardIndex + 1);
+  }
+
+  function goToCard(idx) {
+    if (idx < 0 || idx >= cards.length) return;
+    const hash = cardHash(idx);
+    if (location.hash === hash) {
+      _renderCardAt(idx);
+    } else {
+      location.hash = hash;
+    }
   }
 
   function nextCard() { goToCard(currentCardIndex + 1); }
@@ -422,6 +437,45 @@
   function goToChapter(chapterNum) {
     const idx = cards.findIndex(function (c) { return c.chapterNum === chapterNum; });
     if (idx !== -1) goToCard(idx);
+  }
+
+  function navigateToView(view) {
+    const hash = '#/' + view;
+    if (location.hash === hash) {
+      if (view === 'glossary') renderGlossaryView();
+      else if (view === 'resources') renderResourcesView();
+    } else {
+      location.hash = hash;
+    }
+  }
+
+  /* ---------- Hash routing ---------- */
+
+  function applyHash() {
+    const hash = location.hash || '';
+    const cardMatch = hash.match(/^#\/c(\d+)\/(\d+)$/);
+    if (cardMatch) {
+      const chNum = parseInt(cardMatch[1], 10);
+      const cardIdxInCh = parseInt(cardMatch[2], 10) - 1;
+      const idx = cards.findIndex(function (c) {
+        return c.chapterNum === chNum && c.cardIndex === cardIdxInCh;
+      });
+      if (idx !== -1) {
+        _renderCardAt(idx);
+        return;
+      }
+    }
+    if (hash === '#/glossary') { renderGlossaryView(); return; }
+    if (hash === '#/resources') { renderResourcesView(); return; }
+    // Empty or unrecognized hash: resume saved position, or first card.
+    if (cards.length) {
+      const resumeAt = Math.min(progress.lastCardIndex || 0, cards.length - 1);
+      const resumeHash = cardHash(resumeAt);
+      if (resumeHash) {
+        history.replaceState(null, '', location.pathname + location.search + resumeHash);
+      }
+      _renderCardAt(resumeAt);
+    }
   }
 
   /* ---------- Reference views (Glossary, Resources) ---------- */
@@ -680,10 +734,30 @@
       el.addEventListener('click', function (ev) {
         ev.preventDefault();
         const view = el.dataset.view;
-        if (view === 'glossary') renderGlossaryView();
-        else if (view === 'resources') renderResourcesView();
+        if (view === 'glossary' || view === 'resources') navigateToView(view);
       });
     });
+
+    window.addEventListener('hashchange', applyHash);
+
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', function () {
+        const isMobile = window.matchMedia('(max-width: 720px)').matches;
+        if (isMobile) {
+          document.querySelector('.sidebar').classList.toggle('open');
+        } else {
+          const app = document.querySelector('.app');
+          app.classList.toggle('sidebar-collapsed');
+          try {
+            localStorage.setItem(
+              'teach-me:sidebar-collapsed',
+              app.classList.contains('sidebar-collapsed') ? '1' : '0'
+            );
+          } catch (_) { /* ignore */ }
+        }
+      });
+    }
 
     document.body.addEventListener('click', function (ev) {
       const src = ev.target.closest('.glossary-source-link');
@@ -753,6 +827,12 @@
     try { savedTheme = localStorage.getItem('teach-me:theme') || 'auto'; } catch (_) { /* ignore */ }
     applyTheme(savedTheme);
 
+    let collapsed = '0';
+    try { collapsed = localStorage.getItem('teach-me:sidebar-collapsed') || '0'; } catch (_) { /* ignore */ }
+    if (collapsed === '1' && !window.matchMedia('(max-width: 720px)').matches) {
+      document.querySelector('.app').classList.add('sidebar-collapsed');
+    }
+
     buildCards();
     rebuildSidebarNav();
     setExtrasCounts();
@@ -760,10 +840,7 @@
     updateProgressBar();
     wireEvents();
 
-    if (cards.length) {
-      const resumeAt = Math.min(progress.lastCardIndex || 0, cards.length - 1);
-      goToCard(resumeAt);
-    }
+    applyHash();
   }
 
   if (document.readyState === 'loading') {
