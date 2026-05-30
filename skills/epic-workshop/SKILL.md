@@ -169,6 +169,7 @@ Epic Web exercises use a recurring cast of named emoji characters in code commen
 
 ### Authoring rules
 
+- **Emoji comments only in files the learner edits in that step.** An emoji comment (🐨 💣 💰 🦺 🦉 etc.) is a call to action — it tells the learner to do something to *that* file in *this* step. If the learner will not touch a file in the current exercise step, that file must contain **zero** emoji comments, and its problem and solution copies must be byte-identical. An emoji comment in an untouched file creates a phantom problem→solution diff the learner has to mentally filter out, and implies work that isn't part of the step. When scaffolding genuinely needs explaining, use a plain comment with no emoji — or omit it. Audit every file that differs between problem and solution: if the only difference is comments, that file should not have changed at all.
 - **Match the emoji to the role.** Don't use Kody for a TypeScript hint — that's Lily. Don't use Olivia for a doc link — that's Dominic.
 - **Stay terse.** One sentence per emoji line. The character is the framing; the instruction is what matters.
 - **Wrong-attempt code uses 💣.** When the learner needs to delete the wrong-attempt placeholder before writing the real solution, Barry shows up there.
