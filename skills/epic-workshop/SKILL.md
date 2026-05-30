@@ -122,6 +122,14 @@ Rules:
 
 The same celebrate → encourage → break → hand-off rhythm applies to exercise outros (`FINISHED.mdx`), scaled up to close the whole exercise rather than one step.
 
+## Instructions live in the file, not the README
+
+**The learner should never have to flip back to the README to know what to type.** Actionable, step-by-step instructions — what to add, what to change, a spec of fields to fill in, code to uncomment — belong as 🐨/💰 comments *in the file the learner is editing*, right where the change happens. Put the work where the work is.
+
+The problem `README.mdx` carries what the in-file comments can't: the motivation (what we're building and why), conceptual background (🦉), how to verify it works, and where to look when stuck. It orients; it doesn't instruct keystroke by keystroke.
+
+Smell test: if the README has a numbered "do X, then Y, then Z" list that mirrors the 🐨 comments already in the file, you've split the instructions across two places and forced a context-switch. Move the actionable detail into the file and let the README point at it ("open these files in order — Kody and Marty walk you through each change"). And when you'd otherwise make the learner transcribe a spec from the README (e.g. a list of field descriptions to write), pre-write it in the file as commented code 💰 they uncomment instead — uncommenting beats transcribing.
+
 ## Logistics defaults
 
 - **Length:** 5–6 hours including breaks (longer drains learners)
