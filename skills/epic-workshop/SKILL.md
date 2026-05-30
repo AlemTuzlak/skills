@@ -103,6 +103,24 @@ Exercises are embedded in the workshop app (https://github.com/epicweb-dev/kcdsh
 <EpicVideo url="https://www.epicweb.dev/workshops/.../solution" />
 ```
 
+## Solution step README (the step outro)
+
+Each exercise step has a problem `README.mdx` (the instructions) and a solution `README.mdx`. **The solution README is not a technical changelog of the diff the learner just wrote — it's the emotional and narrative beat that closes the step.** The learner already did the work and can read their own code; this README lands the win and sets up the next step. Keep it short and warm, in this shape:
+
+1. **One-sentence celebration of what they just shipped**, in plain excited language — not a bulleted recap of the implementation. e.g. *"We got the chat working server-side and now we're streaming messages — amazing!"* Resist re-explaining the code line by line.
+2. **Encourage them.** Tell them they did a good job, and mean it.
+3. **Tell them to take a short break and refresh** before the next step.
+4. **🧝‍♀️ Kellie the Co-worker (when applicable)** — what she's doing ahead of the next step. When the next exercise *starts from meaningfully different code than this solution left off* — because you (the instructor) changed things between steps so the learner can focus on the new concept — attribute that work to Kellie: *"🧝‍♀️ Kellie wired up X, Y, and Z for you so you can focus on [the new thing]."* This is what explains an otherwise-confusing jump in the starting code. If there's no significant instructor-made setup before the next step, leave Kellie out.
+5. **👨‍💼 Peter the Product Manager (when applicable)** — what he wants next. Peter shows up specifically when you **intentionally left the implementation lacking** as foreshadowing: he plays the PM who noticed the gap (the bot answers off-topic questions, the table takes 30s to appear, etc.) and asks the learner to fix it next. This motivates the next step from a real product/user need rather than "here's the next API." If the next step isn't motivated by an intentional gap, leave Peter out.
+
+Rules:
+
+- **Short.** The overview is one or two sentences; the whole README is a few short beats, not a wall of text. If you're re-explaining code the learner just wrote, cut it.
+- **Don't force the cast.** Use Kellie only when there's real instructor-made setup to attribute, and Peter only when the next step is motivated by an intentional gap. If neither applies, celebrate + encourage + break is a complete solution README.
+- **Save deep "why it works" analysis for the problem README or a short 📝/🦉 aside** — the solution outro is for momentum and encouragement, not a lecture.
+
+The same celebrate → encourage → break → hand-off rhythm applies to exercise outros (`FINISHED.mdx`), scaled up to close the whole exercise rather than one step.
+
 ## Logistics defaults
 
 - **Length:** 5–6 hours including breaks (longer drains learners)
