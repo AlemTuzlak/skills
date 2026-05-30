@@ -64,6 +64,7 @@ Workshops follow **problem → learner attempts → solution**, not "watch me co
 - The problem step must be solvable enough that a motivated learner can make progress, but hard enough that they engage
 - The solution step reveals the canonical answer after they've tried
 - Don't collapse problem + solution into a single "follow along" video
+- **Don't spoil the limitation a later step resolves.** When a section is a staged arc — each step's pain motivates the next — the section/exercise *intro* and problem framing must not pre-announce those limitations (e.g. "wait 20–30s for one card", "each new question replaces the previous one"). Naming the gotcha upfront steals the discovery: the learner skims past the slow render or the vanishing card because they were told to expect it, instead of *feeling* it and wanting the fix. Describe what each step builds, not the wall it exposes — then let them hit the wall and make the next step the relief. (Foreshadowing the limitation is fine *after* the learner has experienced it — that's what the solution outro and 👨‍💼 Peter are for.)
 
 ### 5. Experience-based instruction
 
