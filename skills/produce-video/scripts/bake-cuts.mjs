@@ -75,7 +75,11 @@ function main() {
     const r = spawnSync("ffmpeg", [
       "-y", "-loglevel", "error", "-i", o.input,
       "-/filter_complex", filterFile, "-map", "[v]", "-map", "[a]",
-      "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-c:a", "aac", "-b:a", "192k", o.out,
+      // Dense keyframes (-g 30 -keyint_min 30) + faststart so HyperFrames can seek frame-accurately
+      // at render time; sparse keyframes cause "seek failures and frame freezing" / capture stalls.
+      "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
+      "-g", "30", "-keyint_min", "30", "-movflags", "+faststart",
+      "-c:a", "aac", "-b:a", "192k", o.out,
     ], { encoding: "utf8" });
     if (r.status !== 0 || !existsSync(o.out)) { console.error("[bake-cuts] ffmpeg failed:", r.stderr); process.exit(1); }
   } finally {
