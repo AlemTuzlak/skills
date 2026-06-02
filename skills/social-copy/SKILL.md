@@ -7,6 +7,8 @@ description: Use when the user wants to create social media posts or launch copy
 
 Generate platform-specific social media copy from code changes, marketing briefs, blog posts, or feature descriptions. Each platform gets copy tailored to its rules, audience behavior, and algorithm.
 
+**Writing rule (non-negotiable): never use em-dashes (— or –). Use a hyphen `-` instead.** Applies to every platform's copy.
+
 ## Input Resolution
 
 Resolve the argument (if provided) in this order:
