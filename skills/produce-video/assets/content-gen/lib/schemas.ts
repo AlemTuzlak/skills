@@ -8,7 +8,7 @@ export const ChaptersSchema = z.array(
 ).min(3);
 
 export const YouTubeSchema = z.object({
-  title: z.string().min(10).max(70),
+  title: z.string().min(10).max(100), // YouTube's real title limit is 100 chars (max(70) caused hard validation failures)
   description: z.string().min(50),
   tags: z.array(z.string()).min(5).max(25),
   chapters: ChaptersSchema, // required — always generated from the timestamped transcript
