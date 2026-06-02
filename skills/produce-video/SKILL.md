@@ -99,14 +99,14 @@ Invoke `/transcribe-video` on `<work>/final_cut.mp4` with `--out <OUT>` so `tran
 - **Quality note (generation loss):** the footage is re-encoded by P1 de-silence and P2 cuts before the render screenshots it; keep those high-quality (`bake-cuts.mjs` uses crf 18 + dense keyframes) and avoid extra re-encode passes. The Chrome capture itself is a lossless 1:1 screenshot, so a low-CRF render recovers nearly all quality. For *pristine* footage (zero browser-raster generation), an advanced path is to render overlays-only to a transparent `--format webm`/`mov` and ffmpeg-composite them over the cut footage (footage encoded once) — heavier, and the punch-in zoom must then be applied to the footage via ffmpeg.
 
 ### P6 — Content generation (delegated to specialized skills)
-Generate the launch content by **invoking three dedicated skills**, each on the **final edited transcript** (P3 — pass the timestamped `transcript.srt` so YouTube chapters get accurate times), writing each output into `<OUT>`:
-- **`youtube-copy`** → `<OUT>/youtube.md` (click-worthy title, above-the-fold description, tags, and timestamped chapters from the SRT).
-- **`blog-post`** → `<OUT>/blog.md` (full blog post from the transcript).
-- **`social-copy`** → `<OUT>/socials.md` (X + thread, Bluesky, LinkedIn, Reddit).
+Generate the launch content by **invoking dedicated skills**, each on the **final edited transcript** (P3 — pass the timestamped `transcript.srt` so YouTube chapters get accurate times), writing each output into `<OUT>`:
+- **`youtube-copy`** → `<OUT>/youtube.md` (click-worthy title, above-the-fold description, tags, and timestamped chapters from the SRT). Default on.
+- **`social-copy`** → `<OUT>/socials.md` (X + thread, Bluesky, LinkedIn, Reddit). Default on.
+- **`blog-post`** → `<OUT>/blog.md` (full blog post from the transcript). **Optional** — ask the user "Want a blog post too?" and only run it if they say yes (default: skip). A blog is a bigger artifact many videos don't need.
 
 Invoke each via the Skill tool with the transcript as the source; they own their own quality rules. Do NOT use a monolithic LLM script for this. If a skill is unavailable, note it and continue with the others (the rendered video is already saved).
 
-**Writing rule for ALL generated text (titles, descriptions, chapters, blog, socials): never use em-dashes (— / –) — use a hyphen `-`.**
+**Writing rule for ALL generated text (titles, descriptions, chapters, blog, socials): never use em-dashes (— / –), use a hyphen `-`.**
 
 ### P7 — Cleanup & handoff
 - Confirm `<OUT>` contains the consolidated result: `final.mp4`, `hyperframes/`, `transcript.*`, `youtube.md`, `socials.md`, `blog.md`.
