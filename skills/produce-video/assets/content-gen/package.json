@@ -1,0 +1,15 @@
+{
+  "name": "produce-video-content-gen",
+  "private": true,
+  "type": "module",
+  "scripts": { "generate": "tsx generate-content.ts" },
+  "dependencies": {
+    "@standard-schema/spec": "^1.1.0",
+    "@tanstack/ai": "^0.2.0",
+    "@tanstack/ai-ollama": "^0.2.0",
+    "@tanstack/ai-openai": "^0.2.0",
+    "dotenv": "^17.2.3",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": { "tsx": "^4.20.6", "typescript": "^5.9.3" }
+}
