@@ -7,6 +7,8 @@ description: Use when the user wants to write a blog post about a feature, produ
 
 Write high-quality blog posts from code changes, marketing briefs, or feature descriptions. Handles SEO, structure, tone matching, and visual content.
 
+**Writing rule (non-negotiable): never use em-dashes (— or –). Use a hyphen `-` instead.** Applies to every line of generated copy.
+
 ## Input Resolution
 
 Resolve the argument (if provided) in this order:
