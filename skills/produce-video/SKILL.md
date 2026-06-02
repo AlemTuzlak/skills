@@ -81,6 +81,7 @@ Invoke `/transcribe-video` on `<work>/final_cut.mp4` with `--out <OUT>` so `tran
    - Copy `templates/project/styles.css` (with the confirmed brand values) into `<OUT>/hyperframes`.
    - For each approved row: instantiate the matching `templates/overlays/*.html`, give it a unique composition id + `data-composition-id`, fill its `{{tokens}}`, set `data-start` = the transcript timestamp and `data-duration` = the dwell, mount it above the video. Punch-in zooms scale the video's WRAPPER div (never the `<video>`).
    - Output dimensions inherit the source recording.
+   - **Readability (non-negotiable): all overlay text must be clearly legible over ANY video background.** Every text group sits on a near-opaque dark panel (`rgba(8,10,14,0.92)`, rounded, subtle border/shadow); titles/body are white (`var(--brand-text)`), secondary/kicker/meta are light slate (`#CBD5E1`). NEVER use `var(--brand-accent)`/`var(--brand-primary)` for body/subtitle/kicker text — accent is for bars, borders, marker sweeps, icons, and big display words only (and only when they clear ~4.5:1 on the panel). When unsure, make text white. `npx hyperframes validate` (WCAG contrast) must pass with zero contrast warnings.
 
 ### P5 — Preview & render  (mandatory agent-launched preview + explicit-render gate)
 - `npx hyperframes lint` + `npx hyperframes inspect` (overflow + safe zones) + `npx hyperframes validate` (contrast). Fix until clean.

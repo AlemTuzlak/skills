@@ -63,7 +63,7 @@
           box-sizing: border-box;
           pointer-events: none;
         }
-        [data-composition-id="ov-image-embed"] .ov-ie-fig { margin: 0; max-width: 760px; }
+        [data-composition-id="ov-image-embed"] .ov-ie-fig { margin: 0; max-width: 760px; text-align: center; }
         [data-composition-id="ov-image-embed"] .ov-ie-frame {
           padding: 12px;
           background: var(--brand-bg);
@@ -81,12 +81,18 @@
           border-radius: 8px;
         }
         [data-composition-id="ov-image-embed"] .ov-ie-cap {
-          margin-top: 18px;
+          display: inline-block;
+          margin: 18px auto 0;
+          padding: 12px 20px;
           text-align: center;
           font-family: "Inter", system-ui, sans-serif;
           font-size: 24px;
           font-weight: 500;
-          color: var(--brand-text);
+          color: #FFFFFF;
+          background: rgba(8, 10, 14, 0.92);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
         }
         [data-composition-id="ov-image-embed"] .ov-ie-cap:empty { display: none; }
       </style>

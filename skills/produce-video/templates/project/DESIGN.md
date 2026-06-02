@@ -25,5 +25,6 @@
 ## What NOT to Do
 - Do not cover the speaker's face / webcam inset (see `references/framing-safe-zones.md`).
 - Do not fill the whole frame with an opaque overlay.
-- Do not hardcode hex in overlays — use `var(--brand-*)`.
+- Do not put text directly over the video — every text group gets a near-opaque dark backing panel so it's readable over any background.
+- Do not use accent/primary color for body/subtitle/kicker text (low contrast). Titles = white, secondary = light slate `#CBD5E1`. Accent is for bars/borders/marks only. `hyperframes validate` must pass with zero contrast warnings.
 - Do not animate the `<video>` element directly (zoom scales a wrapper div).
