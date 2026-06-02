@@ -35,6 +35,16 @@ Take a recording the user provides and turn it into a finished video. The record
 
 ## Process
 
+### Preflight — check dependencies & skills (run FIRST, before P0)
+Verify the environment before doing any work; warn the user about anything missing and how to fix it.
+- **auto-editor** (required for P1 de-silence): run `auto-editor --version`. If it is not installed, STOP and tell the user: *"auto-editor is not installed - install it with `pipx install auto-editor` (or `pip install auto-editor`), then re-run."* Do not attempt P1 without it.
+- **ffmpeg / ffprobe** (cuts, frames, audio): run `ffmpeg -version`. Warn + give install guidance if missing.
+- **Docker** (for `/transcribe-video`): `docker info`. Warn if the daemon is down (start Docker Desktop).
+- **Node >= 22**: `node --version`. Warn if older.
+- **Required skills** — confirm these are available (try to invoke / check the skill list); warn for any missing and which phase it blocks:
+  - `transcribe-video` (P2/P3 transcription), `hyperframes` + `hyperframes-cli` + `gsap` (P2/P4/P5 composition & render), `youtube-copy` + `social-copy` (P6). `blog-post` only if the user opts into a blog (P6, optional).
+- Summarize the preflight result in one short block (what's present, what's missing). Only proceed past a missing **required** dependency/skill if the user explicitly says to continue without it (and note the degraded result).
+
 ### P0 — Input & configuration
 - Input: path to the raw recording (required).
 - Optional: a repo/files for real code grounding; visual style/brand (else run the `hyperframes` Visual Identity Gate — detect from the repo, else ask 3 style questions; write `templates/project/DESIGN.md` + brand values into `styles.css`); overlay **density** (sparse / balanced / rich).
