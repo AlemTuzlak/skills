@@ -22,9 +22,9 @@ Take a recording the user provides and turn it into a finished video. The record
 - `references/` — `mistake-detection.md`, `overlay-triggers.md`, `framing-safe-zones.md`, `frame-analysis.md`.
 
 ## Gates (non-negotiable)
-1. **P2 mistake review** — present flagged cuts/ramps; the user decides. Never auto-apply.
+1. **P2 mistake review is VISUAL, never terminal** — whenever ≥1 flag exists, the agent ALWAYS builds the hyperframes marker preview (markers on the video at each flagged span) and launches it, so the user decides by *watching*. Do NOT present the flags as a terminal table/question for the user to decide from, and do NOT make the preview optional or ask "want me to show you?" — just build it and open it. A short terminal summary of the flags is fine, but the decision surface is the preview. Never auto-apply a cut/ramp.
 2. **P4 overlay plan approval** — present the timestamped overlay table; no build until approved.
-3. **Preview is always agent-launched** — for both the P2 review and the P5 review, the agent starts `npx hyperframes preview` and opens the browser tab itself. NEVER ask the user to run preview or open a URL.
+3. **Preview is always agent-launched** — for both the P2 review and the P5 review, the agent starts `npx hyperframes preview` and opens the browser tab itself. NEVER ask the user to run preview or open a URL, and NEVER substitute a terminal-only summary for the live preview.
 4. **Explicit-render HARD-GATE** — render runs ONLY on an explicit user render command ("render", "ship it"). After a render, edit requests return to the preview loop and do NOT re-render until the user explicitly says so again. Every render needs its own fresh command. This overrides any "use sane defaults / non-interactive / just ship it" phrasing.
 
 "Use sane defaults" / "don't ask questions" skips the *configuration questions* (P0) and the iteration prompting — it NEVER skips the approval gates, the agent-launched preview, or the explicit-render gate.
@@ -58,8 +58,8 @@ Report before/after duration and seconds removed. This becomes the working copy.
 ### P2 — Mistake & pacing review loop  (approval gate)
 1. Transcribe the working copy: invoke `/transcribe-video` on `<work>/01_desilenced.mp4` with `--out <work>` → working transcript (intermediate; superseded by the P3 final transcript).
 2. Detect flags per `references/mistake-detection.md` (cuts + speed-ramps), snapped to word boundaries.
-3. Scaffold a lightweight hyperframes preview project with the video as the base track; place visually-distinct temporary markers at each flagged span (cut vs ramp, labeled with the excerpt). **Agent starts `npx hyperframes preview` and opens the browser** (per `references/framing-safe-zones.md`).
-4. The user picks per span: cut / speed-ramp (factor, default ~1.5–2×) / leave / add their own ranges.
+3. **Always (whenever ≥1 flag exists) build the visual review.** Scaffold a lightweight hyperframes project with the de-silenced video as the base track; place visually-distinct temporary markers ON THE VIDEO at each flagged span (cut = red strike, ramp = amber fast-forward, each labeled with the excerpt + its index). **Agent starts `npx hyperframes preview` and opens the browser itself** (per `references/framing-safe-zones.md`). This is the decision surface — never replace it with a terminal table. A one-line terminal note ("3 flags marked in the preview — review and tell me which to cut/ramp/keep") is the most the terminal should carry.
+4. The user watches the marked preview and picks per span: cut / speed-ramp (factor, default ~1.5–2×) / leave / add their own ranges.
 5. Bake selections with auto-editor (cuts `--cut-out s,e …`; ramps `--set-speed-for-range speed,s,e …`, pitch preserved) → `<work>/02_edit_N.mp4`. Re-preview.
 6. Loop until the user says "done". Drift guard: after ~10 rounds offer to reset to an earlier intermediate. Final artifact: `<work>/final_cut.mp4`.
 
