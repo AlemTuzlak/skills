@@ -25,7 +25,17 @@ For `onscreen_highlight` rows, also carry the frame-analysis fields from `frame-
 | Emphasis beat ("this is the key part", vocal stress, or to lead the eye to an on-screen highlight) | `zoom` | `PunchInZoom.html` | emphasis word ts |
 
 ## Code sourcing (for `code_snippet`)
-Repo-if-available-else-synthesize: if the user provided a repo and a real definition matches, pull the real code; otherwise synthesize a realistic example and **flag it in the approval table as synthesized** (never present synthesized code as verified). Highlight code with shiki using the brand-derived theme.
+Repo-if-available-else-synthesize: if the user provided a repo and a real definition matches, pull the real code; otherwise synthesize a realistic example and **flag it in the approval table as synthesized** (never present synthesized code as verified).
+
+**Always use the terminal/window card** (`CodeSnippet.html` — traffic-light dots + a filename title bar + the dark high-contrast panel). This is the standard code look; do not invent a different code container.
+
+**Format the code properly — like real, hand-written source, not a crammed one-liner:**
+- One statement per line; correct, language-appropriate **indentation** (2 or 4 spaces consistently); blank lines between logical groups.
+- Each line is its own `<span data-line="N">…</span>` (the card animates and highlights per line).
+- Apply syntax colors via spans: keywords `.ov-cs-kw`, strings `.ov-cs-str`, comments `.ov-cs-com` (these read on the dark panel).
+- Keep lines short enough to fit the card width (~≤ ~46 chars at the card's font size); wrap or refactor long lines, never let code overflow the card.
+- Use real, idiomatic syntax for the language (correct imports, real API names, valid punctuation). A short, well-formatted excerpt beats a long dump — show only the lines that matter and `// …` elide the rest.
+- The `{{HIGHLIGHT_LINE}}` should point at the single most important line.
 
 ## Editorial restraint (honor the density setting: sparse / balanced / rich)
 Run a silent self-improvement pass before presenting the plan:

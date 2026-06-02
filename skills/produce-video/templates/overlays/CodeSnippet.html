@@ -18,9 +18,15 @@
       data-start="<t>"  data-duration="5"  data-width="1920"  data-height="1080"
       data-track-index="1"  style="position:absolute; inset:0; z-index:10"
 
+  This is the standard "terminal/window" code look (traffic-light dots + filename bar +
+  dark high-contrast panel). Always use it for code; don't invent another code container.
+
   Tokens (filled by the skill at build time):
-    {{CODE_HTML}}       pre-highlighted code lines, each as <span data-line="N">...</span>
-                        (wrap tokens in .ov-cs-kw / .ov-cs-str / .ov-cs-com for color)
+    {{CODE_HTML}}       PROPERLY FORMATTED code, one statement per line, correct/consistent
+                        indentation (2 or 4 spaces), blank lines between logical groups,
+                        idiomatic syntax + real API names. Each line is <span data-line="N">...</span>.
+                        Wrap tokens in .ov-cs-kw / .ov-cs-str / .ov-cs-com for color. Keep lines
+                        short enough to fit the card (~≤46 chars); never overflow — elide with "// …".
     {{TITLE}}           filename / label shown in the card header
     {{HIGHLIGHT_LINE}}  a line number (data-line value) to emphasize; may be left blank
 
