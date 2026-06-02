@@ -43,6 +43,15 @@ function dockerOrDie() {
   }
 }
 
+function ffmpegOrDie() {
+  // ffmpeg is REQUIRED — used to extract a 16 kHz mono WAV (whisper.cpp only decodes WAV).
+  const r = sh("ffmpeg", ["-version"]);
+  if ((r.error && r.error.code === "ENOENT") || r.status !== 0) {
+    console.error("[transcribe-video] ffmpeg is REQUIRED but was not found on PATH. Install ffmpeg, then retry.");
+    process.exit(1);
+  }
+}
+
 function imageExists() {
   return sh("docker", ["images", "-q", IMAGE]).stdout.trim() !== "";
 }
@@ -148,6 +157,7 @@ async function main() {
     console.error(`[transcribe-video] --task must be "transcribe" or "translate" (got: ${opts.task}).`);
     process.exit(1);
   }
+  ffmpegOrDie();
 
   // Resolve and ensure the output directory up front, so a bad --out fails loud
   // BEFORE the (slow) transcription rather than throwing a raw ENOENT after it.

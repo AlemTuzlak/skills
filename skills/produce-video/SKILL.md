@@ -38,7 +38,7 @@ Take a recording the user provides and turn it into a finished video. The record
 ### Preflight — check dependencies & skills (run FIRST, before P0)
 Verify the environment before doing any work; warn the user about anything missing and how to fix it.
 - **auto-editor** (required for P1 de-silence): run `auto-editor --version`. If it is not installed, STOP and tell the user: *"auto-editor is not installed - install it with `pipx install auto-editor` (or `pip install auto-editor`), then re-run."* Do not attempt P1 without it.
-- **ffmpeg / ffprobe** (cuts, frames, audio): run `ffmpeg -version`. Warn + give install guidance if missing.
+- **ffmpeg / ffprobe** (REQUIRED — P2 cuts, P4 frame analysis, P5 render, audio): run `ffmpeg -version`. If missing, STOP and tell the user to install ffmpeg and add it to PATH. The pipeline cannot run without it.
 - **Docker** (for `/transcribe-video`): `docker info`. Warn if the daemon is down (start Docker Desktop).
 - **Node >= 22**: `node --version`. Warn if older.
 - **Required skills** — confirm these are available (try to invoke / check the skill list); warn for any missing and which phase it blocks:
