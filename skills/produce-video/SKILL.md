@@ -12,14 +12,18 @@ Take a recording the user provides and turn it into a finished video. The record
 - **`hyperframes`** — composition authoring rules (Visual Identity Gate, Layout Before Animation, timeline contract, video/overlay layering). **Invoke before writing/mounting any composition HTML.**
 - **`hyperframes-cli`** — every `npx hyperframes` command (init, lint, inspect, preview, render).
 - **`gsap`** — GSAP timeline/easing patterns for overlays.
+- **`youtube-copy`** — YouTube title/description/tags/chapters (P6).
+- **`blog-post`** — the blog post (P6).
+- **`social-copy`** — X/Bluesky/LinkedIn/Reddit copy (P6).
 
 ## Bundled assets
 - `scripts/desilence.mjs` — auto-editor silence removal + before/after duration.
 - `scripts/extract-frame.mjs` — single-frame grab (framing detection + on-screen highlight).
+- `scripts/bake-cuts.mjs` — ffmpeg trim/concat cutter (dense keyframes) used in P2.
 - `templates/overlays/*.html` — 9 overlay sub-composition templates (filled per instance; sub-comps are standalone HTML docs in the installed CLI — read each file's header comment).
 - `templates/project/{DESIGN.md,styles.css}` — Visual Identity Gate + brand `var(--brand-*)` tokens the overlays consume.
-- `assets/content-gen/` — vendored blog/socials/YouTube generator (run via `node assets/content-gen/node_modules/tsx/dist/cli.mjs generate-content.ts <transcript.txt> <outDir> [transcript.srt]`).
 - `references/` — `mistake-detection.md`, `overlay-triggers.md`, `framing-safe-zones.md`, `frame-analysis.md`.
+- **P6 content generation is delegated to the `youtube-copy`, `blog-post`, and `social-copy` skills** (no vendored LLM script).
 
 ## Gates (non-negotiable)
 1. **P2 mistake review is VISUAL, never terminal** — whenever ≥1 flag exists, the agent ALWAYS builds the hyperframes marker preview (markers on the video at each flagged span) and launches it, so the user decides by *watching*. Do NOT present the flags as a terminal table/question for the user to decide from, and do NOT make the preview optional or ask "want me to show you?" — just build it and open it. A short terminal summary of the flags is fine, but the decision surface is the preview. Never auto-apply a cut/ramp.
@@ -94,15 +98,15 @@ Invoke `/transcribe-video` on `<work>/final_cut.mp4` with `--out <OUT>` so `tran
   (run from `<OUT>/hyperframes`; `--crf 16` is near-visually-lossless — use `--crf 14` for very text-heavy screencasts, or `--video-bitrate 20M` to match a source's bitrate). Final mp4 keeps original audio. After render, further edits return to the loop and require a fresh explicit render command.
 - **Quality note (generation loss):** the footage is re-encoded by P1 de-silence and P2 cuts before the render screenshots it; keep those high-quality (`bake-cuts.mjs` uses crf 18 + dense keyframes) and avoid extra re-encode passes. The Chrome capture itself is a lossless 1:1 screenshot, so a low-CRF render recovers nearly all quality. For *pristine* footage (zero browser-raster generation), an advanced path is to render overlays-only to a transparent `--format webm`/`mov` and ffmpeg-composite them over the cut footage (footage encoded once) — heavier, and the punch-in zoom must then be applied to the footage via ffmpeg.
 
-### P6 — Content generation (vendored, self-contained)
-- Ensure deps once: `pnpm --dir assets/content-gen install` (only if `assets/content-gen/node_modules` is absent). Ensure `assets/content-gen/.env` is configured (copy `.env.example`; OpenAI key or local Ollama) — if unconfigured, ask the user once or skip P6 with a warning (the rendered video is already saved).
-- Run on the **final edited transcript** (from P3), writing into `<OUT>` so transcript + content land alongside the video:
-  ```
-  node assets/content-gen/node_modules/tsx/dist/cli.mjs assets/content-gen/generate-content.ts <OUT>/transcript.txt <OUT> <OUT>/transcript.srt
-  ```
-  (Use the direct `tsx` path — `pnpm exec` trips its deps-status check.)
-- Produces `youtube.md` (title/description/tags/chapters), `socials.md` (X+thread, Bluesky, LinkedIn, Reddit), `blog.md` directly in `<OUT>`.
-- If the LLM call fails (auth/network), report it separately — the rendered video is not lost.
+### P6 — Content generation (delegated to specialized skills)
+Generate the launch content by **invoking three dedicated skills**, each on the **final edited transcript** (P3 — pass the timestamped `transcript.srt` so YouTube chapters get accurate times), writing each output into `<OUT>`:
+- **`youtube-copy`** → `<OUT>/youtube.md` (click-worthy title, above-the-fold description, tags, and timestamped chapters from the SRT).
+- **`blog-post`** → `<OUT>/blog.md` (full blog post from the transcript).
+- **`social-copy`** → `<OUT>/socials.md` (X + thread, Bluesky, LinkedIn, Reddit).
+
+Invoke each via the Skill tool with the transcript as the source; they own their own quality rules. Do NOT use a monolithic LLM script for this. If a skill is unavailable, note it and continue with the others (the rendered video is already saved).
+
+**Writing rule for ALL generated text (titles, descriptions, chapters, blog, socials): never use em-dashes (— / –) — use a hyphen `-`.**
 
 ### P7 — Cleanup & handoff
 - Confirm `<OUT>` contains the consolidated result: `final.mp4`, `hyperframes/`, `transcript.*`, `youtube.md`, `socials.md`, `blog.md`.
