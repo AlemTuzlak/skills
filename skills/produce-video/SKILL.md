@@ -87,7 +87,12 @@ Invoke `/transcribe-video` on `<work>/final_cut.mp4` with `--out <OUT>` so `tran
 - `npx hyperframes lint` + `npx hyperframes inspect` (overflow + safe zones) + `npx hyperframes validate` (contrast). Fix until clean.
 - **Agent starts `npx hyperframes preview` and opens the browser.** Freeform iteration loop on overlays.
 - Pre-render audits: every overlay in its phase's safe zone; dwell minimums; no two overlays fighting the same region simultaneously; lint/inspect/validate clean.
-- **On the user's explicit render command only:** `npx hyperframes render --output <OUT>/final.mp4` (run from `<OUT>/hyperframes`) → final mp4 with original audio preserved, written to the top of the output folder. After render, further edits return to the loop and require a fresh explicit render command.
+- **On the user's explicit render command only:** render at HIGH QUALITY — the default `standard` quality encodes at a low bitrate (~1.4 Mbps) and visibly crushes screen-share footage. Always pass quality + a low CRF:
+  ```
+  npx hyperframes render --output <OUT>/final.mp4 --quality high --crf 16
+  ```
+  (run from `<OUT>/hyperframes`; `--crf 16` is near-visually-lossless — use `--crf 14` for very text-heavy screencasts, or `--video-bitrate 20M` to match a source's bitrate). Final mp4 keeps original audio. After render, further edits return to the loop and require a fresh explicit render command.
+- **Quality note (generation loss):** the footage is re-encoded by P1 de-silence and P2 cuts before the render screenshots it; keep those high-quality (`bake-cuts.mjs` uses crf 18 + dense keyframes) and avoid extra re-encode passes. The Chrome capture itself is a lossless 1:1 screenshot, so a low-CRF render recovers nearly all quality. For *pristine* footage (zero browser-raster generation), an advanced path is to render overlays-only to a transparent `--format webm`/`mov` and ffmpeg-composite them over the cut footage (footage encoded once) — heavier, and the punch-in zoom must then be applied to the footage via ffmpeg.
 
 ### P6 — Content generation (vendored, self-contained)
 - Ensure deps once: `pnpm --dir assets/content-gen install` (only if `assets/content-gen/node_modules` is absent). Ensure `assets/content-gen/.env` is configured (copy `.env.example`; OpenAI key or local Ollama) — if unconfigured, ask the user once or skip P6 with a warning (the rendered video is already saved).
