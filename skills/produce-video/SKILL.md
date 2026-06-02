@@ -60,7 +60,10 @@ Report before/after duration and seconds removed. This becomes the working copy.
 2. Detect flags per `references/mistake-detection.md` (cuts + speed-ramps), snapped to word boundaries.
 3. **Always (whenever ≥1 flag exists) build the visual review.** Scaffold a lightweight hyperframes project with the de-silenced video as the base track; place visually-distinct temporary markers ON THE VIDEO at each flagged span (cut = red strike, ramp = amber fast-forward, each labeled with the excerpt + its index). **Agent starts `npx hyperframes preview` and opens the browser itself** (per `references/framing-safe-zones.md`). This is the decision surface — never replace it with a terminal table. A one-line terminal note ("3 flags marked in the preview — review and tell me which to cut/ramp/keep") is the most the terminal should carry.
 4. The user watches the marked preview and picks per span: cut / speed-ramp (factor, default ~1.5–2×) / leave / add their own ranges.
-5. Bake selections with auto-editor (cuts `--cut-out s,e …`; ramps `--set-speed-for-range speed,s,e …`, pitch preserved) → `<work>/02_edit_N.mp4`. Re-preview.
+5. Bake selections → `<work>/02_edit_N.mp4`, then re-preview:
+   - **Cuts:** use `node scripts/bake-cuts.mjs <input> --out <work>/02_edit_N.mp4 --cut s,e --cut s,e …` (ffmpeg trim/concat — trims video+audio identically in one pass). **Do NOT use auto-editor `--cut-out` for the mistake cuts** — its variadic arg mis-assigns the last range as a positional input, and a select-filter approach desyncs audio. (auto-editor is still used for P1 silence removal.)
+   - **Speed-ramps:** auto-editor `--set-speed-for-range speed,s,e` (pitch preserved); pass ONE range per invocation, or place `--set-speed-for-range` last on the command line, to dodge the same variadic-arg pitfall.
+   - All cut/ramp timestamps are on the **de-silenced** timeline (the transcript the flags came from). Apply cuts and ramps in the same round against that timeline.
 6. Loop until the user says "done". Drift guard: after ~10 rounds offer to reset to an earlier intermediate. Final artifact: `<work>/final_cut.mp4`.
 
 Cuts and ramps are baked into the footage HERE (before P3) so the final transcript's word timestamps match the edited timeline.
