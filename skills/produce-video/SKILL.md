@@ -34,7 +34,20 @@ Take a recording the user provides and turn it into a finished video. The record
 ### P0 — Input & configuration
 - Input: path to the raw recording (required).
 - Optional: a repo/files for real code grounding; visual style/brand (else run the `hyperframes` Visual Identity Gate — detect from the repo, else ask 3 style questions; write `templates/project/DESIGN.md` + brand values into `styles.css`); overlay **density** (sparse / balanced / rich).
-- Working dir for intermediates: `<recording-dir>/.produce-video/`.
+- **Single output folder (`<OUT>`):** everything this skill produces lives under ONE folder, default `<recording-dir>/<video-slug>-produced/` (override with a user-supplied path). Create it now. Final structure:
+  ```
+  <OUT>/
+    final.mp4                 # rendered video (P5)
+    hyperframes/              # the HyperFrames project: index.html, styles.css, DESIGN.md, compositions/, renders/ (P4–P5)
+    transcript.txt            # final edited transcript (P3 / P6)
+    transcript.srt
+    transcript.words.json
+    youtube.md                # P6
+    socials.md                # P6
+    blog.md                   # P6
+    .work/                    # intermediates: 01_desilenced.mp4, 02_edit_N.mp4, frames/ (prunable in P7)
+  ```
+  All subsequent phases write inside `<OUT>` — never scatter outputs elsewhere. `<work>` below = `<OUT>/.work`.
 
 ### P1 — De-silence
 ```
@@ -43,7 +56,7 @@ node scripts/desilence.mjs <input> --out <work>/01_desilenced.mp4 --margin 0.3s
 Report before/after duration and seconds removed. This becomes the working copy.
 
 ### P2 — Mistake & pacing review loop  (approval gate)
-1. Transcribe the working copy: invoke `/transcribe-video` on `01_desilenced.mp4` → working transcript (`transcript.txt`, `transcript.words.json`).
+1. Transcribe the working copy: invoke `/transcribe-video` on `<work>/01_desilenced.mp4` with `--out <work>` → working transcript (intermediate; superseded by the P3 final transcript).
 2. Detect flags per `references/mistake-detection.md` (cuts + speed-ramps), snapped to word boundaries.
 3. Scaffold a lightweight hyperframes preview project with the video as the base track; place visually-distinct temporary markers at each flagged span (cut vs ramp, labeled with the excerpt). **Agent starts `npx hyperframes preview` and opens the browser** (per `references/framing-safe-zones.md`).
 4. The user picks per span: cut / speed-ramp (factor, default ~1.5–2×) / leave / add their own ranges.
@@ -53,7 +66,7 @@ Report before/after duration and seconds removed. This becomes the working copy.
 Cuts and ramps are baked into the footage HERE (before P3) so the final transcript's word timestamps match the edited timeline.
 
 ### P3 — Final transcription
-Invoke `/transcribe-video` on `final_cut.mp4`. The resulting word-timestamped transcript is the sync source for all overlays.
+Invoke `/transcribe-video` on `<work>/final_cut.mp4` with `--out <OUT>` so `transcript.txt` / `transcript.srt` / `transcript.words.json` land at the top of the output folder. This word-timestamped transcript is the sync source for all overlays (P4) and the input to content generation (P6).
 
 ### P4 — Overlay design & build  (approval gate)
 1. **Framing detection** (`references/framing-safe-zones.md`): sample frames with `extract-frame.mjs`, classify phases, confirm phases + safe zones with the user.
@@ -61,8 +74,8 @@ Invoke `/transcribe-video` on `final_cut.mp4`. The resulting word-timestamped tr
 3. **Self-improvement pass** (≥2 iterations): honor density, enforce gaps + dwell minimums, validate every overlay against the active phase's safe zone.
 4. **Approval gate:** present the timestamped table; user edits/removes/retimes/adds. Synthesized code shown for verification. No build until approved.
 5. **Build** (invoke `hyperframes` + `gsap` first):
-   - `npx hyperframes init <proj> --video final_cut.mp4` (base: video track 0 `muted playsinline`; audio on a separate track at volume 1 so the voice plays). **Read the generated `index.html` to learn this CLI version's sub-composition include syntax.**
-   - Copy `templates/project/styles.css` (with the confirmed brand values) into the project.
+   - `npx hyperframes init <OUT>/hyperframes --video <OUT>/.work/final_cut.mp4` (the project lives at `<OUT>/hyperframes`; base: video track 0 `muted playsinline`; audio on a separate track at volume 1 so the voice plays). **Read the generated `index.html` to learn this CLI version's sub-composition include syntax.**
+   - Copy `templates/project/styles.css` (with the confirmed brand values) into `<OUT>/hyperframes`.
    - For each approved row: instantiate the matching `templates/overlays/*.html`, give it a unique composition id + `data-composition-id`, fill its `{{tokens}}`, set `data-start` = the transcript timestamp and `data-duration` = the dwell, mount it above the video. Punch-in zooms scale the video's WRAPPER div (never the `<video>`).
    - Output dimensions inherit the source recording.
 
@@ -70,20 +83,22 @@ Invoke `/transcribe-video` on `final_cut.mp4`. The resulting word-timestamped tr
 - `npx hyperframes lint` + `npx hyperframes inspect` (overflow + safe zones) + `npx hyperframes validate` (contrast). Fix until clean.
 - **Agent starts `npx hyperframes preview` and opens the browser.** Freeform iteration loop on overlays.
 - Pre-render audits: every overlay in its phase's safe zone; dwell minimums; no two overlays fighting the same region simultaneously; lint/inspect/validate clean.
-- **On the user's explicit render command only:** `npx hyperframes render` → final mp4 with original audio preserved. After render, further edits return to the loop and require a fresh explicit render command.
+- **On the user's explicit render command only:** `npx hyperframes render --output <OUT>/final.mp4` (run from `<OUT>/hyperframes`) → final mp4 with original audio preserved, written to the top of the output folder. After render, further edits return to the loop and require a fresh explicit render command.
 
 ### P6 — Content generation (vendored, self-contained)
 - Ensure deps once: `pnpm --dir assets/content-gen install` (only if `assets/content-gen/node_modules` is absent). Ensure `assets/content-gen/.env` is configured (copy `.env.example`; OpenAI key or local Ollama) — if unconfigured, ask the user once or skip P6 with a warning (the rendered video is already saved).
-- Run on the **final edited transcript** (from P3):
+- Run on the **final edited transcript** (from P3), writing into `<OUT>` so transcript + content land alongside the video:
   ```
-  node assets/content-gen/node_modules/tsx/dist/cli.mjs assets/content-gen/generate-content.ts <final transcript.txt> <outDir> <final transcript.srt>
+  node assets/content-gen/node_modules/tsx/dist/cli.mjs assets/content-gen/generate-content.ts <OUT>/transcript.txt <OUT> <OUT>/transcript.srt
   ```
   (Use the direct `tsx` path — `pnpm exec` trips its deps-status check.)
-- Produces `youtube.md` (title/description/tags/chapters), `socials.md` (X+thread, Bluesky, LinkedIn, Reddit), `blog.md`. Open the output folder for the user.
+- Produces `youtube.md` (title/description/tags/chapters), `socials.md` (X+thread, Bluesky, LinkedIn, Reddit), `blog.md` directly in `<OUT>`.
 - If the LLM call fails (auth/network), report it separately — the rendered video is not lost.
 
-### P7 — Cleanup
-Summarize artifacts (final mp4, content files, intermediates under `.produce-video/`). Ask what to keep vs discard. The user owns disposition.
+### P7 — Cleanup & handoff
+- Confirm `<OUT>` contains the consolidated result: `final.mp4`, `hyperframes/`, `transcript.*`, `youtube.md`, `socials.md`, `blog.md`.
+- Offer to prune `<OUT>/.work/` (intermediates: de-silenced/cut files, extracted frames). The user owns disposition.
+- **Open `<OUT>` in the file explorer for the user** and report the single folder path.
 
 ## Requirements
 Docker (for `/transcribe-video`), auto-editor + ffmpeg, Node ≥22, a HyperFrames-capable environment, and an LLM provider for P6.
