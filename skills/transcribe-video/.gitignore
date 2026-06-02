@@ -1,0 +1,11 @@
+# Python test artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Transcription intermediates / outputs (never commit media or generated transcripts)
+*.wav
+scripts/fixtures/sample*.wav
+transcript.txt
+transcript.srt
+transcript.words.json
