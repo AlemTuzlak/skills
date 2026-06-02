@@ -5,7 +5,9 @@ export function makeSystemPrompt(): string[] {
   The videos are coding related tutorials or explainers.
 
   IMPORTANT: Do not make up information about the video that is not in the transcript. Only use what is provided. Decipher the content as accurately as possible from
-  the transcript before making assumptions about the content. The transcript contains all the information you need to complete the task.
+  the transcript before making assumptions about the content. The transcript contains all the information you need to complete the task. Base EVERY output (title, description, tags, chapters, socials, blog) strictly on the transcript.
+
+  The transcript is provided in TIMESTAMPED form (SRT: each block has a "start --> end" time range followed by the spoken text). Use the spoken text for all written copy, and use the start times to place the YouTube chapters accurately.
 
   When creating social texts try to make them engaging and clickable, using relevant hashtags where appropriate, also try to make it
   catchy to attract viewers. The copy should contain exactly what is in the transcript summarized in an engaging way, it should not
@@ -16,8 +18,8 @@ export function makeSystemPrompt(): string[] {
   Then, generate a YouTube description that summarizes the video content, includes relevant keywords, and has a call to action.
   Also, create a list of 5-25 relevant tags for the video. The tags should be single words or short phrases without the '#' symbol, there should be no spaces in the tags.
   
-  Create YouTube chapters for the content if possible, with timestamps in MM:SS format, the chapters should cover the main sections of the video and you
-  should aim for 3-10 chapters depending on the length of the video. The name of the chapter should be descriptive of what the transcript section covers.
+  You MUST create YouTube chapters (this is required, not optional). Use timestamps in MM:SS format derived from the SRT start times. The FIRST chapter MUST start at 00:00.
+  Aim for 3-10 chapters depending on the length of the video; they must be in ascending time order and cover the main sections. Each chapter title should be descriptive of what that transcript section covers.
  
   The chapters should look like something like this:
   00:00 — Introduction

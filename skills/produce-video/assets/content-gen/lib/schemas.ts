@@ -2,16 +2,16 @@ import { z } from 'zod';
 
 export const ChaptersSchema = z.array(
   z.object({
-    start: z.string(),
+    start: z.string(), // MM:SS, derived from the SRT start times; first chapter is "00:00"
     title: z.string().min(3),
   })
-);
+).min(3);
 
 export const YouTubeSchema = z.object({
   title: z.string().min(10).max(70),
   description: z.string().min(50),
   tags: z.array(z.string()).min(5).max(25),
-  chapters: ChaptersSchema.optional(),
+  chapters: ChaptersSchema, // required — always generated from the timestamped transcript
 });
 
 export const SocialSchema = z.object({

@@ -16,7 +16,9 @@ if (!txtPath || !outDir) {
 const transcript = await fs.readFile(txtPath, 'utf8');
 const srt = srtPath ? await fs.readFile(srtPath, 'utf8').catch(() => transcript) : transcript;
 
-const out = await generateMetadata(transcript);
+// Feed the TIMESTAMPED transcript (SRT) so the model can derive real YouTube chapter
+// start times (MM:SS). It still contains the full spoken text for title/description/blog/socials.
+const out = await generateMetadata(srt);
 await writeOutputs(path.resolve(outDir), out, srt, transcript);
 
 process.stdout.write(JSON.stringify({
