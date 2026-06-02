@@ -37,6 +37,20 @@ Repo-if-available-else-synthesize: if the user provided a repo and a real defini
 - Use real, idiomatic syntax for the language (correct imports, real API names, valid punctuation). A short, well-formatted excerpt beats a long dump — show only the lines that matter and `// …` elide the rest.
 - The `{{HIGHLIGHT_LINE}}` should point at the single most important line.
 
+Example — BAD (crammed, no indentation, runs off the card):
+```
+export async function loader({params}){const product=await db.product.find(params.id);if(!product)throw new Response("Not found",{status:404});return product;}
+```
+GOOD (one statement per line, indented, short lines, elided where it doesn't matter):
+```
+export async function loader({ params }) {
+  const product = await getProduct(params.id);
+  if (!product) throw notFound();
+  return product;
+}
+```
+Match the indentation/spacing of real source in that language (e.g. 2-space JS/TS, 4-space Python); never ship minified or single-line code in a card.
+
 ## Editorial restraint (honor the density setting: sparse / balanced / rich)
 Run a silent self-improvement pass before presenting the plan:
 - Cull clutter to match density; merge overlays whose payoff is the same.
