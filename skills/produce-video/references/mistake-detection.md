@@ -11,7 +11,7 @@ Input: the **working transcript** (`transcript.txt` + `transcript.words.json`) p
 ## Two action classes
 
 ### Mistakes → suggest CUT
-- **Repeated/restated sentence:** the same sentence (or near-duplicate, >~80% token overlap) said twice in a row. Cut the weaker/earlier attempt.
+- **Repeated/restated sentence:** the same sentence (or near-duplicate, >~80% token overlap) said twice in a short window. See **Which instance to cut** below — do NOT default to cutting the later mention.
 - **Restarted sentence / false start:** an abandoned clause followed by a fresh start ("so if you— actually let me explain it differently").
 - **Repeated concept:** the same point made twice within a short window with no new information the second time.
 - **Filler run:** a dense cluster of "um / uh / like / you know" with no content.
@@ -20,6 +20,20 @@ Input: the **working transcript** (`transcript.txt` + `transcript.words.json`) p
 ### Draggy stretches → suggest SPEED-RAMP (pitch-preserved)
 - Long pauses-while-typing, slow step-by-step walk-throughs, repetitive setup, or any low-information span where the words are fine but the pacing drags.
 - Default ramp factor ~1.5–2×. Speech speed-ups preserve pitch (auto-editor `speed`/`--set-speed-for-range`). Prefer ramping over cutting when the content is wanted but slow.
+
+## Which instance to cut (direction analysis — REQUIRED for every repeat)
+
+A repeat almost always happens **because the first attempt was flawed** — the speaker fumbled it, said it incompletely, used the wrong word, trailed off, or it just didn't land, so they said it again better. So the redundant copy to remove is usually the **rough take**, which is often the EARLIER one. **Never reflexively cut the later mention.** For each detected repeat:
+
+1. **Compare the takes on delivery quality:** completeness, correct terminology, fluency/confidence, and absence of vague trailing filler ("…you can do so like that", "…or whatever"). The take to KEEP is the clean one; the take to CUT is the flawed one.
+2. **Decide the direction explicitly — before or after:**
+   - If the first pass is the rough one (incomplete/fumbled) and the restatement is clean → **cut the preceding (earlier) span**, keep the later one.
+   - If the first statement was clean and the later one is a throwaway tail restatement that adds nothing → **cut the later span**.
+   - State the direction and the reason in the flag's `why`.
+3. **Cut whole dependent clauses.** A follow-on that references the removed sentence (e.g. "and if you need them, you can do so like that" depends on the sentence naming "them") must be cut together with it, or it dangles.
+4. **Seam check.** After the chosen cut, read the words immediately before and after the cut boundary together — they must flow as one continuous sentence/beat. If they don't, adjust the boundary to a clean sentence edge.
+
+When the repeat is a 3rd+ standalone restatement of an already-well-stated line (pure redundancy, no better/worse take), cut whichever copy least disrupts flow — usually the standalone tail.
 
 ## Rules
 - **Never auto-apply.** Detection only proposes; the user decides per span (cut / speed-ramp / leave / add their own range).
