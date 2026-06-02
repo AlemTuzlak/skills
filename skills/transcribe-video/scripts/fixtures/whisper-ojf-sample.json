@@ -1,0 +1,367 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX_VNNI = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "base",
+		"multilingual": false,
+		"vocab": 51864,
+		"audio": {
+			"ctx": 1500,
+			"state": 512,
+			"head": 8,
+			"layer": 6
+		},
+		"text": {
+			"ctx": 448,
+			"state": 512,
+			"head": 8,
+			"layer": 6
+		},
+		"mels": 80,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/models/ggml-base.en.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:05,000"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 5000
+			},
+			"text": " There are a lot of state management libraries out there and there's a lot of ways to manage state.",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50363,
+					"p": 0.699674,
+					"t_dtw": -1
+				},
+				{
+					"text": " There",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,310"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 310
+					},
+					"id": 1318,
+					"p": 0.879073,
+					"t_dtw": -1
+				},
+				{
+					"text": " are",
+					"timestamps": {
+						"from": "00:00:00,490",
+						"to": "00:00:00,490"
+					},
+					"offsets": {
+						"from": 490,
+						"to": 490
+					},
+					"id": 389,
+					"p": 0.962359,
+					"t_dtw": -1
+				},
+				{
+					"text": " a",
+					"timestamps": {
+						"from": "00:00:00,540",
+						"to": "00:00:00,550"
+					},
+					"offsets": {
+						"from": 540,
+						"to": 550
+					},
+					"id": 257,
+					"p": 0.978189,
+					"t_dtw": -1
+				},
+				{
+					"text": " lot",
+					"timestamps": {
+						"from": "00:00:00,550",
+						"to": "00:00:00,730"
+					},
+					"offsets": {
+						"from": 550,
+						"to": 730
+					},
+					"id": 1256,
+					"p": 0.998938,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:00,730",
+						"to": "00:00:00,850"
+					},
+					"offsets": {
+						"from": 730,
+						"to": 850
+					},
+					"id": 286,
+					"p": 0.997404,
+					"t_dtw": -1
+				},
+				{
+					"text": " state",
+					"timestamps": {
+						"from": "00:00:00,850",
+						"to": "00:00:01,160"
+					},
+					"offsets": {
+						"from": 850,
+						"to": 1160
+					},
+					"id": 1181,
+					"p": 0.899211,
+					"t_dtw": -1
+				},
+				{
+					"text": " management",
+					"timestamps": {
+						"from": "00:00:01,160",
+						"to": "00:00:01,750"
+					},
+					"offsets": {
+						"from": 1160,
+						"to": 1750
+					},
+					"id": 4542,
+					"p": 0.985704,
+					"t_dtw": -1
+				},
+				{
+					"text": " libraries",
+					"timestamps": {
+						"from": "00:00:01,830",
+						"to": "00:00:02,340"
+					},
+					"offsets": {
+						"from": 1830,
+						"to": 2340
+					},
+					"id": 12782,
+					"p": 0.980886,
+					"t_dtw": -1
+				},
+				{
+					"text": " out",
+					"timestamps": {
+						"from": "00:00:02,340",
+						"to": "00:00:02,440"
+					},
+					"offsets": {
+						"from": 2340,
+						"to": 2440
+					},
+					"id": 503,
+					"p": 0.980943,
+					"t_dtw": -1
+				},
+				{
+					"text": " there",
+					"timestamps": {
+						"from": "00:00:02,540",
+						"to": "00:00:02,810"
+					},
+					"offsets": {
+						"from": 2540,
+						"to": 2810
+					},
+					"id": 612,
+					"p": 0.986357,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:02,920",
+						"to": "00:00:03,040"
+					},
+					"offsets": {
+						"from": 2920,
+						"to": 3040
+					},
+					"id": 290,
+					"p": 0.604891,
+					"t_dtw": -1
+				},
+				{
+					"text": " there",
+					"timestamps": {
+						"from": "00:00:03,040",
+						"to": "00:00:03,300"
+					},
+					"offsets": {
+						"from": 3040,
+						"to": 3300
+					},
+					"id": 612,
+					"p": 0.953235,
+					"t_dtw": -1
+				},
+				{
+					"text": "'s",
+					"timestamps": {
+						"from": "00:00:03,300",
+						"to": "00:00:03,400"
+					},
+					"offsets": {
+						"from": 3300,
+						"to": 3400
+					},
+					"id": 338,
+					"p": 0.797277,
+					"t_dtw": -1
+				},
+				{
+					"text": " a",
+					"timestamps": {
+						"from": "00:00:03,400",
+						"to": "00:00:03,450"
+					},
+					"offsets": {
+						"from": 3400,
+						"to": 3450
+					},
+					"id": 257,
+					"p": 0.99204,
+					"t_dtw": -1
+				},
+				{
+					"text": " lot",
+					"timestamps": {
+						"from": "00:00:03,450",
+						"to": "00:00:03,620"
+					},
+					"offsets": {
+						"from": 3450,
+						"to": 3620
+					},
+					"id": 1256,
+					"p": 0.99221,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:03,620",
+						"to": "00:00:03,680"
+					},
+					"offsets": {
+						"from": 3620,
+						"to": 3680
+					},
+					"id": 286,
+					"p": 0.965147,
+					"t_dtw": -1
+				},
+				{
+					"text": " ways",
+					"timestamps": {
+						"from": "00:00:03,680",
+						"to": "00:00:03,920"
+					},
+					"offsets": {
+						"from": 3680,
+						"to": 3920
+					},
+					"id": 2842,
+					"p": 0.925885,
+					"t_dtw": -1
+				},
+				{
+					"text": " to",
+					"timestamps": {
+						"from": "00:00:03,920",
+						"to": "00:00:04,000"
+					},
+					"offsets": {
+						"from": 3920,
+						"to": 4000
+					},
+					"id": 284,
+					"p": 0.983836,
+					"t_dtw": -1
+				},
+				{
+					"text": " manage",
+					"timestamps": {
+						"from": "00:00:04,100",
+						"to": "00:00:04,400"
+					},
+					"offsets": {
+						"from": 4100,
+						"to": 4400
+					},
+					"id": 6687,
+					"p": 0.985876,
+					"t_dtw": -1
+				},
+				{
+					"text": " state",
+					"timestamps": {
+						"from": "00:00:04,400",
+						"to": "00:00:04,730"
+					},
+					"offsets": {
+						"from": 4400,
+						"to": 4730
+					},
+					"id": 1181,
+					"p": 0.896998,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:04,730",
+						"to": "00:00:04,880"
+					},
+					"offsets": {
+						"from": 4730,
+						"to": 4880
+					},
+					"id": 13,
+					"p": 0.863796,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_250]",
+					"timestamps": {
+						"from": "00:00:05,000",
+						"to": "00:00:05,000"
+					},
+					"offsets": {
+						"from": 5000,
+						"to": 5000
+					},
+					"id": 50613,
+					"p": 0.0919661,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}
