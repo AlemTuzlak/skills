@@ -31,9 +31,14 @@ function sh(cmd, args, opts = {}) {
 }
 
 function dockerOrDie() {
+  // Docker is REQUIRED — the Whisper service runs in a container.
   const r = sh("docker", ["info"]);
+  if (r.error && r.error.code === "ENOENT") {
+    console.error("[transcribe-video] Docker is REQUIRED but is not installed. Install Docker Desktop (https://www.docker.com/products/docker-desktop/), start it, then retry.");
+    process.exit(1);
+  }
   if (r.status !== 0) {
-    console.error("[transcribe-video] Docker daemon is not reachable. Start Docker Desktop and retry.");
+    console.error("[transcribe-video] Docker is installed but the daemon is not running. Start Docker Desktop, then retry.");
     process.exit(1);
   }
 }

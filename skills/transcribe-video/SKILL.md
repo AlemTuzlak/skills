@@ -38,7 +38,8 @@ stdout result line (for programmatic callers like `/produce-video`):
 ```
 
 ## Requirements
-- Docker Desktop running, Node ≥ 22, ffmpeg on PATH.
+- **Docker is REQUIRED** — the Whisper service runs in a container, so Docker Desktop must be installed AND running. The runner checks this first and fails loud with install/start guidance if Docker is missing or its daemon is down; there is no non-Docker fallback.
+- Node ≥ 22 and ffmpeg on PATH.
 
 ## Notes
 - The container is left running (`--restart unless-stopped`) for warm reuse; stop with `--stop`.
