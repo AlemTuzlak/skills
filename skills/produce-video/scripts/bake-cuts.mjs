@@ -15,13 +15,14 @@ import os from "node:os";
 import path from "node:path";
 
 export function parseArgs(argv) {
-  const o = { cuts: [] };
+  const o = { cuts: [], crf: 12 };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--out") o.out = argv[++i];
     else if (a === "--cut") { const [s, e] = argv[++i].split(",").map(Number); o.cuts.push([s, e]); }
     else if (a === "--cuts-json") o.cutsJson = argv[++i];
     else if (a === "--total") o.total = Number(argv[++i]);
+    else if (a === "--crf") o.crf = Number(argv[++i]);
     else if (!a.startsWith("--") && o.input === undefined) o.input = a;
   }
   return o;
@@ -77,7 +78,7 @@ function main() {
       "-/filter_complex", filterFile, "-map", "[v]", "-map", "[a]",
       // Dense keyframes (-g 30 -keyint_min 30) + faststart so HyperFrames can seek frame-accurately
       // at render time; sparse keyframes cause "seek failures and frame freezing" / capture stalls.
-      "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
+      "-c:v", "libx264", "-preset", "medium", "-crf", String(o.crf),
       "-g", "30", "-keyint_min", "30", "-movflags", "+faststart",
       "-c:a", "aac", "-b:a", "192k", o.out,
     ], { encoding: "utf8" });

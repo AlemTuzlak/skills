@@ -7,6 +7,8 @@ description: Use when the user wants to turn a raw talking-head / screen-share r
 
 Take a recording the user provides and turn it into a finished video. The recording is the spine and drives the timeline; this skill edits (silence + chosen mistakes/pacing) and augments (overlays), then renders and generates launch content. It does NOT author a synthetic video — for PR-driven synthetic promos use `hyperframes-video` instead.
 
+**Quality principle (non-negotiable): every footage step preserves the original quality.** Never let a tool re-encode the footage at low quality. De-silence and cuts run at near-lossless CRF 12 from the original (auto-editor is used only to DETECT silence, never to encode — its default crushes footage to ~0.6 Mbps), and the render runs at CRF 12. CRF gives small files for static screencasts; that is full quality, not loss.
+
 ## Relation to other skills (delegate, don't re-derive)
 - **`/transcribe-video`** — all transcription (returns word-level `transcript.words.json`). Invoke it; do not transcribe by hand.
 - **`hyperframes`** — composition authoring rules (Visual Identity Gate, Layout Before Animation, timeline contract, video/overlay layering). **Invoke before writing/mounting any composition HTML.**
@@ -63,11 +65,11 @@ Verify the environment before doing any work; warn the user about anything missi
   ```
   All subsequent phases write inside `<OUT>` — never scatter outputs elsewhere. `<work>` below = `<OUT>/.work`.
 
-### P1 — De-silence
+### P1 — De-silence (lossless)
 ```
 node scripts/desilence.mjs <input> --out <work>/01_desilenced.mp4 --margin 0.3s
 ```
-Report before/after duration and seconds removed. This becomes the working copy.
+`desilence.mjs` uses auto-editor ONLY to detect the silent ranges (`--export v3`), then cuts the ORIGINAL with ffmpeg at near-lossless CRF 12, keeping the original audio. **Do NOT let auto-editor encode the output** — its default re-encode crushes the footage to ~0.6 Mbps and permanently blurs it (faces especially); no downstream bitrate can recover that. Report before/after duration and seconds removed. This becomes the working copy.
 
 ### P2 — Mistake & pacing review loop  (approval gate)
 1. Transcribe the working copy: invoke `/transcribe-video` on `<work>/01_desilenced.mp4` with `--out <work>` → working transcript (intermediate; superseded by the P3 final transcript).
@@ -75,7 +77,7 @@ Report before/after duration and seconds removed. This becomes the working copy.
 3. **Always (whenever ≥1 flag exists) build the visual review.** Scaffold a lightweight hyperframes project with the de-silenced video as the base track; place visually-distinct temporary markers ON THE VIDEO at each flagged span (cut = red strike, ramp = amber fast-forward, each labeled with the excerpt + its index). **Agent starts `npx hyperframes preview` and opens the browser itself** (per `references/framing-safe-zones.md`). This is the decision surface — never replace it with a terminal table. A one-line terminal note ("3 flags marked in the preview — review and tell me which to cut/ramp/keep") is the most the terminal should carry.
 4. The user watches the marked preview and picks per span: cut / speed-ramp (factor, default ~1.5–2×) / leave / add their own ranges.
 5. Bake selections → `<work>/02_edit_N.mp4`, then re-preview:
-   - **Cuts:** use `node scripts/bake-cuts.mjs <input> --out <work>/02_edit_N.mp4 --cut s,e --cut s,e …` (ffmpeg trim/concat — trims video+audio identically in one pass). **Do NOT use auto-editor `--cut-out` for the mistake cuts** — its variadic arg mis-assigns the last range as a positional input, and a select-filter approach desyncs audio. (auto-editor is still used for P1 silence removal.)
+   - **Cuts:** use `node scripts/bake-cuts.mjs <input> --out <work>/02_edit_N.mp4 --cut s,e --cut s,e …` (ffmpeg trim/concat at near-lossless CRF 12 by default — trims video+audio identically in one pass). **Do NOT use auto-editor `--cut-out` for the mistake cuts** — its variadic arg mis-assigns the last range as a positional input, it re-encodes lossily, and a select-filter approach desyncs audio.
    - **Speed-ramps:** auto-editor `--set-speed-for-range speed,s,e` (pitch preserved); pass ONE range per invocation, or place `--set-speed-for-range` last on the command line, to dodge the same variadic-arg pitfall.
    - All cut/ramp timestamps are on the **de-silenced** timeline (the transcript the flags came from). Apply cuts and ramps in the same round against that timeline.
 6. Loop until the user says "done". Drift guard: after ~10 rounds offer to reset to an earlier intermediate. Final artifact: `<work>/final_cut.mp4`.
@@ -101,12 +103,12 @@ Invoke `/transcribe-video` on `<work>/final_cut.mp4` with `--out <OUT>` so `tran
 - `npx hyperframes lint` + `npx hyperframes inspect` (overflow + safe zones) + `npx hyperframes validate` (contrast). Fix until clean.
 - **Agent starts `npx hyperframes preview` and opens the browser.** Freeform iteration loop on overlays.
 - Pre-render audits: every overlay in its phase's safe zone; dwell minimums; no two overlays fighting the same region simultaneously; lint/inspect/validate clean.
-- **On the user's explicit render command only:** render at HIGH QUALITY — the default `standard` quality encodes at a low bitrate (~1.4 Mbps) and visibly crushes screen-share footage. Always pass quality + a low CRF:
+- **On the user's explicit render command only:** render at near-lossless CRF 12. The default `standard` quality encodes at ~1.4 Mbps and visibly crushes footage; always pass a low CRF:
   ```
-  npx hyperframes render --output <OUT>/final.mp4 --quality high --crf 16
+  npx hyperframes render --output <OUT>/final.mp4 --crf 12
   ```
-  (run from `<OUT>/hyperframes`; `--crf 16` is near-visually-lossless — use `--crf 14` for very text-heavy screencasts, or `--video-bitrate 20M` to match a source's bitrate). Final mp4 keeps original audio. After render, further edits return to the loop and require a fresh explicit render command.
-- **Quality note (generation loss):** the footage is re-encoded by P1 de-silence and P2 cuts before the render screenshots it; keep those high-quality (`bake-cuts.mjs` uses crf 18 + dense keyframes) and avoid extra re-encode passes. The Chrome capture itself is a lossless 1:1 screenshot, so a low-CRF render recovers nearly all quality. For *pristine* footage (zero browser-raster generation), an advanced path is to render overlays-only to a transparent `--format webm`/`mov` and ffmpeg-composite them over the cut footage (footage encoded once) — heavier, and the punch-in zoom must then be applied to the footage via ffmpeg.
+  (run from `<OUT>/hyperframes`. CRF 12 is near-lossless; do NOT use `--video-bitrate` expecting a big file — for static screencasts CRF produces a small file at full quality, and that is correct, not low quality.) Final mp4 keeps original audio. After render, further edits return to the loop and require a fresh explicit render command.
+- **Quality note:** the Chrome capture is a lossless 1:1 screenshot (verified: render input == output for both text and faces), so a low-CRF render preserves the footage it is given. The ONLY thing that destroys quality is a lossy upstream step — which is why P1 de-silence and P2 cuts both run at near-lossless CRF 12 from the original. Do not add extra re-encode passes. For absolute zero-generation footage, an advanced path is to render overlays-only to a transparent `--format webm`/`mov` and ffmpeg-composite them over the cut footage (punch-in zoom then applied via ffmpeg) — rarely needed.
 
 ### P6 — Content generation (delegated to specialized skills)
 Generate the launch content by **invoking dedicated skills**, each on the **final edited transcript** (P3 — pass the timestamped `transcript.srt` so YouTube chapters get accurate times), writing each output into `<OUT>`:
