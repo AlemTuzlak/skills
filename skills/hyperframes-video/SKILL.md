@@ -274,6 +274,19 @@ A *distinct payoff beat* is one new thing the viewer learns. Two scenes whose pa
 
 Frame rate is fixed at 30fps.
 
+<HARD-GATE>
+**1:1 square (and any non-landscape aspect) MUST fill the whole canvas.** This is the single most common square-format failure: content clustered in the top ~70% with a dead band at the bottom (or sides). A square is not a cropped landscape — when one axis shrinks, each element earns *more* space, so scale **up**, don't shrink.
+
+Concrete rules for every 1:1 scene (and apply the same spirit to 9:16):
+
+- **≤10–20% total dead margin.** At each scene's hero frame, the foreground content's bounding box must reach within ~8–12% of *every* canvas edge. More than ~20% empty on any side = the layout is wrong, not "minimal."
+- **Distribute, don't stack.** Use `justify-content: space-between` / `space-evenly` on the scene's flex column so the blocks (title → body → motif/hub → tagline) spread floor-to-ceiling. `justify-content: flex-start` with a fixed gap is the usual culprit behind the top-cluster failure — only use it when the content genuinely fills the height.
+- **Scale everything up vs the landscape defaults.** On 1080×1080 the usable width (~940px after padding) is half of landscape's, so per-element sizes go *up*: hero/headline text at or above the landscape size, body/captions +20–40%, pills/cards/code-hub fonts noticeably larger, gaps widened. If a 1:1 looks like a shrunken 16:9, the sizes are wrong.
+- **Verify it.** Run `npx hyperframes inspect` AND eyeball the hero frame of every scene: squint — does the content own the frame, or float in a sea of black? If it floats, enlarge elements and switch to a distributing `justify-content` until the dead margin is ≤10–20%.
+
+This is enforced at scene-plan time (Phase 3.3) and as a pre-render audit (Phase 6.1) — it is not optional for square output.
+</HARD-GATE>
+
 ### Q2.3 — HyperFrames project location
 
 > "Where should the HyperFrames project live?
@@ -724,6 +737,16 @@ Each iteration stores a snapshot of the parent `index.html` content + scene cont
 
 If the user picks (1), show a numbered list of snapshot summaries (hook text of each draft) and let them pick.
 
+### Step 5.5 — Re-render discipline (don't auto-render on every edit)
+
+**Once a video has been rendered at least once, do NOT re-render automatically after each subsequent edit. Make the requested change, run `lint` + `inspect`, and wait for the user to explicitly ask for a render before producing a new mp4.**
+
+Why: renders are slow (1–2 min for a final pass) and the live preview already HMRs every edit, so the user can see changes instantly without a render. Re-rendering after every small tweak burns time the user didn't ask to spend.
+
+- When the user requests edits on an already-rendered video, apply them, validate structurally (lint/inspect), tell them the change is live in the preview, and ask whether to re-render — don't just produce a new file.
+- **Exception:** if the user explicitly says to re-render on every change (e.g. "re-render after each edit", "always render"), then do re-render each time until they say otherwise.
+- A single-frame verification extract is acceptable when you must confirm a *visual asset* loaded (e.g. a newly added image/logo), but prefer pointing the user at the live preview; never kick off a full-length render to "check" an edit unless asked.
+
 ## Phase 6: Render
 
 #### Render quality is not optional
@@ -792,7 +815,8 @@ Before rendering, all of these must pass. If any fail, report exactly what and w
 - [ ] **No accidental overlap**: at the hero frame of every scene, no focal element's bounding box overlaps a non-foreground element by more than ~10% without an explicit `z-index` declaration. `npx hyperframes inspect` covers most of this; verify any newly-added decorations against the rendered hero frame, not the empty initial frame. See Layout Rule 7.
 - [ ] **Code beats ≥5s have chapters**: any scene with code visible for >5 seconds defines `chapters[]` (or equivalent timeline-driven `[data-active]` progressions). Static one-shot code dumps fail this check. See Code Scene Rules — *Tell a story with chapters*.
 - [ ] **Every chapter has a synchronized title**: any scene with `chapters[]` (or staged code focus) MUST have a heading/caption variant per chapter that swaps in lockstep with the focus change. A code highlight without a synchronized title saying *why* we're looking at it fails this check. See Code Scene Rules — *Synchronized chapter narration*.
-- [ ] **Per-aspect canvas fill** (when multi-format selected in Q2.2): for each aspect (1:1, 9:16) at every scene's hero frame, the bounding box of foreground content reaches within ~80–100px of every canvas edge. If any scene leaves >120px of dead margin on either axis, the per-aspect overrides are wrong — content is undersized for the aspect. See Step 3.6 — *Fill the canvas*.
+- [ ] **Canvas fill for 1:1 / 9:16** (any non-landscape aspect, whether single-aspect or multi-format): at every scene's hero frame the bounding box of foreground content reaches within ~8–12% of every canvas edge (~80–100px on 1080px). If any scene leaves >~20% dead margin on either axis — the classic top-cluster-with-empty-bottom square failure — the layout is undersized/stacked: enlarge elements and switch the scene to a distributing `justify-content` (space-between/space-evenly). See the Q2.2 1:1-fill HARD-GATE and Step 3.6 — *Fill the canvas*.
+- [ ] **No blank lines in code snippets**: every code scene's snippet is contiguous — no empty rows between lines, no trailing blank line. Blank lines waste vertical space and shrink the font. See Code Scene Rules — *Format synthesized code for video readability* (rule 5).
 - [ ] **Visual chunk cap (≤4 per frame)**: every scene's hero frame contains ≤4 distinct visual chunks (where a chunk is a Gestalt group, not a single element). Counts: title, motif, code card, trace tree = 4 chunks. Adding an attribute chip row pushes to 5 — must merge via similarity (chips and tree share color/font) or split scene. See Visual Cognition Rule A.
 - [ ] **One pre-attentive cue per focal element**: each focal element is marked by exactly one dominant cue (color OR size OR motion OR orientation), not multiple. Two or more competing cues force conjunction search and double parse time. See Visual Cognition Rule B.
 - [ ] **Reading flow matches scene type**: hero/sparse scenes lay out for Z-pattern, code-heavy scenes for F-pattern, multi-card scenes for layer-cake. Misplaced elements (e.g. CTA URL in top-left of a sparse scene, code caption far from the focused line) fail this check. See Visual Cognition Rule C.
@@ -1240,6 +1264,8 @@ Rules:
    ```
 
 4. **No trailing semicolons in captions that reference line numbers.** Line numbers in `chapters[].focusLines` are 1-indexed over the raw template string — every newline matters for accurate line-number references.
+
+5. **No blank lines between lines of code.** In an IDE, blank lines separate logical blocks; on a video frame they are dead vertical space that pushes the code taller (forcing a smaller font) and reads as a gap, not a separator. Strip every empty line from the snippet so the code is contiguous — group/sequence is carried by chapter focus (dimming) and synchronized titles, not by whitespace. The displayed code must be **properly formatted and contiguous**: real indentation, no blank rows, no trailing blank line. If two blocks feel like they need separation, that's a signal to split them across two chapters, not to insert an empty line.
 
 #### Choose meaningful wrong/right comparisons
 
