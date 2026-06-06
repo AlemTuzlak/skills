@@ -1,6 +1,6 @@
 # Skills
 
-Personal [Agent Skills](https://agentskills.io) I use across every project — turn a PR, a git ref, or a freeform idea into marketing briefs, blog posts, changelogs, social copy, newsletters, video scripts, rendered promo videos, and architecture impact docs.
+Personal [Agent Skills](https://agentskills.io) I use across every project — turn a PR, a git ref, or a freeform idea into marketing briefs, blog posts, changelogs, social copy, newsletters, video scripts, rendered promo videos, architecture impact docs, technical presentation decks, and full courses.
 
 Packaged as a Claude Code plugin, but the skills themselves are plain `SKILL.md` files with standard YAML frontmatter — the same format documented for **Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Google Gemini CLI, and Cursor**. Drop them in any of those tools' skills directories and they work. See [Install](#install).
 
@@ -31,6 +31,13 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [remotion-video](./skills/remotion-video) | Rendered `mp4` + poster via Remotion (React-based) |
 | [hyperframes-video](./skills/hyperframes-video) | Rendered `mp4` + poster via HyperFrames (HTML/GSAP-based) |
 | [marketing-pipeline](./skills/marketing-pipeline) | Orchestrate any combination of the above from one input |
+| [presentation](./skills/presentation) | Research-grounded, craft-driven technical slide decks built on Slidev — live in the browser, zero manual steps |
+| [teach-me](./skills/teach-me) | Evidence-based course generator — markdown course + interactive HTML mini-course |
+| [epic-workshop](./skills/epic-workshop) | Epic Web / Epic React-style workshops, exercises, tips, and recordings |
+| [produce-video](./skills/produce-video) | Turn a raw recording into a finished, edited, annotated video + content package |
+| [transcribe-video](./skills/transcribe-video) | Transcribe video/audio to text with word-level timestamps (local Whisper) |
+| [youtube-copy](./skills/youtube-copy) | YouTube metadata — title, SEO description, tags, timestamped chapters |
+| [self-improve](./skills/self-improve) | Capture lessons/corrections and promote them into AGENTS.md or skills |
 
 ---
 
@@ -67,6 +74,11 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 
 ### [marketing-pipeline](./skills/marketing-pipeline)
 **One command, full launch kit.** Pick which skills to run (`brief, blog, social, newsletter, video`) and the order. Each step's output feeds the next — so the brief informs the blog, the blog informs the social posts, the changelog feeds the newsletter, and so on. No re-feeding context yourself.
+
+### [presentation](./skills/presentation)
+**A technical deck that's actually been researched, not hallucinated.** A director layer on top of [Slidev](https://sli.dev): it owns the *content* and the *craft*, and delegates Slidev syntax to Slidev's own official skill (installing it if missing) — so when Slidev's syntax evolves, the craft here stays valid. Before it talks to you it does deep research on the topic (flagging weakly-supported presentation myths instead of repeating them) and, for a specific library/tool, analyzes the *real code* (local repo > GitHub > package > docs) so every slide is technically correct. Then it interviews you (audience, per-area depth, tone, brand, assets, output), storyboards for approval, and generates a deck applying evidence-based craft — assertion-evidence headlines, one-idea-per-slide, ≤5–7 lines of code with progressive reveal, diagrams over walls of code, a hook→takeaways arc.
+
+**What sets it apart:** it *generates* the assets it legitimately can (Shiki code images, Mermaid diagrams rendered to PNG) and only leaves clearly-marked placeholders for what must be real — never faking screenshots or data. It then **self-verifies** every slide in a headless browser (overflow, clipped code, contrast, overstuffed) and auto-fixes, and **finishes live** — dev server running, deck open in the browser, zero manual steps.
 
 ---
 
@@ -244,13 +256,20 @@ Or invoke explicitly:
 │   ├── architecture-impact/SKILL.md
 │   ├── blog-post/SKILL.md
 │   ├── changelog/SKILL.md
+│   ├── epic-workshop/SKILL.md
 │   ├── hyperframes-video/    # multi-file: patterns/, templates/, hooks/, references/
 │   ├── marketing-brief/SKILL.md
 │   ├── marketing-pipeline/SKILL.md
 │   ├── newsletter/SKILL.md
+│   ├── presentation/         # multi-file: references/, assets/ (Shiki+Mermaid render helper)
+│   ├── produce-video/SKILL.md
 │   ├── remotion-video/       # multi-file: patterns/, templates/, hooks/, references/
+│   ├── self-improve/SKILL.md
 │   ├── social-copy/          # multi-file: platforms/
-│   └── video-script/SKILL.md
+│   ├── teach-me/             # multi-file: assets/ (HTML mini-course builder)
+│   ├── transcribe-video/     # multi-file: bundled local Whisper service
+│   ├── video-script/SKILL.md
+│   └── youtube-copy/SKILL.md
 └── README.md
 ```
 
