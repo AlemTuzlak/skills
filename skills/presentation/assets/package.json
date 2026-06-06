@@ -1,0 +1,14 @@
+{
+  "name": "presentation-assets",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Asset render helper for the presentation skill (Shiki code + Mermaid diagrams -> PNG).",
+  "bin": { "render-asset": "./render-asset.mjs" },
+  "scripts": { "test": "node test-render-asset.mjs" },
+  "dependencies": {
+    "shiki": "^1.24.0",
+    "playwright": "^1.49.0",
+    "mermaid": "^11.4.0"
+  }
+}
