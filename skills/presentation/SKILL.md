@@ -57,17 +57,23 @@ fine."
 4. **Assertion-evidence.** Slide titles are complete-sentence claims; the body is
    visual evidence, not a bullet dump. (`references/presentation-craft.md`)
 5. **One idea per slide; ~1–2 min/slide.** Split rather than cram.
-6. **Code discipline.** ≤5–7 lines visible at once, large, progressive reveal,
+6. **Fill the canvas.** Every slide uses all available space with balanced
+   proportions — never top-anchor content above a dead band, and never float a
+   small element in a big empty region. Center/distribute the content group and
+   size visuals to fill their region; distribute whitespace, don't dump it.
+   (`references/presentation-craft.md`; concrete Slidev recipe in
+   `references/slidev-cheatsheet.md`)
+7. **Code discipline.** ≤5–7 lines visible at once, large, progressive reveal,
    dim irrelevant lines; prefer a diagram over a wall of code.
    (`references/technical-craft.md`)
-7. **Generate every legitimately generatable asset** (code images, diagrams,
+8. **Generate every legitimately generatable asset** (code images, diagrams,
    charts). **Placeholder only the un-generatable** (real photos, product
    screenshots, demo videos) with a specific swap instruction. **Never fabricate
    evidence** — no fake screenshots, invented data, or hotlinked images.
    (`references/assets.md`)
-8. **Storyboard approval before writing slides** (Gate 2).
-9. **Self-verify before handing over** (Gate 3, `references/verification.md`).
-10. **Finish live, zero manual steps.** End with the dev server running in the
+9. **Storyboard approval before writing slides** (Gate 2).
+10. **Self-verify before handing over** (Gate 3, `references/verification.md`).
+11. **Finish live, zero manual steps.** End with the dev server running in the
     background and the deck open at `http://localhost:3030`. The user never runs
     a command.
 

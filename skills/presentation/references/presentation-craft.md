@@ -57,6 +57,27 @@ flagged at the bottom.
 - Contrast: meet WCAG AA (≥4.5:1 for body text). Don't rely on color alone
   (color-blindness); reinforce with text/shape/position.
 
+## Fill the canvas — use all available space
+
+- **Every slide should use the full canvas with balanced proportions.** No slide
+  should top-anchor its content and leave a large dead band at the bottom (or any
+  one edge). Compose so the frame reads as *designed*: the content sits as a
+  balanced block, visuals are sized to occupy their region, and whitespace is
+  *distributed around* the content, not dumped in one corner.
+- **Balance, don't stretch.** "Use the space" means proportionate sizing and
+  vertical balance — center or distribute the content group — **not** blowing text
+  up to the edges or inserting gratuitous gaps. The ~30–40% whitespace guidance
+  still holds; it should frame the content evenly.
+- **Size elements to their role and region.** Titles large; body comfortably
+  readable from the back; code/diagrams/placeholders sized to fill the column or
+  half they occupy. A small panel floating in a big empty half is a smell — make
+  it fill its region, or rebalance the split.
+- **This is a generation default, not a touch-up.** Most slide frameworks
+  top-anchor content by default, so left alone slides look like drafts with a
+  dead lower third. Set deck-wide rules so *every* slide fills and balances out of
+  the box (see the concrete Slidev recipe in `slidev-cheatsheet.md`), then catch
+  stragglers in the Gate 3 self-verify "under-filled" check.
+
 ## Color
 
 - 2–3 primary colors per deck. Apply 60-30-10 (dominant / secondary / accent).

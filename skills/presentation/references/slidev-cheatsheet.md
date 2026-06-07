@@ -38,6 +38,29 @@ only what an automated author needs that the syntax docs won't shout about.
 8. **Speaker notes** are HTML comments at the end of a slide:
    `<!-- your speaker notes here -->`. They don't render to the audience; they
    show in presenter view.
+9. **Layouts top-anchor content — fill the canvas deck-wide.** Slidev's `default`
+   layout is `display:block` and `two-cols`/`two-cols-header` lay columns out in a
+   top-aligned grid, so content piles at the top and leaves a dead band below
+   (looks like a draft). Filling the canvas is a non-negotiable
+   (`presentation-craft.md` → "Fill the canvas"), so set it deck-wide in
+   `styles/index.css` rather than per slide:
+   ```css
+   /* center the content group on plain content slides */
+   .slidev-layout.default { display: flex; flex-direction: column; justify-content: center; }
+   /* each column fills full height and centers its own content */
+   .slidev-layout.two-columns .col-left,  .slidev-layout.two-columns .col-right,
+   .slidev-layout.two-cols-header .col-left, .slidev-layout.two-cols-header .col-right {
+     display: flex; flex-direction: column; justify-content: center; height: 100%;
+   }
+   /* visual/placeholder panels stretch to fill their column */
+   .slidev-layout .asset-todo { height: 100%; }
+   ```
+   Gotchas: the **rendered** two-column class is `two-columns` (not `two-cols`);
+   columns expose `.col-left`/`.col-right` (and `.col-header`/`.col-bottom` on
+   `two-cols-header`). Leave `cover`/`quote`/`statement`/`center`/`end` alone —
+   they already center via their own `my-auto` child. Then bump body/code font
+   sizes so content is proportionate, and re-run Gate 3 to confirm the bigger type
+   didn't introduce overflow.
 
 ## CLI quick map
 
