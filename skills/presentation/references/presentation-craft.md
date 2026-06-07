@@ -47,6 +47,23 @@ flagged at the bottom.
   - *Segmenting* — break complex material into learner-paced chunks (reveal
     progressively; more slides over denser slides).
 
+## Text budget — the slide is a cue, not the script
+
+Aggressively minimize on-slide text. The audience should *glance* and grasp a
+slide; the words you would *say* belong in the speaker notes, not on the slide.
+
+- **Title:** the assertion — ≤ ~10 words, one line.
+- **Body:** target **≤ ~20 words per slide**; treat **> ~25 words as a failure** to
+  split or move to notes. (Empirical baselines land around 20–25 words/slide.)
+- **Bullets:** prefer none. If unavoidable: ≤ 3 bullets, ≤ ~6 words each, fragments
+  not sentences, and no sub-bullet hierarchy.
+- **No paragraphs on slides.** A single deliberate statement or quote is fine; prose
+  is not — the full sentence lives in the notes.
+- **Prefer a keyword + a visual over a sentence.** If a slide is mostly text, ask
+  whether one number, a diagram, or an image carries it better.
+- **This is a deck-wide generation default**, not a touch-up — write every slide to
+  budget, then let Gate 3 catch stragglers (`verification.md` "Overstuffed").
+
 ## Typography, hierarchy, whitespace
 
 - Sans-serif, large enough to read from the back row. Body text large; never

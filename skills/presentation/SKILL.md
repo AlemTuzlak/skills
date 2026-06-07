@@ -54,8 +54,11 @@ fine."
    traces to the research/grounding brief.
 3. **Flag weak claims; don't assert them.** If something is commonly repeated
    but poorly supported, skip it or caveat it. Never present a myth as fact.
-4. **Assertion-evidence.** Slide titles are complete-sentence claims; the body is
-   visual evidence, not a bullet dump. (`references/presentation-craft.md`)
+4. **Assertion-evidence + lean text.** Slide titles are complete-sentence claims;
+   the body is visual evidence, not a bullet dump. Keep on-slide text to a glance —
+   aim ≤ ~20 words of body per slide; full sentences and detail belong in the
+   speaker notes, not on the slide. (`references/presentation-craft.md` "Text
+   budget")
 5. **One idea per slide; ~1–2 min/slide.** Split rather than cram.
 6. **Fill the canvas.** Every slide uses all available space with balanced
    proportions — never top-anchor content above a dead band, and never float a

@@ -21,7 +21,7 @@ the Markdown looks fine. Verify the *rendered* deck before handing it over.
 | **Contrast** | text vs background below WCAG AA 4.5:1 | adjust theme/scoped colors; avoid text over busy images |
 | **Empty** | only a title where the storyboard expected content/visual | add the planned evidence, or merge the slide |
 | **Under-filled** | content top-anchored with a large dead band (often the lower third); a small element floats in a big empty region; one edge does all the whitespace | center/distribute the content group; size visuals to fill their region or rebalance the split — set it deck-wide (`slidev-cheatsheet.md` "Fill the canvas" recipe), not per slide |
-| **Overstuffed** | > ~40 words of body text, OR > 7 code lines at once, OR more than one primary idea | split into multiple slides; move detail to speaker notes; convert to a diagram |
+| **Overstuffed** | > ~25 words of body text, OR a full-sentence paragraph, OR > 3 bullets (or bullets over ~6 words), OR > 7 code lines at once, OR more than one primary idea | cut words to a cue; move detail to speaker notes; split the slide; convert to a diagram (`presentation-craft.md` "Text budget") |
 | **Broken render** | Mermaid/magic-move/component didn't render; missing image (404) | fix syntax via the `slidev` skill; fix asset path (must be `/public`-absolute) |
 
 ## Auto-fix loop
