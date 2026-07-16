@@ -1,6 +1,6 @@
 ---
 name: docs
-description: Use when writing, editing, or organizing documentation, or planning what docs a feature needs. Triggers on "write docs for X", "document this feature", "add a guide", "update the docs", "reorganize the docs", or /docs.
+description: Use when writing, editing, or organizing documentation, when planning what docs a feature needs, and whenever planning or implementing a new feature or change in a repo (docs ship with the code). Triggers on "write docs for X", "document this feature", "add a guide", "update the docs", "reorganize the docs", "plan feature X", "implement X", or /docs.
 ---
 
 # docs
@@ -10,6 +10,14 @@ Write docs a real person wants to read. Short, plain, built around someone tryin
 "Document feature X" is not the job. "Help someone do Y with X" is the job.
 
 Work in two phases. First plan the story: who reads this, what they want, and how many pages it should be. Then write.
+
+## When to run
+
+Docs ship with the code. Run this skill at three moments, not only when asked.
+
+- Someone asks for docs. Write them.
+- Planning a feature or change in a repo. Before the plan is done, list which docs are new and which need updating. This doc-impact list is part of the plan, the same as the code changes.
+- Finishing an implementation. Write or update those docs before you call the work done. A change to how something behaves that ships no doc change is not finished.
 
 ## Find the docs first
 
@@ -125,4 +133,6 @@ If you catch yourself reaching for one of these, stop and rewrite the sentence i
 | One page for everyone | Name the readers. Give each a path or a page. |
 | Posting a snippet "they can adapt" | Make it complete and runnable. |
 | Guessing where docs go | Find the docs folder, or ask. Read neighbors first. |
+| Calling a feature done with no doc change | If behavior changed, docs change too. Write them before you finish. |
+| Planning a feature without a doc-impact list | Add the list of new and changed docs to the plan. |
 | Inventing a component the site lacks | Use only components the site already has. |
