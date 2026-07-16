@@ -1,8 +1,8 @@
 # Skills
 
-Personal [Agent Skills](https://agentskills.io) I use across every project — turn a PR, a git ref, or a freeform idea into marketing briefs, blog posts, changelogs, social copy, newsletters, video scripts, rendered promo videos, architecture impact docs, technical presentation decks, and full courses.
+Personal [Agent Skills](https://agentskills.io) I use across every project. They turn a PR, a git ref, or a freeform idea into marketing briefs, blog posts, changelogs, social copy, newsletters, video scripts, rendered promo videos, architecture impact docs, technical presentation decks, documentation, RFCs, and full courses.
 
-Packaged as a Claude Code plugin, but the skills themselves are plain `SKILL.md` files with standard YAML frontmatter — the same format documented for **Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Google Gemini CLI, and Cursor**. Drop them in any of those tools' skills directories and they work. See [Install](#install).
+Packaged as a Claude Code plugin, but the skills themselves are plain `SKILL.md` files with standard YAML frontmatter, the same format documented for **Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Google Gemini CLI, and Cursor**. Drop them in any of those tools' skills directories and they work. See [Install](#install).
 
 ---
 
@@ -10,9 +10,9 @@ Packaged as a Claude Code plugin, but the skills themselves are plain `SKILL.md`
 
 I kept rewriting the same prompts: "summarize this PR for marketing", "draft the changelog", "write a launch tweet", "make me a 30s promo video". Every time, slightly different framing, slightly different quality. So I baked the *expert versions* of those prompts into reusable skills with strong opinions:
 
-- **Decision-maker framing.** Architecture and marketing skills lead with the *"so what?"* — not what was refactored.
+- **Decision-maker framing.** Architecture and marketing skills lead with the *"so what?"*, not what was refactored.
 - **Input pluralism.** Every skill accepts a PR URL, a git ref range (`v1.0...v2.0`), a file path, a marketing brief, an upstream blog post, or freeform text.
-- **Composability.** The marketing skills feed each other: brief → blog post → social copy → newsletter, or run all of it via `/marketing-pipeline`.
+- **Composability.** The marketing skills feed each other: brief, then blog post, then social copy, then newsletter, or run all of it via `/marketing-pipeline`.
 - **No fluff.** Skills enforce hooks, length limits, layout gates, and brand checks. The output is shippable, not "AI-generated".
 
 ---
@@ -31,13 +31,14 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [remotion-video](./skills/remotion-video) | Rendered `mp4` + poster via Remotion (React-based) |
 | [hyperframes-video](./skills/hyperframes-video) | Rendered `mp4` + poster via HyperFrames (HTML/GSAP-based) |
 | [marketing-pipeline](./skills/marketing-pipeline) | Orchestrate any combination of the above from one input |
-| [presentation](./skills/presentation) | Research-grounded, craft-driven technical slide decks built on Slidev — live in the browser, zero manual steps |
-| [teach-me](./skills/teach-me) | Evidence-based course generator — markdown course + interactive HTML mini-course |
+| [presentation](./skills/presentation) | Research-grounded, craft-driven technical slide decks built on Slidev, live in the browser with zero manual steps |
+| [teach-me](./skills/teach-me) | Evidence-based course generator: markdown course plus interactive HTML mini-course |
 | [epic-workshop](./skills/epic-workshop) | Epic Web / Epic React-style workshops, exercises, tips, and recordings |
 | [docs](./skills/docs) | Framework-agnostic documentation writer: plain human prose, persona-driven page splits, reuses your site's own components |
+| [rfc](./skills/rfc) | Interactive RFC / design-doc writer: interviews you, grounds the proposal in your codebase, shows real API options to pick from |
 | [produce-video](./skills/produce-video) | Turn a raw recording into a finished, edited, annotated video + content package |
 | [transcribe-video](./skills/transcribe-video) | Transcribe video/audio to text with word-level timestamps (local Whisper) |
-| [youtube-copy](./skills/youtube-copy) | YouTube metadata — title, SEO description, tags, timestamped chapters |
+| [youtube-copy](./skills/youtube-copy) | YouTube metadata: title, SEO description, tags, timestamped chapters |
 | [self-improve](./skills/self-improve) | Capture lessons/corrections and promote them into AGENTS.md or skills |
 
 ---
@@ -47,10 +48,10 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 ### [architecture-impact](./skills/architecture-impact)
 **The "so what" engine for engineering leadership.** Most PR descriptions are written by/for the author. This produces a doc you can hand to a PM or eng lead. Forces a TL;DR, before/after diagrams (one diagram = one question), business-impact framing, and an *honest* risk section. Passes the "newspaper test": if someone reads only the title, they understand why it matters.
 
-**How it works:** reads PR diff + description, extracts the actual architectural delta (not just file changes), generates Mermaid diagrams for before/after, then writes the doc with progressive disclosure — TL;DR first, technical detail at the bottom.
+**How it works:** reads PR diff + description, extracts the actual architectural delta (not just file changes), generates Mermaid diagrams for before/after, then writes the doc with progressive disclosure: TL;DR first, technical detail at the bottom.
 
 ### [marketing-brief](./skills/marketing-brief)
-**A brief that a non-marketer can actually produce.** Resolves any input (PR / ref range / path / freeform) into Executive Summary, Key Messages, Target Audience, Positioning, and Call to Action. It's the canonical source of truth that downstream skills (blog, social, newsletter, video) all key off — write it once, reuse everywhere.
+**A brief that a non-marketer can actually produce.** Resolves any input (PR / ref range / path / freeform) into Executive Summary, Key Messages, Target Audience, Positioning, and Call to Action. It's the canonical source of truth that downstream skills (blog, social, newsletter, video) all key off. Write it once, reuse everywhere.
 
 ### [changelog](./skills/changelog)
 **Release notes that don't sound like commit messages.** Walks `git log` over a ref range (or a single PR), categorizes Added/Fixed/Changed/Removed, and *rewrites* commit subjects into user-facing language. Optional `gh release create`. Smart enough to take a single `#1234` and append it to an existing CHANGELOG.md version.
@@ -59,30 +60,33 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 **Tone-matched, SEO-aware long-form.** Will detect the repo's existing blog voice (if there are prior posts), nail the headline, structure for skimming, and propose hero/inline image directions. Accepts a marketing brief as input so you skip the "what's this about" round trip.
 
 ### [newsletter](./skills/newsletter)
-**Email that respects an inbox.** Subject line + preview text + body, calibrated to user-facing audience (not eng-internal). Chains naturally off a blog post or changelog — it'll lift the hook from one and the bullets from the other.
+**Email that respects an inbox.** Subject line + preview text + body, calibrated to user-facing audience (not eng-internal). Chains naturally off a blog post or changelog: it lifts the hook from one and the bullets from the other.
 
 ### [social-copy](./skills/social-copy)
 **Platform-native, algorithm-aware.** X gets short hooks + thread structure; LinkedIn gets the long-post format with a proper opening line and line breaks that survive mobile. Each platform has its own ruleset under [`platforms/`](./skills/social-copy/platforms). No "🚀 Excited to announce" energy.
 
 ### [video-script](./skills/video-script)
-**Scripts with timing and visual directions.** Not a wall of narration — proper two-column-style with on-screen action, B-roll suggestions, pacing per platform (15s reel vs. 90s demo vs. 3min walkthrough), and a hook that earns the next 3 seconds.
+**Scripts with timing and visual directions.** Not a wall of narration: proper two-column style with on-screen action, B-roll suggestions, pacing per platform (15s reel vs. 90s demo vs. 3min walkthrough), and a hook that earns the next 3 seconds.
 
 ### [remotion-video](./skills/remotion-video)
-**An actual rendered `mp4`, via [Remotion](https://www.remotion.dev/).** Resolves a PR into a narrative (hook → code moments → CTA), generates a Remotion project, opens preview, iterates with you, then renders `video.mp4` + `poster.jpg` for X/LinkedIn. Brand auto-detection lives in [`brand-detection.md`](./skills/remotion-video/brand-detection.md); reusable scene patterns under [`patterns/`](./skills/remotion-video/patterns) and [`templates/`](./skills/remotion-video/templates).
+**An actual rendered `mp4`, via [Remotion](https://www.remotion.dev/).** Resolves a PR into a narrative (hook, code moments, CTA), generates a Remotion project, opens preview, iterates with you, then renders `video.mp4` + `poster.jpg` for X/LinkedIn. Brand auto-detection lives in [`brand-detection.md`](./skills/remotion-video/brand-detection.md); reusable scene patterns under [`patterns/`](./skills/remotion-video/patterns) and [`templates/`](./skills/remotion-video/templates).
 
 ### [hyperframes-video](./skills/hyperframes-video)
 **Same shape as `remotion-video`, but on the HTML/GSAP stack.** Uses [HyperFrames](https://hyperframes.dev) for people who'd rather author in HTML/CSS than React. Enforces the canvas-fill rule (no letterboxing across formats), synchronized chapter narration, layout-before-animation discipline, and a brand scan + preview gate before render. Pairs with the `hyperframes` and `hyperframes-cli` skills if you have those installed.
 
 ### [marketing-pipeline](./skills/marketing-pipeline)
-**One command, full launch kit.** Pick which skills to run (`brief, blog, social, newsletter, video`) and the order. Each step's output feeds the next — so the brief informs the blog, the blog informs the social posts, the changelog feeds the newsletter, and so on. No re-feeding context yourself.
+**One command, full launch kit.** Pick which skills to run (`brief, blog, social, newsletter, video`) and the order. Each step's output feeds the next, so the brief informs the blog, the blog informs the social posts, the changelog feeds the newsletter, and so on. No re-feeding context yourself.
 
 ### [presentation](./skills/presentation)
-**A technical deck that's actually been researched, not hallucinated.** A director layer on top of [Slidev](https://sli.dev): it owns the *content* and the *craft*, and delegates Slidev syntax to Slidev's own official skill (installing it if missing) — so when Slidev's syntax evolves, the craft here stays valid. Before it talks to you it does deep research on the topic (flagging weakly-supported presentation myths instead of repeating them) and, for a specific library/tool, analyzes the *real code* (local repo > GitHub > package > docs) so every slide is technically correct. Then it interviews you (audience, per-area depth, tone, brand, assets, output), storyboards for approval, and generates a deck applying evidence-based craft — assertion-evidence headlines, one-idea-per-slide, ≤5–7 lines of code with progressive reveal, diagrams over walls of code, a hook→takeaways arc.
+**A technical deck that's actually been researched, not hallucinated.** A director layer on top of [Slidev](https://sli.dev): it owns the *content* and the *craft*, and delegates Slidev syntax to Slidev's own official skill (installing it if missing), so when Slidev's syntax evolves, the craft here stays valid. Before it talks to you it does deep research on the topic (flagging weakly-supported presentation myths instead of repeating them) and, for a specific library/tool, analyzes the *real code* (local repo > GitHub > package > docs) so every slide is technically correct. Then it interviews you (audience, per-area depth, tone, brand, assets, output), storyboards for approval, and generates a deck applying evidence-based craft: assertion-evidence headlines, one-idea-per-slide, 5 to 7 lines of code with progressive reveal, diagrams over walls of code, a hook-to-takeaways arc.
 
-**What sets it apart:** it *generates* the assets it legitimately can (Shiki code images, Mermaid diagrams rendered to PNG) and only leaves clearly-marked placeholders for what must be real — never faking screenshots or data. It then **self-verifies** every slide in a headless browser (overflow, clipped code, contrast, overstuffed) and auto-fixes, and **finishes live** — dev server running, deck open in the browser, zero manual steps.
+**What sets it apart:** it *generates* the assets it legitimately can (Shiki code images, Mermaid diagrams rendered to PNG) and only leaves clearly-marked placeholders for what must be real, never faking screenshots or data. It then **self-verifies** every slide in a headless browser (overflow, clipped code, contrast, overstuffed) and auto-fixes, and **finishes live**: dev server running, deck open in the browser, zero manual steps.
 
 ### [docs](./skills/docs)
 **Docs a human actually wants to read.** Treats "document feature X" as the wrong goal and "help someone do Y with X" as the right one. Finds your docs folder (or asks where it is), reads a few existing pages to learn the voice, and reuses whatever components the site already has (steps, tabs, callouts) for storytelling, so it's tied to no framework. Plans the reader's story first, then splits a topic into short linked pages instead of one giant wall. Writes in plain B1-B2 English, shows runnable code over prose, and enforces hard bans: no em-dashes, no separator glyphs, no "not X: it's Y" phrasing, and no justifying the shipped API against names or approaches that never shipped. Fires at feature planning and implementation time, not only when asked, because docs ship with the code.
+
+### [rfc](./skills/rfc)
+**An RFC that survives review, not a doc-shaped placeholder.** An RFC's value is the thinking it forces (honest goals, real alternatives, named risks, a concrete design), so this skill forces that thinking instead of generating an RFC-shaped document with hand-waved sections. It interviews you to surface the parts your ticket and code haven't already answered, and inside a repo it scans the affected subsystem and cites real files. It shows you 2 to 3 concrete API/code approaches and lets you pick: the one you choose becomes the Proposed Design, the ones you reject become the Alternatives Considered section with their code intact, so the alternatives are real instead of strawmen. It self-critiques the draft against a quality rubric before you ever see it, then writes the RFC to a repo-aware path and opens it.
 
 ---
 
@@ -106,15 +110,15 @@ The agent loads the description at session start to decide *when* to invoke the 
 - **Triggered automatically.** "Write a blog post about #1234" triggers `blog-post` without you typing `/blog-post`.
 - **Composable.** Skills can reference other skills and pass artifacts between them.
 
-Skills with extra structure (`hyperframes-video`, `remotion-video`, `social-copy`) ship supporting files alongside `SKILL.md` — patterns, templates, references, hooks — that the skill's body links to.
+Skills with extra structure (`hyperframes-video`, `remotion-video`, `social-copy`) ship supporting files alongside `SKILL.md` (patterns, templates, references, hooks) that the skill's body links to.
 
 ---
 
 ## Install
 
-The repo's canonical layout is `skills/<skill-name>/SKILL.md`. Every supported CLI just needs that folder copied or symlinked into one of its discovery paths — no extra manifest beyond the `SKILL.md` files themselves (Claude Code's plugin manifests live in `.claude-plugin/` and are bundled with the repo).
+The repo's canonical layout is `skills/<skill-name>/SKILL.md`. Every supported CLI just needs that folder copied or symlinked into one of its discovery paths. No extra manifest beyond the `SKILL.md` files themselves (Claude Code's plugin manifests live in `.claude-plugin/` and are bundled with the repo).
 
-### Claude Code — plugin marketplace (recommended)
+### Claude Code: plugin marketplace (recommended)
 
 ```text
 /plugin marketplace add alemtuzlak/skills
@@ -127,7 +131,7 @@ Plugin-installed skills are invoked as `/alemtuzlak-skills:blog-post`, etc.
 
 Docs: [Discover and install plugins](https://code.claude.com/docs/en/discover-plugins.md), [Create a plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces.md).
 
-### Claude Code — drop-in skills (no plugin)
+### Claude Code: drop-in skills (no plugin)
 
 ```bash
 git clone git@github.com:alemtuzlak/skills.git /tmp/alem-skills
@@ -163,21 +167,21 @@ mkdir -p ~/.agents/skills
 cp -r /tmp/alem-skills/skills/* ~/.agents/skills/
 ```
 
-Optional per-skill `agents/openai.yaml` files can add Codex-specific UI metadata, invocation policy, and tool dependencies — none are required for the skills to work.
+Optional per-skill `agents/openai.yaml` files can add Codex-specific UI metadata, invocation policy, and tool dependencies. None are required for the skills to work.
 
-Docs: [Agent Skills — OpenAI Codex](https://developers.openai.com/codex/skills).
+Docs: [Agent Skills for OpenAI Codex](https://developers.openai.com/codex/skills).
 
 ### Google Gemini CLI
 
-Easiest — Gemini has a native install command for git repos:
+Easiest, since Gemini has a native install command for git repos:
 
 ```bash
 gemini skills install https://github.com/alemtuzlak/skills.git --path skills
 ```
 
-Or drop-in (paths: `.gemini/skills/` or `.agents/skills/` for project, `~/.gemini/skills/` or `~/.agents/skills/` for user — the `.agents/` alias takes precedence within each tier).
+Or drop-in (paths: `.gemini/skills/` or `.agents/skills/` for project, `~/.gemini/skills/` or `~/.agents/skills/` for user; the `.agents/` alias takes precedence within each tier).
 
-Docs: [Skills — Gemini CLI](https://geminicli.com/docs/cli/skills/).
+Docs: [Skills for Gemini CLI](https://geminicli.com/docs/cli/skills/).
 
 ### Cursor
 
@@ -189,11 +193,11 @@ mkdir -p ~/.agents/skills
 cp -r /tmp/alem-skills/skills/* ~/.agents/skills/
 ```
 
-Docs: [Skills — Cursor](https://cursor.com/docs/skills).
+Docs: [Skills for Cursor](https://cursor.com/docs/skills).
 
 ### Once-and-done install for all `.agents/skills/` agents
 
-Codex, Gemini, Copilot CLI, and Cursor all honor `~/.agents/skills/` — so a single copy makes the skills available in **all four**:
+Codex, Gemini, Copilot CLI, and Cursor all honor `~/.agents/skills/`, so a single copy makes the skills available in **all four**:
 
 ```bash
 git clone git@github.com:alemtuzlak/skills.git /tmp/alem-skills
@@ -234,7 +238,7 @@ Once installed, just describe what you want. The agent picks the right skill fro
 > Make a 30-second promo video for the auth refactor PR
    → triggers remotion-video (or hyperframes-video)
 
-> Full launch content for #1234 — brief, blog, tweet, newsletter
+> Full launch content for #1234: brief, blog, tweet, newsletter
    → triggers marketing-pipeline
 ```
 
@@ -269,7 +273,8 @@ Or invoke explicitly:
 │   ├── presentation/         # multi-file: references/, assets/ (Shiki+Mermaid render helper)
 │   ├── produce-video/SKILL.md
 │   ├── remotion-video/       # multi-file: patterns/, templates/, hooks/, references/
-│   ├── self-improve/SKILL.md
+│   ├── rfc/SKILL.md
+│   ├── self-improve/         # multi-file: commands/, hooks/, lib/, templates/
 │   ├── social-copy/          # multi-file: platforms/
 │   ├── teach-me/             # multi-file: assets/ (HTML mini-course builder)
 │   ├── transcribe-video/     # multi-file: bundled local Whisper service
