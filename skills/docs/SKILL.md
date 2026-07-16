@@ -1,0 +1,128 @@
+---
+name: docs
+description: Use when writing, editing, or organizing documentation, or planning what docs a feature needs. Triggers on "write docs for X", "document this feature", "add a guide", "update the docs", "reorganize the docs", or /docs.
+---
+
+# docs
+
+Write docs a real person wants to read. Short, plain, built around someone trying to do a real thing.
+
+"Document feature X" is not the job. "Help someone do Y with X" is the job.
+
+Work in two phases. First plan the story: who reads this, what they want, and how many pages it should be. Then write.
+
+## Find the docs first
+
+Before writing anything, find where docs live.
+
+1. Look for a docs folder. Check `docs/` first, then `documentation/`, `content/docs/`, `site/`, `website/docs/`.
+2. Found nothing? Ask the user where docs should go. Do not guess and do not create a folder on a hunch.
+3. Open 2 or 3 existing pages near where the new content belongs. Read them for voice, tone, frontmatter fields, and structure.
+4. Note which components the site already uses (steps, tabs, callouts, cards, accordions, code groups, and so on). Different sites have different ones.
+5. Reuse those components to tell the story. If the site has a steps component, use it for walkthroughs. If it has tabs, use them for framework variations. If the site has none, use plain markdown. Never invent a component the site does not have.
+
+If there is no page like the one you are about to write, read the closest one you can find and match it.
+
+## Phase 1: plan the story
+
+Do this before you write a word of content.
+
+1. List who reads this and what each one wants. A person building on a React SPA, a person on a server-rendered app, someone who just wants a quick demo, someone extending the internals. Do not stop at the first reader.
+2. Write one user story per reader: "As a X, I want to Y, so I can Z."
+3. Turn stories into pages. One journey is one page. Different journeys are different pages. A feature with three real journeys is three pages plus maybe a short overview, not one giant page.
+4. Check every reader has a path. A reader with no page is a hole in the plan. Add a page or a route for them.
+
+The page split comes out of this step. Do not skip it.
+
+## Less is more: split, do not cram
+
+Do not force thousands of words into one page. Long pages hide the answer.
+
+When a topic has several angles, give each its own short page and link them. A reader lands on the overview, then clicks into the exact thing they need.
+
+Example. A feature for tool interrupts:
+
+```
+Bad: one page
+  interrupts.md   (overview + simple case + many interrupts + custom, all crammed in)
+
+Good: a small set of linked pages
+  interrupts/index.md            what it is, when to use it, links out
+  interrupts/basic.md            one interrupt, start to finish
+  interrupts/multiple.md         several interrupts in a flow
+  interrupts/custom.md           build your own
+```
+
+Each page is short and does one thing. The overview stitches them into a story.
+
+## Phase 2: write like a human
+
+Legibility is the goal, above everything else.
+
+- Keep it digestible. No walls of text, no huge paragraphs. Break ideas into small pieces. Give the smallest amount of info that does the job.
+- Use simple English. Assume the reader speaks B1 to B2 English. Skip big, heavy words when a plain one works. "use" not "utilize", "start" not "commence", "about" not "regarding".
+- Keep markdown light. Lists are fine. Bold headings on every line are not. Let the words carry the page.
+- Prefer plain ASCII and normal keyboard characters over fancy glyphs. Write the way a person types.
+- Second person, action first. Start with what the reader has now and what they will have at the end. No "In this guide we will explore..." openings. Just start.
+
+### Show, do not tell
+
+Do not explain in four paragraphs what one sentence and a code block can show. Readers grasp a diff or a snippet faster than prose.
+
+```
+Bad:
+  Three paragraphs describing how the config object accepts a
+  middleware array, what each slot does, and how ordering works.
+
+Good:
+  Add your middleware to the `middleware` array. Order runs top to bottom:
+
+  const app = createApp({
+    middleware: [auth, logging],
+  })
+```
+
+One good runnable example beats a page of description. Every code sample must run when copied, not need imagination to fill gaps.
+
+### Page shape for a guide
+
+Start state, end state, steps, done.
+
+- Open with what the reader has and what they will have.
+- Walk through steps they can follow and test as they go.
+- End when they reach the goal. Do not close with a vague "next steps" dump.
+
+Reference pages (props, types, signatures) stay scannable and link back to the guide that shows them in use.
+
+## Forbidden
+
+Never use these. Ever.
+
+- Em dashes and en dashes: the long `—` and the shorter `–`. Rewrite the sentence with a comma, colon, period, or parentheses instead.
+- Separator glyphs like `×` or `·`.
+- The pattern "It's not X: it's Y." and the "Not just X, but Y" three-part build-up.
+- The phrases "key insight", "gap", and variations of them.
+
+If you catch yourself reaching for one of these, stop and rewrite the sentence in plain words.
+
+## Cross-linking and placement
+
+- Put new pages where they fit the reader's path, grouped by what the reader is doing ("Building with React"), not by code layer ("Frontend Package API"). Update the site's nav or index so the page is reachable. An orphan page does not ship.
+- Link related pages at the moment they help, inline in the flow, not as a "Related" dump at the bottom.
+- Cross-linking goes both ways. When you add a page, update the older pages that should point into it.
+- Do not over-link. One well-placed "need X? see Y" beats a list of maybes.
+
+## Red flags
+
+| You catch yourself | Do instead |
+|---|---|
+| Writing three paragraphs before any code | Cut to one sentence plus a snippet. Show it. |
+| Cramming every angle into one page | Split into short linked pages, one job each. |
+| "In this guide we will explore..." | Delete it. Start with the reader's state and goal. |
+| "Let me describe what this component does" | Describe what the reader does with it. |
+| Reaching for an em dash | Rewrite with a comma, period, or parentheses. |
+| Using a big word (utilize, leverage, facilitate) | Swap in the plain word. |
+| One page for everyone | Name the readers. Give each a path or a page. |
+| Posting a snippet "they can adapt" | Make it complete and runnable. |
+| Guessing where docs go | Find the docs folder, or ask. Read neighbors first. |
+| Inventing a component the site lacks | Use only components the site already has. |
