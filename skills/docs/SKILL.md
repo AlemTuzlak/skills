@@ -102,6 +102,27 @@ Start state, end state, steps, done.
 
 Reference pages (props, types, signatures) stay scannable and link back to the guide that shows them in use.
 
+## Write for the reader, not the history
+
+Docs describe what exists now. The reader never saw the old design, the earlier name, the draft PR, or the API you replaced along the way. Do not make them read about it.
+
+Never justify the current API by comparing it to a version that did not ship. A line like "instead of `useAssistant`, this uses `usePlugin`, which makes more sense because..." is noise to someone who never knew `useAssistant` existed. Cut it and just describe `usePlugin`.
+
+```
+Bad:
+  We renamed useAssistant to usePlugin and moved the tools onto it,
+  so instead of calling assistant.addTool you now use plugin.tools.
+
+Good:
+  Register tools on the plugin with plugin.tools:
+
+  const plugin = usePlugin({ tools: [search] })
+```
+
+Ban this framing from the output: "instead of X", "we renamed", "previously called", "this replaces the old", "unlike the earlier", and any transitional name that never reached a release.
+
+The one exception is a real migration. If users had X in a shipped, public release and you are moving them to Y, a short "Migrating from X" note is worth writing, because those readers actually used X. A name that only lived in a branch or a draft is not that. When unsure whether an old name shipped, leave it out.
+
 ## Forbidden
 
 Never use these. Ever.
@@ -135,4 +156,5 @@ If you catch yourself reaching for one of these, stop and rewrite the sentence i
 | Guessing where docs go | Find the docs folder, or ask. Read neighbors first. |
 | Calling a feature done with no doc change | If behavior changed, docs change too. Write them before you finish. |
 | Planning a feature without a doc-impact list | Add the list of new and changed docs to the plan. |
+| "Unlike the old X, this now..." / "we renamed X to Y" | The reader never saw X. Describe only what ships now. |
 | Inventing a component the site lacks | Use only components the site already has. |

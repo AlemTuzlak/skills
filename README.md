@@ -34,6 +34,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [presentation](./skills/presentation) | Research-grounded, craft-driven technical slide decks built on Slidev — live in the browser, zero manual steps |
 | [teach-me](./skills/teach-me) | Evidence-based course generator — markdown course + interactive HTML mini-course |
 | [epic-workshop](./skills/epic-workshop) | Epic Web / Epic React-style workshops, exercises, tips, and recordings |
+| [docs](./skills/docs) | Framework-agnostic documentation writer: plain human prose, persona-driven page splits, reuses your site's own components |
 | [produce-video](./skills/produce-video) | Turn a raw recording into a finished, edited, annotated video + content package |
 | [transcribe-video](./skills/transcribe-video) | Transcribe video/audio to text with word-level timestamps (local Whisper) |
 | [youtube-copy](./skills/youtube-copy) | YouTube metadata — title, SEO description, tags, timestamped chapters |
@@ -79,6 +80,9 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 **A technical deck that's actually been researched, not hallucinated.** A director layer on top of [Slidev](https://sli.dev): it owns the *content* and the *craft*, and delegates Slidev syntax to Slidev's own official skill (installing it if missing) — so when Slidev's syntax evolves, the craft here stays valid. Before it talks to you it does deep research on the topic (flagging weakly-supported presentation myths instead of repeating them) and, for a specific library/tool, analyzes the *real code* (local repo > GitHub > package > docs) so every slide is technically correct. Then it interviews you (audience, per-area depth, tone, brand, assets, output), storyboards for approval, and generates a deck applying evidence-based craft — assertion-evidence headlines, one-idea-per-slide, ≤5–7 lines of code with progressive reveal, diagrams over walls of code, a hook→takeaways arc.
 
 **What sets it apart:** it *generates* the assets it legitimately can (Shiki code images, Mermaid diagrams rendered to PNG) and only leaves clearly-marked placeholders for what must be real — never faking screenshots or data. It then **self-verifies** every slide in a headless browser (overflow, clipped code, contrast, overstuffed) and auto-fixes, and **finishes live** — dev server running, deck open in the browser, zero manual steps.
+
+### [docs](./skills/docs)
+**Docs a human actually wants to read.** Treats "document feature X" as the wrong goal and "help someone do Y with X" as the right one. Finds your docs folder (or asks where it is), reads a few existing pages to learn the voice, and reuses whatever components the site already has (steps, tabs, callouts) for storytelling, so it's tied to no framework. Plans the reader's story first, then splits a topic into short linked pages instead of one giant wall. Writes in plain B1-B2 English, shows runnable code over prose, and enforces hard bans: no em-dashes, no separator glyphs, no "not X: it's Y" phrasing, and no justifying the shipped API against names or approaches that never shipped. Fires at feature planning and implementation time, not only when asked, because docs ship with the code.
 
 ---
 
@@ -256,6 +260,7 @@ Or invoke explicitly:
 │   ├── architecture-impact/SKILL.md
 │   ├── blog-post/SKILL.md
 │   ├── changelog/SKILL.md
+│   ├── docs/SKILL.md
 │   ├── epic-workshop/SKILL.md
 │   ├── hyperframes-video/    # multi-file: patterns/, templates/, hooks/, references/
 │   ├── marketing-brief/SKILL.md
