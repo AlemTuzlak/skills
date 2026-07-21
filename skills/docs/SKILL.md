@@ -73,6 +73,27 @@ Legibility is the goal, above everything else.
 - Prefer plain ASCII and normal keyboard characters over fancy glyphs. Write the way a person types.
 - Second person, action first. Start with what the reader has now and what they will have at the end. No "In this guide we will explore..." openings. Just start.
 
+### Lead with the problem, then solve it
+
+Every page opens with the problem the reader came for, in their own words, before any API. Name the situation they are stuck in. Then say in a sentence or two how the feature solves it. Only after that do you go into the technical parts and the code.
+
+A reader who sees the problem first knows in seconds whether they are on the right page. A reader who hits an API signature first has to reverse-engineer what it is even for.
+
+```
+Bad:
+  Call useInterrupts() and pass a resolver. The resolver runs once per
+  pending item inside a transaction...
+
+Good:
+  Some tool calls shouldn't run without a human saying yes: moving money,
+  deleting data. An interrupt pauses the run for that decision, then picks up
+  where it left off. Here is how to gate a tool behind an approval:
+
+  [code]
+```
+
+The order for a guide is problem, one-line fix, then the how (steps, snippets, API). Keep the problem to a couple of sentences, not a background essay. The code shows how it is solved, so do not narrate the solution in prose first.
+
 ### Show, do not tell
 
 Do not explain in four paragraphs what one sentence and a code block can show. Readers grasp a diff or a snippet faster than prose.
@@ -94,10 +115,11 @@ One good runnable example beats a page of description. Every code sample must ru
 
 ### Page shape for a guide
 
-Start state, end state, steps, done.
+Problem, fix, steps, done.
 
-- Open with what the reader has and what they will have.
-- Walk through steps they can follow and test as they go.
+- Open with the problem the reader has, in their words, and what they will have at the end.
+- Say in a sentence how the feature solves it.
+- Walk through steps they can follow and test as they go, with the code doing the explaining.
 - End when they reach the goal. Do not close with a vague "next steps" dump.
 
 Reference pages (props, types, signatures) stay scannable and link back to the guide that shows them in use.
@@ -145,6 +167,7 @@ If you catch yourself reaching for one of these, stop and rewrite the sentence i
 
 | You catch yourself | Do instead |
 |---|---|
+| Opening with an API signature or config before the problem | Name the problem the reader has first, then the one-line fix, then the code. |
 | Writing three paragraphs before any code | Cut to one sentence plus a snippet. Show it. |
 | Cramming every angle into one page | Split into short linked pages, one job each. |
 | "In this guide we will explore..." | Delete it. Start with the reader's state and goal. |
