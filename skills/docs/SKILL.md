@@ -145,6 +145,38 @@ Ban this framing from the output: "instead of X", "we renamed", "previously call
 
 The one exception is a real migration. If users had X in a shipped, public release and you are moving them to Y, a short "Migrating from X" note is worth writing, because those readers actually used X. A name that only lived in a branch or a draft is not that. When unsure whether an old name shipped, leave it out.
 
+## Don't leak the build process
+
+The doc is read by someone who just arrived. They never saw the pull request, the refactor, or the conversation where the design was decided (including a conversation with an agent while writing the code and the docs). Write as if the current design was always the design. Anything that only makes sense to someone who watched it change is noise to the reader.
+
+**Cut rejected alternatives.** If a discussion weighed option A against option B and picked B, the doc documents B. It never names A, never says B is "better than" A, never says A "is no longer needed." The reader is not choosing between them; they use what shipped.
+
+```
+Bad:
+  We use a plain JSON Schema here instead of zod, since it is lighter
+  and zod is no longer a dependency.
+
+Good:
+  Pass the tool's input shape as a JSON Schema:
+
+  [code]
+```
+
+**Do not explain what something is not, when the reader never thought it was.** If a piece moved out of a module during a refactor, the doc for its new home does not warn against the old arrangement. A reader who never knew locks lived inside persistence is only confused by a paragraph insisting locks are not a persistence store and must not be passed in as one. State what the thing is now, in its own terms.
+
+```
+Bad (in the locks doc):
+  Locks are not a persistence store. Do not pass a lock into the stores
+  map. That used to be possible but is wrong now.
+
+Good (in the locks doc):
+  A lock coordinates work across instances. Wire it with withLocks:
+
+  [code]
+```
+
+The test: read the sentence as a brand-new user. If it answers a question they would never ask ("wait, was this somewhere else before?") or defends a choice they never knew existed, delete it. The doc has no memory of how it got here.
+
 ## Forbidden
 
 Never use these. Ever.
@@ -180,4 +212,6 @@ If you catch yourself reaching for one of these, stop and rewrite the sentence i
 | Calling a feature done with no doc change | If behavior changed, docs change too. Write them before you finish. |
 | Planning a feature without a doc-impact list | Add the list of new and changed docs to the plan. |
 | "Unlike the old X, this now..." / "we renamed X to Y" | The reader never saw X. Describe only what ships now. |
+| "we chose Y over zod because..." / "X is no longer needed" | Cut the rejected alternative. Document only what shipped, no comparison. |
+| Warning readers not to do a thing they never knew was possible (e.g. "don't pass locks as a store") | Delete it. If they never saw the old arrangement, the warning only confuses. Describe the thing in its own terms. |
 | Inventing a component the site lacks | Use only components the site already has. |
