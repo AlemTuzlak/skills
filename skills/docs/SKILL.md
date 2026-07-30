@@ -31,6 +31,14 @@ Before writing anything, find where docs live.
 
 If there is no page like the one you are about to write, read the closest one you can find and match it.
 
+### What "match the neighbors" covers, and what it does not
+
+Matching neighbors is about **voice, tone, copy, and structure**: how formal the writing is, whether headings are sentence case, how much setup a section gets, which components carry the walkthrough, how code samples are introduced, what the frontmatter fields are.
+
+It is **not** permission to copy a neighbor's bad habits. Everything in [Forbidden](#forbidden) and every rule in this skill still applies to the content you write, no matter what the surrounding pages do. An existing page full of em dashes does not license one more.
+
+So: never reason "the other pages do it, so I will too" about a rule this skill states. If existing pages break a rule and you think the whole set should be brought in line, that is a separate cleanup to raise with the user, not something to settle by quietly matching the violation.
+
 ## Phase 1: plan the story
 
 Do this before you write a word of content.
@@ -218,7 +226,7 @@ The test: read the sentence as a brand-new user. If it answers a question they w
 
 ## Forbidden
 
-Never use these. Ever.
+Never use these. Ever. This list has no exceptions: not "the neighboring pages use them", not "the repo's house style uses them", not "it reads better here".
 
 - Em dashes and en dashes: the long `—` and the shorter `–`. Rewrite the sentence with a comma, colon, period, or parentheses instead.
 - Separator glyphs like `×` or `·`.
@@ -226,6 +234,8 @@ Never use these. Ever.
 - The phrases "key insight", "gap", and variations of them.
 
 If you catch yourself reaching for one of these, stop and rewrite the sentence in plain words.
+
+Before you call a page done, search your own added text for `—`, `–`, `×`, and `·`. If a hit survived, you rationalized it. Fix it. Flagging it in your summary is not a substitute for fixing it.
 
 ## Cross-linking and placement
 
@@ -246,6 +256,7 @@ If you catch yourself reaching for one of these, stop and rewrite the sentence i
 | "In this guide we will explore..." | Delete it. Start with the reader's state and goal. |
 | "Let me describe what this component does" | Describe what the reader does with it. |
 | Reaching for an em dash | Rewrite with a comma, period, or parentheses. |
+| "The surrounding pages do X, so I will too" where X breaks a rule here | Match neighbors on voice and structure only. Follow this skill on everything it covers, and raise the existing violations as their own cleanup. |
 | Using a big word (utilize, leverage, facilitate) | Swap in the plain word. |
 | One page for everyone | Name the readers. Give each a path or a page. |
 | Posting a snippet "they can adapt" | Make it complete and runnable. |
