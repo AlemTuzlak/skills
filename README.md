@@ -40,6 +40,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [transcribe-video](./skills/transcribe-video) | Transcribe video/audio to text with word-level timestamps (local Whisper) |
 | [youtube-copy](./skills/youtube-copy) | YouTube metadata: title, SEO description, tags, timestamped chapters |
 | [self-improve](./skills/self-improve) | Capture lessons/corrections and promote them into AGENTS.md or skills |
+| [tanstack-branding](./skills/tanstack-branding) | TanStack brand kit: exact tokens, category accents, contrast data, plus the real logo and font files |
 
 ---
 
