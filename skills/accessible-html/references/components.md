@@ -31,8 +31,13 @@ Custom version:
 
 ## Modal dialog
 
-Use `<dialog>` + `dialog.showModal()`. You get the focus trap, Escape, `inert` background, and the
-top layer for free. Anything else is a re-implementation.
+**First: does this need to be a modal?** A modal interrupts, steals focus, traps the keyboard, and
+hides the rest of the page from assistive tech. It is the most expensive UI you can ship. A page, an
+inline expanded section, a `<details>`, or a non-modal popover is usually better and always cheaper.
+Modals stacked on modals are a design failure, not a technical one.
+
+If you do need one: use `<dialog>` + `dialog.showModal()`. You get the focus trap, Escape, `inert`
+background, and the top layer for free. Anything else is a re-implementation.
 
 ```html
 <dialog id="confirm" aria-labelledby="confirm-title">
@@ -55,8 +60,33 @@ Required, whether native or custom:
 - `role="alertdialog"` only for a message that interrupts and needs a response.
 - Do not scroll-lock by removing content from the DOM in a way that loses focus.
 
-Non-modal / anchored popover: use the `popover` attribute (`popovertarget`), which gives light
-dismiss and top layer without a focus trap.
+---
+
+## Popover (non-modal overlay)
+
+The native Popover API is the right tool for anything anchored and non-blocking: a settings panel, a
+notification tray, a rich dropdown, a hint card.
+
+```html
+<button popovertarget="prefs">Preferences</button>
+<div id="prefs" popover>
+  <h2>Preferences</h2>
+  …
+  <button popovertarget="prefs" popovertargetaction="hide">Close</button>
+</div>
+```
+
+What you get free: top layer (never clipped by `overflow` or `z-index`), light dismiss (click outside),
+Escape to close, and the trigger/target wiring. Focus is **not** trapped, which is correct here.
+
+- `popover="auto"` (the default) — light dismiss, and only one auto popover in a chain stays open.
+- `popover="manual"` — you control opening and closing entirely; no light dismiss. Use for toasts.
+- Add `aria-expanded` on the trigger yourself if the popover is a disclosure-style panel; the attribute
+  is not automatic.
+- `popovertargetaction="show|hide|toggle"` for extra buttons.
+- Pair with CSS anchor positioning (`anchor-name` / `position-anchor`) where supported, with a
+  fallback — do not position with JS on scroll, that is jank and it fights zoom.
+- Do not use a popover as a modal. If the background must be unusable, it is a dialog.
 
 ---
 
@@ -213,14 +243,75 @@ filtered list of checkboxes will do the job, use that.
 
 ---
 
-## Carousels, video, and motion
+## Links, cards, and click targets
 
-- Pause/stop control for anything moving, auto-advancing, or auto-playing longer than 5 seconds.
-- `@media (prefers-reduced-motion: reduce)` — remove transforms and parallax, keep opacity fades short.
-- No flashing more than 3 times per second, ever.
-- Video: captions for dialogue, audio description or a transcript for visual-only information,
-  native `<video controls>` unless you rebuild every control accessibly.
-- Do not autoplay audio.
+A link is `<a href>`. That is not pedantry — the browser attaches a pile of behaviour to a real href
+that a click handler cannot reproduce:
+
+| User does | Real `<a href>` | `onClick` on a div/card |
+|---|---|---|
+| Middle-click / Ctrl+click / Cmd+click | Opens in a new tab | Nothing, or navigates in place |
+| Right-click → copy link | Works | No link to copy |
+| Hover | Shows the destination in the status bar | Nothing |
+| Drags it to a bookmark bar | Works | Nothing |
+| Keyboard Enter | Works | Only if you wrote the handler |
+| JS fails to load | Still navigates | Dead page |
+
+So: **the whole-card click target is a CSS problem, not a JS problem.** Put one real link on the
+heading and stretch it:
+
+```html
+<article class="card">
+  <h3><a href="/posts/thing" class="card-link">Thing</a></h3>
+  <p>Summary…</p>
+  <button type="button">Save</button>   <!-- stays independently clickable -->
+</article>
+```
+
+```css
+.card { position: relative; }
+.card-link::after { content: ''; position: absolute; inset: 0; }  /* card-wide hit area */
+.card button { position: relative; }                              /* sits above the overlay */
+```
+
+This gives one accessible name ("Thing"), one tab stop for the card, working middle-click, and nested
+controls that still work. Never wrap a whole card in `<a>` — the link's accessible name becomes the
+entire card text, and any button inside becomes invalid nested-interactive markup.
+
+Also:
+
+- Links in body text need an underline, not just a colour.
+- Say when a link opens a new tab or downloads a file — an icon with a visually-hidden "(opens in a
+  new tab)", or in the link text.
+- Do not use `target="_blank"` by default; it removes the user's choice and their Back button.
+- Buttons that navigate and links that act are both wrong. `<a>` goes somewhere, `<button>` does something.
+
+---
+
+## Iframes and embeds
+
+- Every `<iframe>` needs a `title` that says what is inside it ("YouTube video player: setup guide"),
+  not "iframe" or "embed". It is a landmark in screen-reader element lists.
+- An iframe is focusable. A hidden or empty one is an invisible tab stop — add `tabindex="-1"` or
+  remove it from the DOM.
+- Third-party embeds (maps, chat widgets, video players, payment fields) are usually the least
+  accessible thing on your page and you cannot fix their internals. Provide an alternative path: an
+  address in text next to the map, a phone number next to the chat widget, a transcript next to the video.
+- A cookie or consent banner in an iframe still must not obscure focus, and must be reachable first.
+
+---
+
+## Video and audio
+
+- Captions for all prerecorded dialogue (1.2.2 A) and for live audio at AA (1.2.4).
+- Audio description or a full text alternative when the video shows information the soundtrack does not
+  mention (1.2.5 AA).
+- Transcripts for audio-only content. They also help everyone who would rather read.
+- Use native `<video controls>` / `<audio controls>` unless you are prepared to rebuild every control
+  as a labelled, keyboard-operable button — including the timeline slider, which is the hard part.
+- Never autoplay audio. Anything auto-playing over 3 seconds needs a pause/stop or volume control.
+- Motion, flashing, and auto-advancing content rules live in `visual-and-motion.md`. Carousels: pause
+  button, stop on hover and focus, and honour `prefers-reduced-motion`.
 
 ---
 
