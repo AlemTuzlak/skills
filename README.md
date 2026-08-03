@@ -39,6 +39,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [produce-video](./skills/produce-video) | Turn a raw recording into a finished, edited, annotated video + content package |
 | [transcribe-video](./skills/transcribe-video) | Transcribe video/audio to text with word-level timestamps (local Whisper) |
 | [youtube-copy](./skills/youtube-copy) | YouTube metadata: title, SEO description, tags, timestamped chapters |
+| [accessible-html](./skills/accessible-html) | Accessible markup by default: loads on any UI code, plus a hook that catches defects as they are written |
 | [self-improve](./skills/self-improve) | Capture lessons/corrections and promote them into AGENTS.md or skills |
 | [tanstack-branding](./skills/tanstack-branding) | TanStack brand kit: exact tokens, category accents, contrast data, plus the real logo and font files |
 
@@ -88,6 +89,11 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 
 ### [rfc](./skills/rfc)
 **An RFC that survives review, not a doc-shaped placeholder.** An RFC's value is the thinking it forces (honest goals, real alternatives, named risks, a concrete design), so this skill forces that thinking instead of generating an RFC-shaped document with hand-waved sections. It interviews you to surface the parts your ticket and code haven't already answered, and inside a repo it scans the affected subsystem and cites real files. It shows you 2 to 3 concrete API/code approaches and lets you pick: the one you choose becomes the Proposed Design, the ones you reject become the Alternatives Considered section with their code intact, so the alternatives are real instead of strawmen. It self-critiques the draft against a quality rubric before you ever see it, then writes the RFC to a repo-aware path and opens it.
+
+### [accessible-html](./skills/accessible-html)
+**Accessibility as a writing habit, not an audit.** Accessible markup rarely fails from ignorance: it fails because someone knew the rule and skipped it at 5pm. So this skill loads on any UI code (HTML, JSX/TSX, Vue, Svelte, Angular templates, CSS that touches focus, contrast, motion, or hit area) and on element names like button, modal, dropdown, or any click handler, not just on the word "accessibility". It keeps the load-bearing rules in `SKILL.md` where they get read, gates its reference files behind a trigger table, and names the required parts of each widget so a dialog without focus return or a `role="menu"` without arrow keys reads as unfinished. It also handles the ugly real case: adding to a file that is already broken and marked "do not refactor".
+
+**How it works:** the rules come from Playful Programming's Art of Accessibility series, WCAG 2.2 AA, the ARIA Authoring Practices patterns, and the WebAIM Million failure data. It ships `hooks/a11y-guard.js`, a `PreToolUse` hook that reads the markup you are about to write and reports the specific defects (`outline: none` with no replacement, click handlers on divs, positive `tabindex`, missing alt, blocked pinch zoom, single-key shortcuts with no off switch). It never blocks and says nothing when the code is clean. The hook exists because pressure-testing proved a skill cannot enforce itself: one run never loaded the skill and reported that it had.
 
 ---
 
@@ -261,7 +267,10 @@ Or invoke explicitly:
 ├── .claude-plugin/
 │   ├── plugin.json           # Claude Code plugin manifest
 │   └── marketplace.json      # Claude Code marketplace listing
+├── AGENTS.md                 # rules for agents working in this repo
+├── CLAUDE.md                 # pointer to AGENTS.md
 ├── skills/
+│   ├── accessible-html/      # multi-file: references/, hooks/ (PreToolUse a11y guard)
 │   ├── architecture-impact/SKILL.md
 │   ├── blog-post/SKILL.md
 │   ├── changelog/SKILL.md
