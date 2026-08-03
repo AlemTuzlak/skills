@@ -176,46 +176,67 @@ The mirror-image bug: **invisible focusable elements.** A menu you hid with `opa
 Shortcuts are great for power users and for motor-impaired users who cannot aim a pointer. They are
 also a WCAG requirement once they are single characters.
 
-**WCAG 2.1.4 Character Key Shortcuts (Level A):** if a shortcut uses only letters, numbers,
-punctuation, or symbols, you must offer at least one of:
+### A shortcut feature has four parts. Ship all four.
 
-1. a way to turn it off,
-2. a way to remap it to include a modifier, or
-3. only make it active while the relevant component has focus.
+Any keyboard-shortcut feature that uses bare characters (`j`, `k`, `x`, `/`, `g i`) consists of
+**exactly these parts**, in this order. A shortcut module missing part 2 is not finished — it fails
+WCAG 2.1.4 at **Level A**, the lowest bar there is.
 
-Why: speech-recognition users emit stray characters constantly. A bare `j`/`k`/`/` shortcut fires at
-random for them.
+1. **A typing guard** — ignore every shortcut while focus is in `<input>`, `<textarea>`, `<select>`, or
+   `[contenteditable]`, and bail on modifier keys you do not own.
+2. **A user-controlled off switch** — a real persisted setting the user can turn off, or a remap to
+   modifier chords, or shortcuts scoped to a focused component. **This is the part that gets skipped.
+   It is not optional and it is not a follow-up.** Read it from storage, expose it in the settings UI,
+   default it to on if you like — but it must be switchable by the user, not a constant in your source.
+3. **The handlers** — one per shortcut, each `preventDefault()`ing only the key it handles.
+4. **A discoverable list** — a shortcuts help panel (`?` by convention, itself guarded), and `<kbd>`
+   hints next to the actions in the UI. A secret shortcut is not a feature.
 
-Rules that follow from that:
-
-- Ignore shortcuts while focus is in an `<input>`, `<textarea>`, `<select>`, or `[contenteditable]`.
-- Prefer a modifier, or a scoped shortcut, or a leader key.
-- Document them, and give a discoverable list (`?` is the convention — itself scoped).
-- Show the shortcut in the UI next to the action it triggers (`<kbd>`), so it is discoverable and not
-  just a secret.
-- Match the platform: Cmd on macOS, Ctrl elsewhere — check `event.metaKey || event.ctrlKey`.
+Why part 2 is non-negotiable: speech-recognition users emit stray characters constantly. Dictating one
+sentence into a page with bare `j`/`k`/`x` shortcuts scrolls, archives, and navigates at random. They
+cannot use your app at all, and they cannot turn the shortcuts off without your switch.
 
 ```js
-const typing = (el) =>
-  el.matches('input, textarea, select, [contenteditable]');
+// 2. The off switch — persisted, user-controlled. Not a constant.
+const KEY = 'shortcuts.singleKey.enabled';
+const singleKeyEnabled = () => localStorage.getItem(KEY) !== 'off';
+// …and a real checkbox in Settings that writes 'off'/'on' to that key.
+
+// 1. The typing guard
+const typing = (el) => el.matches('input, textarea, select, [contenteditable]');
 
 document.addEventListener('keydown', (e) => {
   if (typing(e.target) || e.altKey) return;
-  // Cmd/Ctrl + K — a modifier shortcut, no 2.1.4 obligation
+
+  // Modifier chords are exempt from 2.1.4 — no off switch needed
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
     e.preventDefault();
     openCommandPalette();
     return;
   }
-  // Bare "/" — needs the escape hatch to satisfy 2.1.4
-  if (e.key === '/' && shortcutsEnabled) {
-    e.preventDefault();
-    focusSearch();
+  if (e.metaKey || e.ctrlKey) return;   // never shadow browser/AT chords
+
+  // 3. Bare single-character shortcuts — gated on the switch from part 2
+  if (!singleKeyEnabled()) return;
+  switch (e.key) {
+    case 'j': e.preventDefault(); move(1); break;
+    case 'k': e.preventDefault(); move(-1); break;
+    case '/': e.preventDefault(); focusSearch(); break;
   }
 });
 ```
 
-`shortcutsEnabled` must be a real user setting, not a constant.
+If you copy this example and leave `singleKeyEnabled` returning a hardcoded `true`, you have written the
+bug the example exists to prevent.
+
+Also:
+
+- Announce what a shortcut did in a polite live region ("Message archived"), or the action is silent for
+  screen reader users.
+- Move focus sensibly after a destructive shortcut — archiving the selected row must not drop focus to
+  `<body>`.
+- Match the platform: Cmd on macOS, Ctrl elsewhere.
+- Avoid `accesskey` entirely.
 
 ---
 

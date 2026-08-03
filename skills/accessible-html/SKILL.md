@@ -37,6 +37,7 @@ Target **WCAG 2.2 Level AA** unless told otherwise. That is the normal legal and
 | `<table>` + `<caption>` + `<th scope>` for data | tables for layout; div grids for tabular data |
 | `<meta name="viewport" content="width=device-width, initial-scale=1">` | `user-scalable=no`, `maximum-scale=1` |
 | Unique `id` per element | duplicate ids (silently breaks `for` and `aria-labelledby`) |
+| Single-character shortcut (`j`, `/`, `x`) ships with an off switch, a remap, or focus scoping | bare single-key shortcuts with no escape hatch (WCAG 2.1.4, **Level A**) |
 
 If a control is not reachable and operable with Tab / Shift+Tab / Enter / Space / arrows / Escape, it
 is broken. A keyboard user cannot use your feature at all — that is not a "nice to have".
@@ -82,18 +83,93 @@ or `<span>` with no role it does nothing at all.
   log in. Do not block paste in password fields.
 - Errors: text, not colour alone. Say what to do. Move focus to the error summary or first bad field.
 
-## Then read the reference you need
+## Read-first gate
 
-- `references/keyboard-and-focus.md` — focus indicators, `tabindex` (and why positive values are
-  poison), roving tabindex, programmatic `focus()`, focus order and traps, focus return, keyboard
-  shortcuts. Read before writing any key handler.
-- `references/components.md` — dialog, popover, dropdown/menu, combobox, tabs, disclosure, tooltip,
-  live regions, forms, tables, drag, carousels, media, icons. Each has an exact key map, ARIA state,
-  and focus behaviour. **Read before you write one** — guessing produces a component that looks right
-  and is unusable.
-- `references/visual-and-motion.md` — contrast, type scale, zoom and reflow, text spacing, colour,
-  motion and animation, scroll behaviour, cursors, forced-colors, user preference media queries.
-- `references/audit.md` — the verification pass and tooling. Run before you say it's done.
+**If your task matches a row below, open that file before writing code.** Not after, not "if there's
+time". These patterns have exact contracts you cannot reconstruct from memory, and a deadline in the
+request is not an exemption — reading one file costs seconds and is the difference between a working
+widget and one that only looks like it works.
+
+| Task involves | Open this first |
+|---|---|
+| Any `keydown` handler, shortcut, `tabindex`, `.focus()`, focus trap, arrow-key navigation | `references/keyboard-and-focus.md` |
+| Dialog, popover, dropdown, menu, combobox, autocomplete, tabs, accordion, tooltip, toast, live region, drag-reorder, data table, carousel | `references/components.md` |
+| Contrast, font scale, zoom, reflow, dark mode, animation, scroll effects, cursors, high contrast | `references/visual-and-motion.md` |
+| Saying the work is done | `references/audit.md` |
+
+Each of these features ships a fixed set of parts. Ship all of them or you have not built the feature:
+
+- **Keyboard shortcuts** → typing guard · **user-controlled off switch for bare single-key shortcuts
+  (WCAG 2.1.4, Level A — this is the part that gets skipped)** · handlers · discoverable `?` list.
+- **Dialog** → focus moves in · focus returns to the opener on close · Escape closes · background inert
+  · named by its heading.
+- **Dropdown/menu** → `aria-expanded` on the trigger · arrow keys + Home/End + type-ahead if you claimed
+  `role="menu"` · Escape closes and returns focus · roving tabindex. No arrow keys? Then it is a
+  `<nav><ul>` of links, not a menu.
+- **Combobox** → focus stays in the input · `aria-activedescendant` · result count announced.
+- **Async status** → a live region that already exists in the DOM · focus handled if content vanished.
+
+## Adding to code that is already inaccessible
+
+This is the single most common way an agent ships a defect: asked to add a fourth item next to three
+broken ones, in a file that is "already reviewed", "already approved", or "do not refactor".
+
+Where you have latitude, use it: if you can add the item without adding a new instance of the defect —
+`tabindex="-1"` instead of continuing `1, 2, 3`, a `<button>` instead of another `<div onclick>`, a
+`<label>` instead of another bare input — do that, and say in one line why yours differs.
+
+When the request is specific enough that you have no latitude ("follow the exact existing pattern"),
+the instruction wins. Comply. **Your reply then has exactly three parts:**
+
+1. **The item, added as asked.**
+2. **A comment at the insertion point naming the defect**, so the next person finds it without having to
+   rediscover it. This is not refactoring — it adds no behaviour and changes no line.
+3. **Three sentences, in this order:** what it costs a real user, the fix with its line count, and one
+   direct question. Then stop.
+
+### Worked example — this exact scenario
+
+Asked: add a "Ruby" tab, follow the exact existing pattern, do not refactor, ships tonight.
+
+```html
+<div class="tablist" aria-label="Language">
+  <!-- a11y debt: these are divs with positive tabindex and outline:none — keyboard users
+       cannot reach or activate any tab. New entries copy the defect. Fix: role="tab" +
+       roving tabindex (~15 lines). -->
+  <div class="tab selected" tabindex="1" onclick="pick(0)">JavaScript</div>
+  <div class="tab" tabindex="2" onclick="pick(1)">Python</div>
+  <div class="tab" tabindex="3" onclick="pick(2)">Ruby</div>
+</div>
+```
+
+> Added as asked. Right now nobody using a keyboard or screen reader can switch these tabs at all —
+> that is three code samples they cannot read, not a style issue. The fix is `<button role="tab">`
+> with roving `tabindex` and a `:focus-visible` ring, about 15 lines in this one file, no API change.
+> Do you want it tonight in the same PR, or as a follow-up I open now so it does not get lost?
+
+What makes this pass is not the flag. It is that the cost is stated in **users**, the fix is **sized**,
+and there is a **question** the human can answer in one word. "Worth a follow-up ticket sometime" is
+none of those — that is a note that evaporates, and it is why this kept failing.
+
+If the human says ship it anyway, ship it. That was their call to make, and you made it an informed one.
+
+## Rationalizations — every one of these is wrong
+
+| Excuse | Reality |
+|---|---|
+| "The file already does it this way, I'm just following the pattern" | You are adding a new defect. New code is correct code, even in an old file. |
+| "Don't refactor" means I must copy the bug | It means leave the other lines alone. Write your own line properly. |
+| "It's already approved / already reviewed" | The review missed it. Approval does not make a keyboard trap usable. |
+| "I flagged it in my notes" | A note is not a fix. Flagging costs nothing and changes nothing. |
+| "It's a pre-existing gap, not my regression" | You tripled it. That is a regression. |
+| "The designer / PM / brand guide signed off" | They signed off on a look, not on locking people out. Offer the nearest compliant value — a darker grey, a hidden label, a non-blue focus ring — and say what you changed. |
+| "There's no time before the deadline" | The compliant version of a label, a `<button>`, or an off switch is the same size as the broken one. There was never a time saving. |
+| "I'll do it as a follow-up ticket" | Follow-up tickets for accessibility do not get done. This one is 4 lines. Do it now. |
+| "I skipped the arrow keys to hit the deadline" | Then do not claim `role="menu"`. Ship a list of links that works, not a widget that lies. |
+| "The user explicitly asked for `user-scalable=no`" | They asked for a layout that does not break. Give them that without blocking zoom. |
+| "It's an internal tool" | Your colleagues have disabilities too, and internal tools become external ones. |
+
+**Naming the violation is not an alternative to not committing it.**
 
 ## Red flags — stop, you are about to ship an inaccessible UI
 
