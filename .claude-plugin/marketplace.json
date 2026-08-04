@@ -5,20 +5,5 @@
   "owner": {
     "name": "Alem Tuzlak"
   },
-  "plugins": [
-    {
-      "name": "self-improve",
-      "description": "Self-improving agent: captures lessons from corrections, enforces architectural couplings, and absorbs learnings back into your skills.",
-      "version": "0.1.0",
-      "source": "./skills/self-improve",
-      "author": {
-        "name": "Alem Tuzlak"
-      },
-      "homepage": "https://github.com/alemtuzlak/skills",
-      "repository": "https://github.com/alemtuzlak/skills",
-      "license": "MIT",
-      "keywords": ["self-improve", "lessons", "couplings", "skills"],
-      "category": "developer-tools"
-    }
-  ]
+  "plugins": []
 }
