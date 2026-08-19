@@ -1,6 +1,6 @@
 # Skills
 
-Personal [Agent Skills](https://agentskills.io) I use across every project. They turn a PR, a git ref, or a freeform idea into marketing briefs, blog posts, changelogs, social copy, newsletters, video scripts, rendered promo videos, architecture impact docs, technical presentation decks, documentation, RFCs, and full courses.
+Personal [Agent Skills](https://agentskills.io) I use across every project. They turn a PR, a git ref, or a freeform idea into marketing briefs, blog posts, changelogs, social copy, newsletters, video scripts, rendered promo videos, architecture impact docs, technical presentation decks, documentation, RFCs, PRDs, and full courses.
 
 Packaged as a Claude Code plugin, but the skills themselves are plain `SKILL.md` files with standard YAML frontmatter, the same format documented for **Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Google Gemini CLI, and Cursor**. Drop them in any of those tools' skills directories and they work. See [Install](#install).
 
@@ -36,6 +36,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [epic-workshop](./skills/epic-workshop) | Epic Web / Epic React-style workshops, exercises, tips, and recordings |
 | [docs](./skills/docs) | Framework-agnostic documentation writer: plain human prose, persona-driven page splits, reuses your site's own components |
 | [rfc](./skills/rfc) | Interactive RFC / design-doc writer: interviews you, grounds the proposal in your codebase, shows real API options to pick from |
+| [to-prd](./skills/to-prd) | PRD writer from finished work, a ticket, or a PR, using the CopilotKit EEP spec template |
 | [produce-video](./skills/produce-video) | Turn a raw recording into a finished, edited, annotated video + content package |
 | [transcribe-video](./skills/transcribe-video) | Transcribe video/audio to text with word-level timestamps (local Whisper) |
 | [youtube-copy](./skills/youtube-copy) | YouTube metadata: title, SEO description, tags, timestamped chapters |
@@ -88,6 +89,9 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 
 ### [rfc](./skills/rfc)
 **An RFC that survives review, not a doc-shaped placeholder.** An RFC's value is the thinking it forces (honest goals, real alternatives, named risks, a concrete design), so this skill forces that thinking instead of generating an RFC-shaped document with hand-waved sections. It interviews you to surface the parts your ticket and code haven't already answered, and inside a repo it scans the affected subsystem and cites real files. It shows you 2 to 3 concrete API/code approaches and lets you pick: the one you choose becomes the Proposed Design, the ones you reject become the Alternatives Considered section with their code intact, so the alternatives are real instead of strawmen. It self-critiques the draft against a quality rubric before you ever see it, then writes the RFC to a repo-aware path and opens it.
+
+### [to-prd](./skills/to-prd)
+**A PRD from the work you just finished, not a blank spec.** Uses the CopilotKit EEP template (problem and solution from the user's view, a long user-story list, implementation decisions, testing decisions, a manual test plan, out of scope). It reads the session, the repo, the PR, or the ticket first, then grills you on each heading until you agree. Implementation decisions stay at modules and contracts, not file paths. Writes markdown to `docs/prds/` and opens it in Plannotator.
 
 ### [accessible-html](./skills/accessible-html)
 **Accessibility as a writing habit, not an audit.** Accessible markup rarely fails from ignorance: it fails because someone knew the rule and skipped it at 5pm. So this skill loads on any UI code (HTML, JSX/TSX, Vue, Svelte, Angular templates, CSS that touches focus, contrast, motion, or hit area) and on element names like button, modal, dropdown, or any click handler, not just on the word "accessibility". It keeps the load-bearing rules in `SKILL.md` where they get read, gates its reference files behind a trigger table, and names the required parts of each widget so a dialog without focus return or a `role="menu"` without arrow keys reads as unfinished. It also handles the ugly real case: adding to a file that is already broken and marked "do not refactor".
@@ -283,6 +287,7 @@ Or invoke explicitly:
 │   ├── produce-video/SKILL.md
 │   ├── remotion-video/       # multi-file: patterns/, templates/, hooks/, references/
 │   ├── rfc/SKILL.md
+│   ├── to-prd/               # multi-file: assets/prd-template.md (EEP spec)
 │   ├── social-copy/          # multi-file: platforms/
 │   ├── teach-me/             # multi-file: assets/ (HTML mini-course builder)
 │   ├── transcribe-video/     # multi-file: bundled local Whisper service
