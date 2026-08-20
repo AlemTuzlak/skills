@@ -34,12 +34,13 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [presentation](./skills/presentation) | Research-grounded, craft-driven technical slide decks built on Slidev, live in the browser with zero manual steps |
 | [teach-me](./skills/teach-me) | Evidence-based course generator: markdown course plus interactive HTML mini-course |
 | [epic-workshop](./skills/epic-workshop) | Epic Web / Epic React-style workshops, exercises, tips, and recordings |
-| [docs](./skills/docs) | Framework-agnostic documentation writer: plain human prose, persona-driven page splits, reuses your site's own components |
+| [docs](./skills/docs) | Framework-agnostic documentation writer: shows you the readers, asks for tone, then writes pages through `simple-english` and `i-have-adhd` |
 | [rfc](./skills/rfc) | Interactive RFC / design-doc writer: interviews you, grounds the proposal in your codebase, shows real API options to pick from |
 | [to-prd](./skills/to-prd) | PRD writer from finished work, a ticket, or a PR, using the CopilotKit EEP spec template |
 | [produce-video](./skills/produce-video) | Turn a raw recording into a finished, edited, annotated video + content package |
 | [transcribe-video](./skills/transcribe-video) | Transcribe video/audio to text with word-level timestamps (local Whisper) |
 | [youtube-copy](./skills/youtube-copy) | YouTube metadata: title, SEO description, tags, timestamped chapters |
+| [i-have-adhd](./skills/i-have-adhd) | ADHD-shaped output: next action first, numbered steps, lists capped at 5. Also the writing filter `docs` loads before pages |
 | [accessible-html](./skills/accessible-html) | Accessible markup by default: loads on any UI code, plus a hook that catches defects as they are written |
 | [tanstack-branding](./skills/tanstack-branding) | TanStack brand kit: exact tokens, category accents, contrast data, plus the real logo and font files |
 
@@ -85,7 +86,10 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 **What sets it apart:** it *generates* the assets it legitimately can (Shiki code images, Mermaid diagrams rendered to PNG) and only leaves clearly-marked placeholders for what must be real, never faking screenshots or data. It then **self-verifies** every slide in a headless browser (overflow, clipped code, contrast, overstuffed) and auto-fixes, and **finishes live**: dev server running, deck open in the browser, zero manual steps.
 
 ### [docs](./skills/docs)
-**Docs a human actually wants to read.** Treats "document feature X" as the wrong goal and "help someone do Y with X" as the right one. Finds your docs folder (or asks where it is), reads a few existing pages to learn the voice, and reuses whatever components the site already has (steps, tabs, callouts) for storytelling, so it's tied to no framework. Plans the reader's story first, then splits a topic into short linked pages instead of one giant wall. Writes in plain B1-B2 English, shows runnable code over prose, and enforces hard bans: no em-dashes, no separator glyphs, no "not X: it's Y" phrasing, and no justifying the shipped API against names or approaches that never shipped. Fires at feature planning and implementation time, not only when asked, because docs ship with the code.
+**Docs a human actually wants to read.** Treats "document feature X" as the wrong goal and "help someone do Y with X" as the right one. Finds your docs folder (or asks where it is), reads a few existing pages to learn structure and components, and reuses whatever the site already has (steps, tabs, callouts) for storytelling, so it's tied to no framework. Plans the reader's story first, then **stops**: it shows you the discovered readers and waits, then asks for tone (neighbors are a proposed default, not a silent yes). Only after that does it load `simple-english` and `i-have-adhd` and write the pages. Splits a topic into short linked pages instead of one giant wall. Shows runnable code over prose, and enforces hard bans: no em-dashes, no separator glyphs, no "not X: it's Y" phrasing, and no justifying the shipped API against names or approaches that never shipped. Fires at feature planning and implementation time, not only when asked, because docs ship with the code.
+
+### [i-have-adhd](./skills/i-have-adhd)
+**Output an ADHD brain can act on.** Vendored from [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd). First line is the next action, multi-step work is numbered, lists cap at 5, state is restated every turn, wins are visible, no preamble or closer. It does not auto-invoke (`disable-model-invocation: true`). Call `/i-have-adhd` for a session, or let `docs` load it as a writing filter for documentation pages. When `docs` loads it, the rules apply to the pages only.
 
 ### [rfc](./skills/rfc)
 **An RFC that survives review, not a doc-shaped placeholder.** An RFC's value is the thinking it forces (honest goals, real alternatives, named risks, a concrete design), so this skill forces that thinking instead of generating an RFC-shaped document with hand-waved sections. It interviews you to surface the parts your ticket and code haven't already answered, and inside a repo it scans the affected subsystem and cites real files. It shows you 2 to 3 concrete API/code approaches and lets you pick: the one you choose becomes the Proposed Design, the ones you reject become the Alternatives Considered section with their code intact, so the alternatives are real instead of strawmen. It self-critiques the draft against a quality rubric before you ever see it, then writes the RFC to a repo-aware path and opens it.
@@ -279,6 +283,7 @@ Or invoke explicitly:
 │   ├── changelog/SKILL.md
 │   ├── docs/SKILL.md
 │   ├── epic-workshop/SKILL.md
+│   ├── i-have-adhd/SKILL.md  # ADHD output style; also a docs writing filter
 │   ├── hyperframes-video/    # multi-file: patterns/, templates/, hooks/, references/
 │   ├── marketing-brief/SKILL.md
 │   ├── marketing-pipeline/SKILL.md
