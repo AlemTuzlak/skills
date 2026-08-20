@@ -35,6 +35,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [teach-me](./skills/teach-me) | Evidence-based course generator: markdown course plus interactive HTML mini-course |
 | [epic-workshop](./skills/epic-workshop) | Epic Web / Epic React-style workshops, exercises, tips, and recordings |
 | [docs](./skills/docs) | Framework-agnostic documentation writer: shows you the readers, asks for tone, then writes pages through `simple-english` and `i-have-adhd` |
+| [pr-description](./skills/pr-description) | PR title and body from the diff: posts immediately, rewrites on agent push, writes through `simple-english` and `i-have-adhd` |
 | [rfc](./skills/rfc) | Interactive RFC / design-doc writer: interviews you, grounds the proposal in your codebase, shows real API options to pick from |
 | [to-prd](./skills/to-prd) | PRD writer from finished work, a ticket, or a PR, using the CopilotKit EEP spec template |
 | [produce-video](./skills/produce-video) | Turn a raw recording into a finished, edited, annotated video + content package |
@@ -87,6 +88,9 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 
 ### [docs](./skills/docs)
 **Docs a human actually wants to read.** Treats "document feature X" as the wrong goal and "help someone do Y with X" as the right one. Finds your docs folder (or asks where it is), reads a few existing pages to learn structure and components, and reuses whatever the site already has (steps, tabs, callouts) for storytelling, so it's tied to no framework. Plans the reader's story first, then **stops**: it shows you the discovered readers and waits, then asks for tone (neighbors are a proposed default, not a silent yes). Only after that does it load `simple-english` and `i-have-adhd` and write the pages. Splits a topic into short linked pages instead of one giant wall. Shows runnable code over prose, and enforces hard bans: no em-dashes, no separator glyphs, no "not X: it's Y" phrasing, and no justifying the shipped API against names or approaches that never shipped. Fires at feature planning and implementation time, not only when asked, because docs ship with the code.
+
+### [pr-description](./skills/pr-description)
+**A PR description written from the diff, then posted.** Runs before `gh pr create` and again after an agent `git push` on an open PR. Opens with 1 to 4 sentences (a bugfix names the bug and the fix). Fills the repo template, then adds Testing (commands, manual steps, how the PR makes review easy), Screenshots when the PR has UI, Linked issues, Risk / rollback, and a Public API before/after when published exports changed. On a UI PR it tries to capture the screen in the browser, commits the PNGs, and embeds them. If capture fails, it still posts and says why. A feature cannot post until the branch has a test, a command, or an example. Writes through `simple-english` and `i-have-adhd`. Does not wait for approval.
 
 ### [i-have-adhd](./skills/i-have-adhd)
 **Output an ADHD brain can act on.** Vendored from [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd). First line is the next action, multi-step work is numbered, lists cap at 5, state is restated every turn, wins are visible, no preamble or closer. It does not auto-invoke (`disable-model-invocation: true`). Call `/i-have-adhd` for a session, or let `docs` load it as a writing filter for documentation pages. When `docs` loads it, the rules apply to the pages only.
@@ -289,6 +293,7 @@ Or invoke explicitly:
 │   ├── marketing-pipeline/SKILL.md
 │   ├── newsletter/SKILL.md
 │   ├── presentation/         # multi-file: references/, assets/ (Shiki+Mermaid render helper)
+│   ├── pr-description/SKILL.md
 │   ├── produce-video/SKILL.md
 │   ├── remotion-video/       # multi-file: patterns/, templates/, hooks/, references/
 │   ├── rfc/SKILL.md
