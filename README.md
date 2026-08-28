@@ -46,6 +46,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [tanstack-branding](./skills/tanstack-branding) | TanStack brand kit: exact tokens, category accents, contrast data, plus the real logo and font files |
 | [touch-map](./skills/touch-map) | Mental map of what a behavior change must touch, before an implementation plan or any code |
 | [reuse-first](./skills/reuse-first) | Search, import, or extract helpers before writing a new util |
+| [lego-plan](./skills/lego-plan) | Layered DAG from simple primitives to a working feature; plan only |
 
 ---
 
@@ -113,6 +114,9 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 
 ### [reuse-first](./skills/reuse-first)
 **Do not write `isRecord` again.** Before a new helper, search the current package, neighbors, and shared utils by *job*, not by the name the agent wanted. Exact match: import it. Close match: extend it if it is still the same job. Two copies of the same `if` in opened files: extract one function and replace those copies. Domain helpers stay next to the type (`isCancelledOrder` in `order.ts`). Generic helpers go to the repo’s utils home on the first write, so `order.ts` does not grow a 400-line util header. The skill prints one `reuse:` line, acts, and stops. A later workflow skill sequences it with the other build skills.
+
+### [lego-plan](./skills/lego-plan)
+**A pyramid you can fan out.** After the change is chosen, this writes a layered DAG: layer 0 is independent primitives a driver can run in parallel, later layers only depend on earlier ones, the last layer is the feature working. Nodes are subagent-sized (`fetchOrder`, `OrderCard`, `wire the loader`). Inside a node, ordered parts must compile together and stay on one worker. Each node has a stable id, files, parts, and a “done when” check. Mermaid always, same ids, so a later workflow can redraw the graph and mark nodes done. Plan only. No code, no dispatch.
 
 ---
 
@@ -296,6 +300,7 @@ Or invoke explicitly:
 │   ├── docs/SKILL.md
 │   ├── epic-workshop/SKILL.md
 │   ├── i-have-adhd/SKILL.md  # ADHD output style; also a docs writing filter
+│   ├── lego-plan/SKILL.md    # layered DAG implementation plan, plan only
 │   ├── hyperframes-video/    # multi-file: patterns/, templates/, hooks/, references/
 │   ├── marketing-brief/SKILL.md
 │   ├── marketing-pipeline/SKILL.md
