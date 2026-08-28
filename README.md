@@ -2,7 +2,9 @@
 
 Personal [Agent Skills](https://agentskills.io) I use across every project. They turn a PR, a git ref, or a freeform idea into marketing briefs, blog posts, changelogs, social copy, newsletters, video scripts, rendered promo videos, architecture impact docs, technical presentation decks, documentation, RFCs, PRDs, and full courses.
 
-Packaged as a Claude Code plugin, but the skills themselves are plain `SKILL.md` files with standard YAML frontmatter, the same format documented for **Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Google Gemini CLI, and Cursor**. Drop them in any of those tools' skills directories and they work. See [Install](#install).
+The repo also ships a **portable build pack**: small skills for how I map, reuse, plan, type, test, debug, prove, and implement a feature. `/build-feature` is the driver. Each leaf still runs alone.
+
+Packaged as a Claude Code plugin, but the skills themselves are plain `SKILL.md` files with standard YAML frontmatter, the same format documented for **Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Google Gemini CLI, Cursor, and Grok**. Drop them in any of those tools' skills directories and they work. See [Install](#install).
 
 ---
 
@@ -52,6 +54,35 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [prove-it](./skills/prove-it) | Prove a change in the browser or via a method you pick; skip means not proved |
 | [fix-bug](./skills/fix-bug) | Root-cause bug fix: hypotheses on the hot path, logs, then a failing test, then the fix; optional prove-it |
 | [build-feature](./skills/build-feature) | Driver for a full feature: grill, spec, map, lego DAG, parallel implement, optional prove-it |
+
+### Build pack
+
+These eight work on Claude Code, Codex, Grok, and Cursor (plain `SKILL.md`, copied into each agent’s skills folder). Leaves do not load each other. `/build-feature` is the only composer.
+
+```text
+/build-feature
+  grill-me
+  → design spec (Superpowers path, not committed)
+  → touch-map → reuse-first → lego-plan
+  → implementation plan (lego nodes + DAG, not committed)
+  → parallel same-layer implement
+      (typescript-standards, test-hygiene, reuse-first, docs)
+  → fix-bug if a node is red
+  → optional prove-it
+```
+
+| Skill | Job |
+|---|---|
+| [touch-map](./skills/touch-map) | Map what the change must touch. No code. |
+| [reuse-first](./skills/reuse-first) | Search, import, or extract a helper before writing a new one. |
+| [lego-plan](./skills/lego-plan) | Layered DAG. Plan only. Live board for agents. |
+| [test-hygiene](./skills/test-hygiene) | What and how to test. Tautological tests considered harmful. |
+| [typescript-standards](./skills/typescript-standards) | TypeScript taste for app and library. |
+| [prove-it](./skills/prove-it) | Prove in the browser or a method you pick. Skip means not proved. |
+| [fix-bug](./skills/fix-bug) | Root cause: hypotheses, logs, failing test, then the fix. Optional prove-it. |
+| [build-feature](./skills/build-feature) | Driver. Two approval blocks. Parallel implement. |
+
+A live bug is `/fix-bug`, not `/build-feature`.
 
 ---
 
@@ -115,10 +146,10 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 **How it works:** the rules come from Playful Programming's Art of Accessibility series, WCAG 2.2 AA, the ARIA Authoring Practices patterns, and the WebAIM Million failure data. It ships `hooks/a11y-guard.js`, a `PreToolUse` hook that reads the markup you are about to write and reports the specific defects (`outline: none` with no replacement, click handlers on divs, positive `tabindex`, missing alt, blocked pinch zoom, single-key shortcuts with no off switch). It never blocks and says nothing when the code is clean. The hook exists because pressure-testing proved a skill cannot enforce itself: one run never loaded the skill and reported that it had.
 
 ### [touch-map](./skills/touch-map)
-**The map before the plan.** Agents jump to code, or they remap the whole monorepo. This skill only maps: after you have chosen the change, it keeps a committed domain atlas at `.agent/domain-map.json` (big pieces only), then always remaps the small modules and functions for *this* change. If several ways exist, it picks one with a ladder (reuse, stay in domain, no new layer, then fewest files), not a god-file shortcut. It stops after the six-section finish-line list. A later workflow skill sequences it with the other build skills.
+**The map before the plan.** Agents jump to code, or they remap the whole monorepo. This skill only maps: after you have chosen the change, it keeps a committed domain atlas at `.agent/domain-map.json` (big pieces only), then always remaps the small modules and functions for *this* change. If several ways exist, it picks one with a ladder (reuse, stay in domain, no new layer, then fewest files), not a god-file shortcut. It stops after the six-section finish-line list. `/build-feature` sequences it with the other build skills.
 
 ### [reuse-first](./skills/reuse-first)
-**Do not write `isRecord` again.** Before a new helper, search the current package, neighbors, and shared utils by *job*, not by the name the agent wanted. Exact match: import it. Close match: extend it if it is still the same job. Two copies of the same `if` in opened files: extract one function and replace those copies. Domain helpers stay next to the type (`isCancelledOrder` in `order.ts`). Generic helpers go to the repo’s utils home on the first write, so `order.ts` does not grow a 400-line util header. The skill prints one `reuse:` line, acts, and stops. A later workflow skill sequences it with the other build skills.
+**Do not write `isRecord` again.** Before a new helper, search the current package, neighbors, and shared utils by *job*, not by the name the agent wanted. Exact match: import it. Close match: extend it if it is still the same job. Two copies of the same `if` in opened files: extract one function and replace those copies. Domain helpers stay next to the type (`isCancelledOrder` in `order.ts`). Generic helpers go to the repo’s utils home on the first write, so `order.ts` does not grow a 400-line util header. The skill prints one `reuse:` line, acts, and stops. `/build-feature` sequences it with the other build skills.
 
 ### [lego-plan](./skills/lego-plan)
 **A pyramid you can fan out.** After the change is chosen, this writes a layered DAG: layer 0 is independent primitives a driver can run in parallel, later layers only depend on earlier ones, the last layer is the feature working. Nodes are subagent-sized (`fetchOrder`, `OrderCard`, `wire the loader`). Inside a node, ordered parts must compile together and stay on one worker. Last part is the node test. Same-file writes cannot share a layer. Each node has a stable id, files, parts, a done-when check, and `status: pending`. Chat always has Mermaid plus a JSON fence (same ids). Agents also get `.agent/scratch/lego-plan.json` so a later driver can flip status and redraw the graph. Plan only. No code, no dispatch.
@@ -193,7 +224,7 @@ cp -r /tmp/alem-skills/skills/* ~/.claude/skills/
 mkdir -p .claude/skills && cp -r /tmp/alem-skills/skills/blog-post .claude/skills/
 ```
 
-Drop-in skills are invoked as `/blog-post`, `/changelog`, etc.
+Drop-in skills are invoked as `/blog-post`, `/build-feature`, `/changelog`, etc.
 
 ### GitHub Copilot CLI
 
@@ -209,17 +240,26 @@ Docs: [Adding agent skills for GitHub Copilot CLI](https://docs.github.com/en/co
 
 ### OpenAI Codex CLI
 
-Discovery paths (in precedence order): `$CWD/.agents/skills`, `$REPO_ROOT/.agents/skills`, `~/.agents/skills`, `/etc/codex/skills`.
+Discovery paths (in precedence order): `$CWD/.agents/skills`, `$REPO_ROOT/.agents/skills`, `~/.agents/skills`, `/etc/codex/skills`. If your other Codex skills already live in `~/.codex/skills/`, copy there too so the pack sits next to them.
 
 ```bash
 git clone git@github.com:alemtuzlak/skills.git /tmp/alem-skills
-mkdir -p ~/.agents/skills
+mkdir -p ~/.agents/skills ~/.codex/skills
 cp -r /tmp/alem-skills/skills/* ~/.agents/skills/
+cp -r /tmp/alem-skills/skills/* ~/.codex/skills/
 ```
 
 Optional per-skill `agents/openai.yaml` files can add Codex-specific UI metadata, invocation policy, and tool dependencies. None are required for the skills to work.
 
 Docs: [Agent Skills for OpenAI Codex](https://developers.openai.com/codex/skills).
+
+### Grok
+
+```bash
+git clone git@github.com:alemtuzlak/skills.git /tmp/alem-skills
+mkdir -p ~/.grok/skills
+cp -r /tmp/alem-skills/skills/* ~/.grok/skills/
+```
 
 ### Google Gemini CLI
 
@@ -290,6 +330,9 @@ Once installed, just describe what you want. The agent picks the right skill fro
 
 > Full launch content for #1234: brief, blog, tweet, newsletter
    → triggers marketing-pipeline
+
+> implement the order list
+   → triggers build-feature
 ```
 
 Or invoke explicitly:
@@ -299,6 +342,8 @@ Or invoke explicitly:
 /blog-post .tmp/marketing-brief.md
 /changelog v1.4.0...v1.5.0
 /marketing-pipeline #1234
+/build-feature
+/fix-bug
 ```
 
 ---
