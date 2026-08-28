@@ -4,11 +4,11 @@ Run `/typescript-standards` when writing or reviewing TypeScript. App or library
 
 ## What it does
 
-- **Infers at the call site.** No `<T>` in calls. No overloads. One signature, conditional return if needed.
-- **Bans sloppy casts.** No `as any` or `as unknown as X`. `as const` only to stop a literal widening to `string`.
-- **Keeps functions extendable.** First arg is the value. Extra flags go in options when a boolean is magic. `add(a, b)` stays two args.
-- **Reuses types.** Search this package and neighbors before a new `type` / `interface`.
-- **Limits extras.** Custom errors only where callers `instanceof`. No `export *`. Fix this skill’s smells only in the file you opened.
+- **Infers.** No `<T>` in calls. No overloads. No return-type annotation. Callbacks in `map` infer. `filter` uses `value is X`.
+- **Constrains with types.** Required args if the body cannot run without them. Pipe `B` through callers of `A`. Match `null` vs `undefined` to the next function. Named conditions. Early returns. Exhaustive `switch` for 3+ branches.
+- **Keeps call sites simple.** Options object for magic booleans. Assign the list, then loop. Flat spreads. Convert shapes once at a boundary, not in every spread.
+- **Documents public functions** with TSDoc (what, args, how to call). Custom errors only where callers `instanceof`.
+- **Bans sloppy casts and barrels.** Search this package for a type before inventing a second `Order`. Fix this skill’s smells only in the file you opened.
 
 It does not place helpers, and it does not add `debug` flags.
 

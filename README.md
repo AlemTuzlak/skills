@@ -124,7 +124,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 **Tautological tests considered harmful.** This is what and how to test, in one skill. A test that still passes after you delete the production logic is not a test. Pin observable behavior (return, throw, UI, real side effect): the critical path plus distinct runtime edges, not type-impossible inputs, not the same helper replayed in five files. No snapshots. Mock I/O only, never your own modules. Then the file craft: helpers over copy-paste, no `as any`, top-level imports, clean the file you touch. Replaces older `test-hygiene` copies in personal skill dirs.
 
 ### [typescript-standards](./skills/typescript-standards)
-**Callers write JavaScript. You hide the types.** One taste file for app and library TypeScript. Call sites never pass `<T>`. No overloads. No `as any` / `as unknown as X`. `as const` only to keep a literal from becoming `string`. First arg is the value; magic booleans become an options object. Search this package for a type before inventing `Order` again. Custom errors only where callers catch them. No `export *`. Does not place helpers and does not add `debug` flags.
+**Callers write JavaScript. You hide the types.** One taste file for app and library TypeScript. Call sites never pass `<T>`. No overloads. No return-type annotations. No `as any` / `as unknown as X`. `as const` only to keep a literal from becoming `string`. Pipe the same type through callers. Required args if the body cannot run without them. Named conditions, early returns, exhaustive `switch` for 3+ branches. TSDoc on public functions. Infer `map` callbacks. `filter` with `value is X`. Flat spreads and one nullish style. Does not place helpers and does not add `debug` flags.
 
 ---
 
