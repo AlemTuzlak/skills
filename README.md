@@ -44,6 +44,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [i-have-adhd](./skills/i-have-adhd) | ADHD-shaped output: next action first, numbered steps, lists capped at 5. Also the writing filter `docs` loads before pages |
 | [accessible-html](./skills/accessible-html) | Accessible markup by default: loads on any UI code, plus a hook that catches defects as they are written |
 | [tanstack-branding](./skills/tanstack-branding) | TanStack brand kit: exact tokens, category accents, contrast data, plus the real logo and font files |
+| [touch-map](./skills/touch-map) | Mental map of what a behavior change must touch, before an implementation plan or any code |
 
 ---
 
@@ -105,6 +106,9 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 **Accessibility as a writing habit, not an audit.** Accessible markup rarely fails from ignorance: it fails because someone knew the rule and skipped it at 5pm. So this skill loads on any UI code (HTML, JSX/TSX, Vue, Svelte, Angular templates, CSS that touches focus, contrast, motion, or hit area) and on element names like button, modal, dropdown, or any click handler, not just on the word "accessibility". It keeps the load-bearing rules in `SKILL.md` where they get read, gates its reference files behind a trigger table, and names the required parts of each widget so a dialog without focus return or a `role="menu"` without arrow keys reads as unfinished. It also handles the ugly real case: adding to a file that is already broken and marked "do not refactor".
 
 **How it works:** the rules come from Playful Programming's Art of Accessibility series, WCAG 2.2 AA, the ARIA Authoring Practices patterns, and the WebAIM Million failure data. It ships `hooks/a11y-guard.js`, a `PreToolUse` hook that reads the markup you are about to write and reports the specific defects (`outline: none` with no replacement, click handlers on divs, positive `tabindex`, missing alt, blocked pinch zoom, single-key shortcuts with no off switch). It never blocks and says nothing when the code is clean. The hook exists because pressure-testing proved a skill cannot enforce itself: one run never loaded the skill and reported that it had.
+
+### [touch-map](./skills/touch-map)
+**The map before the plan.** Agents jump to code, or they remap the whole monorepo. This skill sits in the middle: after you have chosen the change, before Lego blocks or implementation. It keeps a committed domain atlas at `.agent/domain-map.json` (big pieces only), then always remaps the small modules and functions for *this* change. If several ways exist, it picks one with a ladder (reuse, stay in domain, no new layer, then fewest files), not a god-file shortcut. Run it alone to get the finish-line file list. Run it as part of "implement this" and it hands off to `lego-plan` with no code yet.
 
 ---
 
@@ -298,6 +302,7 @@ Or invoke explicitly:
 │   ├── remotion-video/       # multi-file: patterns/, templates/, hooks/, references/
 │   ├── rfc/SKILL.md
 │   ├── to-prd/               # multi-file: assets/prd-template.md (EEP spec)
+│   ├── touch-map/SKILL.md    # domain atlas + per-change files-to-touch map
 │   ├── social-copy/          # multi-file: platforms/
 │   ├── teach-me/             # multi-file: assets/ (HTML mini-course builder)
 │   ├── transcribe-video/     # multi-file: bundled local Whisper service
