@@ -49,6 +49,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [lego-plan](./skills/lego-plan) | Layered DAG from simple primitives to a working feature; plan only, live board for agents |
 | [test-hygiene](./skills/test-hygiene) | What and how to test: tautological tests considered harmful, real pins, clean test files |
 | [typescript-standards](./skills/typescript-standards) | TypeScript taste: infer at the call site, no overloads, no sloppy casts, app or library |
+| [prove-it](./skills/prove-it) | Prove a change in the browser or via a method you pick; skip means not proved |
 
 ---
 
@@ -125,6 +126,9 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 
 ### [typescript-standards](./skills/typescript-standards)
 **Callers write JavaScript. You hide the types.** One taste file for app and library TypeScript. Call sites never pass `<T>`. No overloads. No return-type annotations. No `as any` / `as unknown as X`. `as const` only to keep a literal from becoming `string`. Pipe the same type through callers. Required args if the body cannot run without them. Named conditions, early returns, exhaustive `switch` for 3+ branches. TSDoc on public functions. Infer `map` callbacks. `filter` with `value is X`. Flat spreads and one nullish style. Does not place helpers and does not add `debug` flags.
+
+### [prove-it](./skills/prove-it)
+**Prove it like a person, and only when you ask.** `/prove-it` or “prove the changes.” Not a silent done-gate. UI: click through the app, related routes, empty/error if they exist, both viewports if layout changed. Server/API: the agent asks how (playground, example app, curl, or skip) and waits. Skip means not proved, not “it works.” Optional screenshot report in `.agent/scratch/`. Existing `dev` command only, then it is stopped. No new Playwright or example package unless you said yes.
 
 ---
 
@@ -313,6 +317,7 @@ Or invoke explicitly:
 │   ├── marketing-brief/SKILL.md
 │   ├── marketing-pipeline/SKILL.md
 │   ├── newsletter/SKILL.md
+│   ├── prove-it/SKILL.md     # prove UI in the browser, or ask how to prove an API
 │   ├── presentation/         # multi-file: references/, assets/ (Shiki+Mermaid render helper)
 │   ├── pr-description/SKILL.md
 │   ├── produce-video/SKILL.md
