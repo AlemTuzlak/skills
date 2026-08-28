@@ -7,7 +7,7 @@ description: Use when a bug is in play: a test fails, CI is red, an API returns 
 
 Find the root cause. Do not patch a symptom. App or library does not change this.
 
-This skill does not load other skills. It does not overwrite CopilotKit debug skills.
+This skill loads `prove-it` only after a green fix, and only if the user picks it or already asked to prove. It does not overwrite CopilotKit debug skills.
 
 ## When To Use
 
@@ -23,6 +23,7 @@ Skip greenfield features with no failure. Skip docs and types-only edits.
 4. **When the cause is pinned: delete every log this skill added, and turn third-party debug off.** Then write the failing test. Then fix. Logs must not land in the fix.
 5. **Do not skip, delete, or disable the failing test** to go green. Do not swallow the error (`|| true`, empty catch). Do not raise a timeout to hide a race.
 6. **Fix the root cause**, plus the same pattern in that file / nearby module. No extra refactor.
+7. **Do not load `prove-it` unless the user picks it, or already asked to prove this fix.** A green suite is not proof. Default is skip.
 
 ## Hot path
 
@@ -61,17 +62,28 @@ Start there. **Eliminate.** Narrow. Widen only if every hypothesis on that path 
 4. Run that test (green). Then run the existing tests for this package / this file’s suite.
 5. If a new failure appears, treat it as a new bug. Start at Procedure 1. Do not ship the first fix on top of a new break.
 
-### Procedure 5: Stop
+### Procedure 5: Optional prove-it
 
-After the suite for this package is green and logs are gone, stop. Do not claim “proved in the browser” unless the user asked for that separately.
+1. After the suite for this package is green and logs are gone, **ask once**. Options: load `prove-it`, or skip. Default **skip**.
+2. Wait. Do not load `prove-it` until they pick.
+3. If they already asked to prove this fix in this conversation, skip the ask. Load `prove-it`.
+4. If **skip:** say the fix is **not proved** as a user path. Do not treat the green suite as proof. Procedure 6.
+5. If they pick `prove-it`: load `prove-it` and follow it. Then Procedure 6.
+6. Do not click through the app, curl the API, or write a proof report inside this skill. That work belongs to `prove-it`.
+
+### Procedure 6: Stop
+
+After skip, or after `prove-it` returns, stop.
 
 ## Decision Tree
 
-- Failure in play → Procedure 1 → 2 → 3 → 4 → 5.
+- Failure in play → Procedure 1 → 2 → 3 → 4 → 5 → 6.
 - Cannot reproduce → stop. Say not reproduced. Ask for steps. Do not guess-fix.
 - Logs kill every hot-path hypothesis → widen, Procedure 2 again.
 - Test still red after the fix → wrong cause. Revert the fix. Back to Procedure 2.
 - Same pattern in the next function → fix it in this same change (Hard gate 6).
+- Suite green, no prove ask yet → Procedure 5 (ask, default skip).
+- User already asked to prove this fix → load `prove-it`, then Procedure 6.
 
 ## Red Flags
 
@@ -87,6 +99,9 @@ After the suite for this package is green and logs are gone, stop. Do not claim 
 | Refactor while fixing | Drive-by | Root cause + same pattern only. |
 | Whole-monorepo test run | Unasked | This package / this suite. |
 | “Works on my machine” | Different env | Same command / same conditions as the failure. |
+| Loading `prove-it` with no ask | Unasked proof | Procedure 5. Default skip. |
+| Mini browser pass inside this skill | Duplicate of `prove-it` | Load `prove-it` after they pick it. |
+| “Tests passed, so it is proved” | Green suite treated as proof | Procedure 5. Skip means not proved. |
 
 ## Error Handling
 
@@ -95,5 +110,7 @@ After the suite for this package is green and logs are gone, stop. Do not claim 
 - **Logs are huge:** log only the hypothesized branches, not every line in the file.
 - **Failing test cannot be written yet** (no harness): a one-file script that asserts the bug is the stand-in. Still red, then fix, then green.
 - **Fix makes a different test fail:** Procedure 1 on that failure. Do not push the first fix until the cascade is resolved.
+- **`prove-it` is missing on this agent:** say so. Offer skip. Do not invent a second prove procedure here.
+- **They pick `prove-it`, then skip inside it:** the fix is not proved. Procedure 6.
 
-This skill does not place helpers, write docs, or start a prove-it pass unless the user asked.
+This skill does not place helpers or write docs. Proof is Procedure 5 only.

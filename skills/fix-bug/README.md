@@ -9,6 +9,7 @@ Load when something is actually failing. Do not use it to design a new feature.
 - Logs before and after those paths, **eliminates** from the output, narrows.
 - **Deletes the logs** (and debug flags), writes a **failing test**, then fixes the root cause and the same pattern nearby.
 - Re-runs that test, then this package / this file’s suite.
+- After the suite is green, **asks once** to load `prove-it`. Skip is the default. A green suite is not proof.
 
 No skipped tests, no swallowed errors, no timeout-as-fix.
 
@@ -23,4 +24,4 @@ fix this
 
 ## Output
 
-A root-cause fix and a test that was red, then green. No leftover debug logs in the diff.
+A root-cause fix and a test that was red, then green. No leftover debug logs in the diff. Optional `prove-it` only if you pick it.
