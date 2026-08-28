@@ -5,8 +5,6 @@ description: Use when writing, modifying, or working near test code, when tests 
 
 # Test Hygiene
 
-Tautological tests considered harmful
-
 This skill owns **what** a test pins and **how** the test file is written. It replaces any older `test-hygiene` copy.
 
 <HARD-GATE>
