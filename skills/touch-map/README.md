@@ -2,7 +2,7 @@
 
 Map what a behavior change must touch before anyone writes an implementation plan or code.
 
-Use this after the feature or fix is chosen, and before `lego-plan`. Run it alone when you only want the finish-line list.
+Use this after the feature or fix is chosen. It only maps. A later workflow skill can chain it with planning and build skills.
 
 ## What it does
 
@@ -10,7 +10,7 @@ Use this after the feature or fix is chosen, and before `lego-plan`. Run it alon
 - **Reads a domain atlas** at `.agent/domain-map.json` (creates one on first run from packages or top-level source folders). That file is domain grain only: `id`, `owns`, `talksTo`.
 - **Zooms into this change.** Names modules, existing functions and types, and the files you must touch. Stops reading when the file list stops changing.
 - **Picks one path** when several exist, in this order: reuse what exists, stay in the hit domain(s), no new package/layer/public API, then fewest files.
-- **Hands off or stops.** Alone: the six-section map is the product. For an implementation plan: load `lego-plan` next. Never writes code.
+- **Stops after the map.** The six-section map is the product. It does not load the next skill. It never writes code.
 
 ## Usage
 
@@ -18,8 +18,6 @@ Use this after the feature or fix is chosen, and before `lego-plan`. Run it alon
 /touch-map
 /touch-map what does adding retry to the fetch client touch
 ```
-
-Or, after grill: "implement this" → this skill maps → `lego-plan` stacks blocks.
 
 Skip it for typos, comments, formatting, lockfile-only, and docs with no code.
 

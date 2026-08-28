@@ -5,9 +5,9 @@ description: Use when the change intent is already settled and the agent must ma
 
 # Touch Map
 
-Build a mental map of what this change must touch to finish. Do not write an implementation plan. Do not write code.
+Build a mental map of what this change must touch to finish. Do not write an implementation plan. Do not write code. Do not load the next skill in a pipeline. A later workflow skill sequences this map with other skills.
 
-This skill sits after settled intent (grill if needed) and before `lego-plan`. Used alone, the map is the product: the parts and files required to get the change over the line.
+The map is the product: the parts and files required to get the change over the line.
 
 ## When To Use
 
@@ -15,14 +15,14 @@ Load after the user has decided **what** the change is, and any **how** they alr
 
 - **Run for:** a new feature, a bug fix, a refactor that moves a boundary.
 - **Skip:** typos, comments, formatting, lockfile-only, docs with no code.
-- **If intent is still open** ("implement X", "use grill-me to implement this"): grill first. Then load this skill. Do not map a feature that is not chosen yet.
+- **If intent is still open** ("implement X" with no chosen behavior): stop. Ask until the change is settled. Then map. Do not map a feature that is not chosen yet.
 
 ## Hard Gates
 
-1. **No code.** This skill maps. `lego-plan` stacks blocks. Code comes after both.
-2. **Show the map and continue.** Do not wait for approval. The user interrupts if the map is wrong.
+1. **No code and no next skill.** This skill maps. It does not plan blocks. It does not implement.
+2. **Show the map and stop.** Do not wait for approval. The user interrupts if the map is wrong.
 3. **Do not read `coupling.json`.** That is a later, separate check.
-4. **Do not hunt the whole repo for utils.** Record reuse the agent actually saw in the hit domain(s). `reuse-first` does the real search later.
+4. **Do not hunt the whole repo for utils.** Record reuse the agent actually saw in the hit domain(s). A later skill owns the full search.
 
 ## Persistent Atlas
 
@@ -54,7 +54,7 @@ Committed with the repo. Domain grain only. Function names do not belong here.
 ### Procedure 1: Confirm settled intent
 
 1. If the change is already clear (named bug, named function, named behavior), continue.
-2. If the user is still choosing what they want, stop mapping. Load `grill-me` (or ask). Return here after intent is settled.
+2. If the user is still choosing what they want, stop mapping. Ask until intent is settled. Then return here.
 
 ### Procedure 2: Load or bootstrap the atlas
 
@@ -104,10 +104,10 @@ Show these six sections, in this order. Do not write a per-task markdown file.
 5. **Will not touch** — explicit. Stops drive-by edits.
 6. **Path pick** — one line if there was one path. If there were several, the winner and the ladder step.
 
-### Procedure 7: Stop or hand off
+### Procedure 7: Stop
 
-1. If this skill was invoked **alone** (`/touch-map`, "what do we need to touch?"): stop after Procedure 6. Do not load `lego-plan`. Do not write code.
-2. If the job is an **implementation plan** ("implement this", grill already finished, `implement-feature`): load `lego-plan` next. Pass the six sections. Do not write code.
+1. After Procedure 6, stop.
+2. Do not write code. Do not load another skill from this one.
 
 ## Decision Tree
 
@@ -116,7 +116,6 @@ Show these six sections, in this order. Do not write a per-task markdown file.
 - Typo / comment / format / lockfile / docs-only → this skill does not apply.
 - Atlas file missing → Procedure 2 step 2 (bootstrap), then continue.
 - One path vs many paths → Procedure 4.
-- Invoked alone vs implementation-plan job → Procedure 7.
 
 ## Red Flags
 
@@ -124,10 +123,11 @@ Show these six sections, in this order. Do not write a per-task markdown file.
 |---|---|---|
 | Mapping before the user chose the feature | Intent is not settled | Procedure 1. Grill first. |
 | Opening every file in `owns` | Tour, not a map | Procedure 3: stop when the file list is stable. |
-| Grepping the monorepo for `isRecord` | This is `reuse-first` | Record only reuse already seen. |
+| Grepping the monorepo for `isRecord` | Full search is a different skill | Record only reuse already seen. |
 | Reading `coupling.json` | Wrong file | Leave that check for later. |
-| Waiting for "looks good?" on the map | Gate is show-and-continue | Show the six sections and continue. |
-| Starting to code after the map | Skipped `lego-plan` | Procedure 7. No code. |
+| Waiting for "looks good?" on the map | Gate is show-and-stop | Show the six sections and stop. |
+| Starting to code after the map | This skill only maps | Procedure 7. No code. |
+| Loading the next pipeline skill from here | Leaves compose at the workflow | Stop. Let the workflow skill sequence. |
 | Writing `.agent/touch-maps/<task>.md` | Stale task junk | Chat (or session) only. Atlas file is the only persist. |
 | Editing the atlas because a helper was added | Function grain in the atlas | Leave the atlas. Put the helper in section 2. |
 | Picking the path with fewest files first | God-file trap | Run the full ladder. |
@@ -137,5 +137,4 @@ Show these six sections, in this order. Do not write a per-task markdown file.
 - **Not inside a git repo:** map this change in the six sections. Skip the atlas file. Say that in one line.
 - **Atlas JSON is invalid:** do not guess. Report the parse error. Rebuild from Procedure 2 step 2 only if the user agrees, or fix the JSON if the intent is obvious (trailing comma, missing bracket).
 - **Hit domain is unclear:** pick the smallest set of domains that can own the change. State the doubt in Path pick. Do not invent a new domain for a one-file bug.
-- **`lego-plan` is not installed:** if Procedure 7 would load it, stop after the map and say `lego-plan` is missing. Still do not write code.
-- **User interrupts that the map is wrong:** correct the six sections. Re-run Procedure 4 if the path changed. Then continue from Procedure 7.
+- **User interrupts that the map is wrong:** correct the six sections. Re-run Procedure 4 if the path changed. Then stop.
