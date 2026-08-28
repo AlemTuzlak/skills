@@ -47,6 +47,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [touch-map](./skills/touch-map) | Mental map of what a behavior change must touch, before an implementation plan or any code |
 | [reuse-first](./skills/reuse-first) | Search, import, or extract helpers before writing a new util |
 | [lego-plan](./skills/lego-plan) | Layered DAG from simple primitives to a working feature; plan only, live board for agents |
+| [test-hygiene](./skills/test-hygiene) | What and how to test: tautological tests considered harmful, real pins, clean test files |
 
 ---
 
@@ -117,6 +118,9 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 
 ### [lego-plan](./skills/lego-plan)
 **A pyramid you can fan out.** After the change is chosen, this writes a layered DAG: layer 0 is independent primitives a driver can run in parallel, later layers only depend on earlier ones, the last layer is the feature working. Nodes are subagent-sized (`fetchOrder`, `OrderCard`, `wire the loader`). Inside a node, ordered parts must compile together and stay on one worker. Last part is the node test. Same-file writes cannot share a layer. Each node has a stable id, files, parts, a done-when check, and `status: pending`. Chat always has Mermaid plus a JSON fence (same ids). Agents also get `.agent/scratch/lego-plan.json` so a later driver can flip status and redraw the graph. Plan only. No code, no dispatch.
+
+### [test-hygiene](./skills/test-hygiene)
+**Tautological tests considered harmful.** This is what and how to test, in one skill. A test that still passes after you delete the production logic is not a test. Pin observable behavior (return, throw, UI, real side effect): the critical path plus distinct runtime edges, not type-impossible inputs, not the same helper replayed in five files. No snapshots. Mock I/O only, never your own modules. Then the file craft: helpers over copy-paste, no `as any`, top-level imports, clean the file you touch. Replaces older `test-hygiene` copies in personal skill dirs.
 
 ---
 
@@ -315,6 +319,7 @@ Or invoke explicitly:
 │   ├── touch-map/SKILL.md    # domain atlas + per-change files-to-touch map
 │   ├── social-copy/          # multi-file: platforms/
 │   ├── teach-me/             # multi-file: assets/ (HTML mini-course builder)
+│   ├── test-hygiene/SKILL.md # what and how to test; tautological tests considered harmful
 │   ├── transcribe-video/     # multi-file: bundled local Whisper service
 │   ├── video-script/SKILL.md
 │   └── youtube-copy/SKILL.md
