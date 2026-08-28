@@ -50,6 +50,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [test-hygiene](./skills/test-hygiene) | What and how to test: tautological tests considered harmful, real pins, clean test files |
 | [typescript-standards](./skills/typescript-standards) | TypeScript taste: infer at the call site, no overloads, no sloppy casts, app or library |
 | [prove-it](./skills/prove-it) | Prove a change in the browser or via a method you pick; skip means not proved |
+| [fix-bug](./skills/fix-bug) | Root-cause bug fix: hypotheses on the hot path, logs, then a failing test, then the fix |
 
 ---
 
@@ -129,6 +130,9 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 
 ### [prove-it](./skills/prove-it)
 **Prove it like a person, and only when you ask.** `/prove-it` or “prove the changes.” Not a silent done-gate. UI: click through the app, related routes, empty/error if they exist, both viewports if layout changed. Server/API: the agent asks how (playground, example app, curl, or skip) and waits. Skip means not proved, not “it works.” Optional screenshot report in `.agent/scratch/`. Existing `dev` command only, then it is stopped. No new Playwright or example package unless you said yes.
+
+### [fix-bug](./skills/fix-bug)
+**Logs, then a red test, then the cause.** At least three hypotheses on the hot path, third-party debug if it exists, logs before and after those branches, eliminate, delete the logs, write a failing test, fix the root and the same pattern nearby. Package tests after. Does not copy CopilotKit debug skills.
 
 ---
 
@@ -310,6 +314,7 @@ Or invoke explicitly:
 │   ├── blog-post/SKILL.md
 │   ├── changelog/SKILL.md
 │   ├── docs/SKILL.md
+│   ├── fix-bug/SKILL.md      # root-cause fix: hot-path logs, then failing test
 │   ├── epic-workshop/SKILL.md
 │   ├── i-have-adhd/SKILL.md  # ADHD output style; also a docs writing filter
 │   ├── lego-plan/SKILL.md    # layered DAG implementation plan, plan only
