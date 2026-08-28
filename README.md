@@ -51,6 +51,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [typescript-standards](./skills/typescript-standards) | TypeScript taste: infer at the call site, no overloads, no sloppy casts, app or library |
 | [prove-it](./skills/prove-it) | Prove a change in the browser or via a method you pick; skip means not proved |
 | [fix-bug](./skills/fix-bug) | Root-cause bug fix: hypotheses on the hot path, logs, then a failing test, then the fix; optional prove-it |
+| [build-feature](./skills/build-feature) | Driver for a full feature: grill, spec, map, lego DAG, parallel implement, optional prove-it |
 
 ---
 
@@ -133,6 +134,9 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 
 ### [fix-bug](./skills/fix-bug)
 **Logs, then a red test, then the cause.** At least three hypotheses on the hot path, third-party debug if it exists, logs before and after those branches, eliminate, delete the logs, write a failing test, fix the root and the same pattern nearby. Package tests after. Then it asks once to load `prove-it` (skip is the default). Does not copy CopilotKit debug skills.
+
+### [build-feature](./skills/build-feature)
+**The driver for a whole feature.** `/build-feature` or “implement this.” `grill-me` first (skip if the design is already settled). Two waits: Superpowers design spec, then a `writing-plans` file whose tasks are lego nodes plus the DAG. Neither file is committed. Then `touch-map`, `reuse-first`, `lego-plan`. Same-layer nodes run in parallel. Each worker gets `typescript-standards`, `test-hygiene`, `reuse-first`, and `docs` (one persona list, one tone). A red node runs `fix-bug`. The live DAG redraws in chat. At the end it asks once to load `prove-it`. Not for a bug that is already failing.
 
 ---
 
@@ -312,6 +316,7 @@ Or invoke explicitly:
 │   ├── accessible-html/      # multi-file: references/, hooks/ (PreToolUse a11y guard)
 │   ├── architecture-impact/SKILL.md
 │   ├── blog-post/SKILL.md
+│   ├── build-feature/SKILL.md # driver: grill, spec, map, lego DAG, parallel implement
 │   ├── changelog/SKILL.md
 │   ├── docs/SKILL.md
 │   ├── fix-bug/SKILL.md      # root-cause fix: hot-path logs, then failing test
