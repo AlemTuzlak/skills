@@ -45,6 +45,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [accessible-html](./skills/accessible-html) | Accessible markup by default: loads on any UI code, plus a hook that catches defects as they are written |
 | [tanstack-branding](./skills/tanstack-branding) | TanStack brand kit: exact tokens, category accents, contrast data, plus the real logo and font files |
 | [touch-map](./skills/touch-map) | Mental map of what a behavior change must touch, before an implementation plan or any code |
+| [reuse-first](./skills/reuse-first) | Search, import, or extract helpers before writing a new util |
 
 ---
 
@@ -109,6 +110,9 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 
 ### [touch-map](./skills/touch-map)
 **The map before the plan.** Agents jump to code, or they remap the whole monorepo. This skill only maps: after you have chosen the change, it keeps a committed domain atlas at `.agent/domain-map.json` (big pieces only), then always remaps the small modules and functions for *this* change. If several ways exist, it picks one with a ladder (reuse, stay in domain, no new layer, then fewest files), not a god-file shortcut. It stops after the six-section finish-line list. A later workflow skill sequences it with the other build skills.
+
+### [reuse-first](./skills/reuse-first)
+**Do not write `isRecord` again.** Before a new helper, search the current package, neighbors, and shared utils by *job*, not by the name the agent wanted. Exact match: import it. Close match: extend it if it is still the same job. Two copies of the same `if` in opened files: extract one function and replace those copies. Domain helpers stay next to the type (`isCancelledOrder` in `order.ts`). Generic helpers go to the repo’s utils home on the first write, so `order.ts` does not grow a 400-line util header. The skill prints one `reuse:` line, acts, and stops. A later workflow skill sequences it with the other build skills.
 
 ---
 
@@ -300,6 +304,7 @@ Or invoke explicitly:
 │   ├── pr-description/SKILL.md
 │   ├── produce-video/SKILL.md
 │   ├── remotion-video/       # multi-file: patterns/, templates/, hooks/, references/
+│   ├── reuse-first/SKILL.md  # search/import/extract helpers before writing a util
 │   ├── rfc/SKILL.md
 │   ├── to-prd/               # multi-file: assets/prd-template.md (EEP spec)
 │   ├── touch-map/SKILL.md    # domain atlas + per-change files-to-touch map
