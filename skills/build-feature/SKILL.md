@@ -24,6 +24,7 @@ Skip if a failure is already in play. That job is `fix-bug`. Skip typos, comment
 5. **Same-layer nodes run in parallel.** Do not use Superpowers `subagent-driven-development` as the dispatcher (that loop is one task, then review, then the next).
 6. **Every implementer subagent must be told to load** `typescript-standards`, `test-hygiene`, `reuse-first`, and `docs`. Pass the confirmed reader list and tone. Workers do not re-ask persona or tone. Workers do not get `grill-me`, `touch-map`, `lego-plan`, `writing-plans`, or `prove-it`.
 7. **Do not load `prove-it` until the end ask.** Default skip. A green DAG is not proof.
+8. **The driver paints. Subagents never paint.** After every live-board status change, the next user-visible message MUST contain a full Mermaid of the board. `done` nodes are green (`:::done`). A JSON write, a prose recap, a todo list, or waiting until the layer (or the whole run) ends does not count. If several subagents return in one wake, paint once with every new status. Do not skip the fence because more than one finished.
 
 ## Flow
 
@@ -36,11 +37,41 @@ grill-me (or skip if design is already settled)
   → lego-plan
   → writing-plans file from the DAG, open, wait  [block 2]
   → one tone gate if any node writes docs pages
-  → implement layers in parallel, redraw DAG
+  → implement layers in parallel; driver paints DAG after each return
   → optional prove-it
 ```
 
-Load each named skill and follow it. Overrides in this file win where they conflict (`writing-plans` grain, no sequential dispatcher, do not commit those two files).
+Load each named skill and follow it. Overrides in this file win where they conflict (`writing-plans` grain, no sequential dispatcher, do not commit those two files, driver paints the live DAG). `lego-plan` forbids `classDef` on the **plan** emit. This driver paint is the exception.
+
+## Paint the live DAG
+
+The user-facing product during implement is the **colored Mermaid**, not the JSON.
+
+The **driver** (this conversation, the main agent) paints. A worker subagent must not emit the live DAG. Ignore a worker mermaid if one appears.
+
+Paint after:
+1. Setting a ready layer to `in-progress`, **before** spawn.
+2. **Each** subagent return (this conversation wakes). First actions: update JSON from `done when`, then paint in the user-visible reply, then continue.
+3. Marking a node red.
+
+The paint is a fenced `mermaid` block in chat. Tool logs and subagent transcripts are not the paint.
+
+Form (ids match the live board; apply `:::pending` / `:::inprogress` / `:::done` / `:::failed` from JSON `status`):
+
+```mermaid
+flowchart TD
+  classDef pending fill:#e5e7eb,stroke:#9ca3af,color:#111
+  classDef inprogress fill:#fde68a,stroke:#d97706,color:#111
+  classDef done fill:#86efac,stroke:#16a34a,color:#111
+  classDef failed fill:#fca5a5,stroke:#dc2626,color:#111
+  fetch-order[fetch-order]:::done
+  order-card[order-card]:::inprogress
+  wire-loader[wire-loader]:::pending
+  fetch-order --> wire-loader
+  order-card --> wire-loader
+```
+
+Keep every node and the same edges. Do not drop finished nodes. `:::done` is green so the user can see what landed.
 
 ## Procedures
 
@@ -92,7 +123,7 @@ Load each named skill and follow it. Overrides in this file win where they confl
 1. If any node `files` include docs pages, and tone is not already chosen in this conversation: one tone gate from `docs`. Stop. Then continue.
 2. If no docs pages: skip tone.
 3. Ready layer = every `pending` node whose `depends` are all `done` (empty depends = ready).
-4. Set those nodes to `in-progress` in `.agent/scratch/lego-plan.json`. Redraw the DAG in chat (ids stable, label each status).
+4. Set those nodes to `in-progress` in `.agent/scratch/lego-plan.json`. **Paint the live DAG** (see above). Then spawn.
 5. Spawn **one subagent per in-progress node**, in parallel. Each prompt must include:
    - node id, name, files, ordered parts, done-when
    - the spec path and the relevant spec facts
@@ -100,8 +131,9 @@ Load each named skill and follow it. Overrides in this file win where they confl
    - **Load these skills and follow them:** `typescript-standards`, `test-hygiene`, `reuse-first`, `docs`
    - do not edit paths outside `files`
    - do not re-plan, do not grill, do not re-ask persona or tone
-6. When a node’s `done when` is green: set `done`. Update the JSON. Redraw the DAG in chat.
-7. If `done when` is red or the subagent errors: keep other in-progress nodes running. Load `fix-bug` for that node (driver or a subagent with the same file list). Do not start the next layer until every node in this layer is `done`, or the user stops the run.
+   - do not paint the live DAG (the driver paints)
+6. When a subagent returns, the **main agent** does this **before** any other user-facing text: run that node’s `done when`; set `done` or red; update the JSON; **Paint the live DAG**. Then spawn the next layer only if this layer is all `done`. Do not hold the paint until the layer or the run ends.
+7. If `done when` is red or the subagent errors: keep other in-progress nodes running. Paint with `:::failed` on that node. Load `fix-bug` for that node (driver or a subagent with the same file list). Do not start the next layer until every node in this layer is `done`, or the user stops the run.
 8. Repeat from step 3 until every node is `done`.
 9. Procedure 8.
 
@@ -125,7 +157,8 @@ Stop. Do not start unrelated work.
 - Spec already approved in this conversation → skip plan-1 wait.
 - No docs pages in the DAG → skip tone.
 - Layer has 2+ ready nodes → parallel (Hard gate 5).
-- Node red → `fix-bug`; rest of layer continues.
+- Subagent returned → Procedure 7 step 6 (paint first).
+- Node red → `fix-bug`; rest of layer continues. Paint `:::failed`.
 - All nodes `done` → Procedure 8.
 
 ## Red Flags
@@ -143,6 +176,11 @@ Stop. Do not start unrelated work.
 | Next layer while a node is still `in-progress` | Broke the DAG | Procedure 7 step 7. |
 | Skipping `reuse-first` before `lego-plan` | DAG invents existing helpers | Procedure 5 step 2. |
 | Running this on “fix this failing test” | Wrong skill | Procedure 1. |
+| Subagent returned and chat has no new Mermaid | Hard gate 8 missed | Paint now. Then continue. |
+| Prose “node X is done” with no fence | Recap is not the board | Paint the live DAG. |
+| One paint after the whole layer or the whole run | User cannot see progress | Paint after each return. |
+| Unstyled mermaid during implement | Plan emit leaked into the live board | `:::done` is green. |
+| Worker mermaid treated as the paint | Wrong painter | Driver paints. Ignore the worker fence. |
 
 ## Error Handling
 
@@ -154,3 +192,5 @@ Stop. Do not start unrelated work.
 - **User stops the run mid-layer:** stop dispatch. Leave the live board as it is. Do not mark skipped nodes `done`.
 - **`prove-it` missing:** say so. Offer skip. Do not invent a second prove procedure.
 - **They pick `prove-it`, then skip inside it:** not proved. Procedure 9.
+- **Paint omitted from a completion message:** emit the painted DAG immediately. Do not start the next layer until that fence is in chat.
+- **Harness wakes once for several finished workers:** update every returned node, then paint once. Do not skip because the wake was a batch.

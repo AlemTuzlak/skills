@@ -8,7 +8,7 @@ Run `/build-feature` (or ask to implement a feature). This skill is the driver f
 - **Blocks twice.** Plan 1 is a design spec under `docs/superpowers/specs/`. Plan 2 is a Superpowers `writing-plans` file whose tasks are lego **nodes**, plus the DAG. Both files are opened. Neither is committed. Silence is not approval.
 - **Maps, then reuses, then legos:** `touch-map` → `reuse-first` once → `lego-plan`.
 - **`docs` once for readers** (persona gate, then stop). **One tone gate** before any page is written. Node workers do not re-ask.
-- **Implements** same-layer nodes in parallel. Each subagent must load `typescript-standards`, `test-hygiene`, `reuse-first`, and `docs`. The DAG redraws in chat as `pending` → `in-progress` → `done`.
+- **Implements** same-layer nodes in parallel. Each subagent must load `typescript-standards`, `test-hygiene`, `reuse-first`, and `docs`. The **main agent** paints the live DAG in chat after each subagent return. `done` nodes are green.
 - A red node runs `fix-bug`. The rest of that layer keeps going. The next layer waits.
 - After every node is `done`, **asks once** to load `prove-it`. Skip is the default.
 
