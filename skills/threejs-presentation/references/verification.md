@@ -18,7 +18,7 @@ Verify the **running talk**, not only the source.
 
 | Check | Fail when | Fix |
 |-------|-----------|-----|
-| **Keys** | arrows step the glass, or Enter changes slides | restore Zurich keys |
+| **Keys** | arrows step the glass, or Enter changes slides | restore talk keys |
 | **Counter** | `n / N` missing | Hud always mounts the counter |
 | **Timer** | visible at load, or `T` ignored when timer is on | hide until first `T`; wire `toggleTimer` |
 | **Flat** | `?flat` shows different text than the glass | one painter for both |

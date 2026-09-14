@@ -43,7 +43,7 @@ Do not copy those rules into this skill.
    stage fallback.
 4. **Blockout first.** Three.js primitives and CC0 models so `npm run dev` works in
    the same session. Blender is a later pass, only if the user asks.
-5. **Zurich keys.** Arrows move one slide. Enter / Backspace step the glass.
+5. **Talk keys.** Arrows move one slide. Enter / Backspace step the glass.
    Counter always on. Space does nothing. `f` is fullscreen. `?slide=id` deep-links.
 6. **Timer is optional.** Hidden at load. `T` starts count-up. `T` again stops
    and leaves the time on screen. If the user said no timer, `T` does nothing.

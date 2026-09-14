@@ -12,7 +12,7 @@ Copy `template/` into the talk folder. Do not generate a Vite app from scratch.
 - Optional timer (`T` start, `T` stop)
 - `?flat` (same painter, no WebGL)
 - `?slide=id`
-- Zurich keys: arrows = slide, Enter / Backspace = step, `f` = fullscreen,
+- Talk keys: arrows = slide, Enter / Backspace = step, `f` = fullscreen,
   Space unbound
 - `src/scene/World.jsx` as the world slot (blockout, later GLB)
 - Offline, seeded, deterministic

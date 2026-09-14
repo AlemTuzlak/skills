@@ -56,4 +56,4 @@ lines. Detail in `notes`.
 Most slides: a catalog form that **fills the surface**.
 
 Punch slides: the camera shows the world or a 3D mechanism. Do not put a chart
-as tiny objects in the room. Zurich JS measured that. Data fills the glass.
+as tiny objects in the room. Data in the room is not readable from the hall. Data fills the glass.
