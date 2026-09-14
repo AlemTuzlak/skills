@@ -33,7 +33,9 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [remotion-video](./skills/remotion-video) | Rendered `mp4` + poster via Remotion (React-based) |
 | [hyperframes-video](./skills/hyperframes-video) | Rendered `mp4` + poster via HyperFrames (HTML/GSAP-based) |
 | [marketing-pipeline](./skills/marketing-pipeline) | Orchestrate any combination of the above from one input |
-| [presentation](./skills/presentation) | Research-grounded, craft-driven technical slide decks built on Slidev, live in the browser with zero manual steps |
+| [presentation](./skills/presentation) | Shared talk craft (research, interview, storyboard). Loaded by the two engines. Not a command. |
+| [slidedev-presentation](./skills/slidedev-presentation) | Research-grounded Slidev decks, live at localhost:3030 |
+| [threejs-presentation](./skills/threejs-presentation) | Unique 3D world per talk. Vite + Three.js. Local preview and a static `dist` |
 | [teach-me](./skills/teach-me) | Evidence-based course generator: markdown course plus interactive HTML mini-course |
 | [epic-workshop](./skills/epic-workshop) | Epic Web / Epic React-style workshops, exercises, tips, and recordings |
 | [docs](./skills/docs) | Framework-agnostic documentation writer: shows you the readers, asks for tone, then writes pages through `simple-english` and `i-have-adhd` |
@@ -121,9 +123,13 @@ A live bug is `/fix-bug`, not `/build-feature`.
 **One command, full launch kit.** Pick which skills to run (`brief, blog, social, newsletter, video`) and the order. Each step's output feeds the next, so the brief informs the blog, the blog informs the social posts, the changelog feeds the newsletter, and so on. No re-feeding context yourself.
 
 ### [presentation](./skills/presentation)
-**A technical deck that's actually been researched, not hallucinated.** A director layer on top of [Slidev](https://sli.dev): it owns the *content* and the *craft*, and delegates Slidev syntax to Slidev's own official skill (installing it if missing), so when Slidev's syntax evolves, the craft here stays valid. Before it talks to you it does deep research on the topic (flagging weakly-supported presentation myths instead of repeating them) and, for a specific library/tool, analyzes the *real code* (local repo > GitHub > package > docs) so every slide is technically correct. Then it interviews you (audience, per-area depth, tone, brand, assets, output), storyboards for approval, and generates a deck applying evidence-based craft: assertion-evidence headlines, one-idea-per-slide, 5 to 7 lines of code with progressive reveal, diagrams over walls of code, a hook-to-takeaways arc.
+**Shared craft, not a command.** Research, interview, storyboard, assertion-evidence, text budget, no fake evidence. `slidedev-presentation` and `threejs-presentation` load it. Do not invoke it alone.
 
-**What sets it apart:** it *generates* the assets it legitimately can (Shiki code images, Mermaid diagrams rendered to PNG) and only leaves clearly-marked placeholders for what must be real, never faking screenshots or data. It then **self-verifies** every slide in a headless browser (overflow, clipped code, contrast, overstuffed) and auto-fixes, and **finishes live**: dev server running, deck open in the browser, zero manual steps.
+### [slidedev-presentation](./skills/slidedev-presentation)
+**A Slidev deck that was researched, not guessed.** Loads `presentation`, then scaffolds [Slidev](https://sli.dev), writes `slides.md`, verifies every slide in a headless browser, and opens `http://localhost:3030`.
+
+### [threejs-presentation](./skills/threejs-presentation)
+**A unique 3D world per talk.** Loads `presentation`, then stops until you pick a world. Copies a Vite + React Three Fiber skeleton. Content is painted on a hero surface. Punch beats use the room. `npm run dev` plus `npm run build`. No upload.
 
 ### [docs](./skills/docs)
 **Docs a human actually wants to read.** Treats "document feature X" as the wrong goal and "help someone do Y with X" as the right one. Finds your docs folder (or asks where it is), reads a few existing pages to learn structure and components, and reuses whatever the site already has (steps, tabs, callouts) for storytelling, so it's tied to no framework. Plans the reader's story first, then **stops**: it shows you the discovered readers and waits, then asks for tone (neighbors are a proposed default, not a silent yes). Only after that does it load `simple-english` and `i-have-adhd` and write the pages. Splits a topic into short linked pages instead of one giant wall. Shows runnable code over prose, and enforces hard bans: no em-dashes, no separator glyphs, no "not X: it's Y" phrasing, and no justifying the shipped API against names or approaches that never shipped. Fires at feature planning and implementation time, not only when asked, because docs ship with the code.
@@ -333,6 +339,12 @@ Once installed, just describe what you want. The agent picks the right skill fro
 
 > implement the order list
    → triggers build-feature
+
+> Make a 3D talk about X
+   → triggers threejs-presentation
+
+> Make a Slidev deck about X
+   → triggers slidedev-presentation
 ```
 
 Or invoke explicitly:
@@ -373,7 +385,9 @@ Or invoke explicitly:
 │   ├── marketing-pipeline/SKILL.md
 │   ├── newsletter/SKILL.md
 │   ├── prove-it/SKILL.md     # prove UI in the browser, or ask how to prove an API
-│   ├── presentation/         # multi-file: references/, assets/ (Shiki+Mermaid render helper)
+│   ├── presentation/         # library: research, interview, craft (not a command)
+│   ├── slidedev-presentation/ # Slidev engine: scaffold, slides.md, screenshot verify
+│   ├── threejs-presentation/ # Three.js engine: world gate, Vite+R3F template, catalog on glass
 │   ├── pr-description/SKILL.md
 │   ├── produce-video/SKILL.md
 │   ├── remotion-video/       # multi-file: patterns/, templates/, hooks/, references/

@@ -1,8 +1,8 @@
 {
   "name": "alemtuzlak-skills",
-  "description": "Personal AI agent skills — technical Slidev presentations, courses, marketing content (brief, blog, social, newsletter), changelogs, architecture impact docs, and rendered promo videos. Built for Claude Code, Copilot, Codex, Gemini & Cursor.",
+  "description": "Personal AI agent skills — Slidev and Three.js presentations, courses, marketing content (brief, blog, social, newsletter), changelogs, architecture impact docs, and rendered promo videos. Built for Claude Code, Copilot, Codex, Gemini & Cursor.",
   "version": "1.1.0",
-  "keywords": ["agent-skills", "claude-code", "ai-agents", "slidev", "presentations", "marketing", "changelog", "blog", "video", "courses", "anthropic", "llm"],
+  "keywords": ["agent-skills", "claude-code", "ai-agents", "slidev", "threejs", "presentations", "marketing", "changelog", "blog", "video", "courses", "anthropic", "llm"],
   "author": {
     "name": "Alem Tuzlak"
   },

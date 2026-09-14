@@ -23,9 +23,9 @@ Opinionated but overridable.
   only acceptable to demonstrate "look how awful long code is."
 - **Big and high-contrast.** Monospaced, large (think 24pt+ equivalent), readable
   from the back. Never shrink to fit — split across slides.
-- **Progressive reveal.** Show 1–3 lines at a time as you explain them (Slidev
-  `v-clicks`, line-highlighting `{1|2-3|all}`, or magic-move for diffs). For
-  diffs, highlight changed lines and **dim** previously-discussed code.
+- **Progressive reveal.** Show 1–3 lines at a time as you explain them. The
+  engine owns the mechanic (Slidev clicks / magic-move, or Three.js Enter steps).
+  For diffs, highlight changed lines and **dim** previously-discussed code.
 - **Direct attention.** Highlight the 1–3 lines under discussion; de-emphasize the
   rest (gray/opacity). Don't make the audience hunt.
 - **Prefer a diagram or pseudocode** when the audience can't realistically read

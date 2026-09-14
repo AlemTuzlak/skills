@@ -1,7 +1,7 @@
 # Gate 1 — Research & Grounding
 
 Runs **before the interview**. Produces one **research + grounding brief** that
-the interview, storyboard, and slide generation all read from. Slides are
+the interview, storyboard, and generation all read from. Talks are
 generated from this brief, never from unverified model memory.
 
 Two tracks. Track A always runs. Track B runs when the topic is a specific

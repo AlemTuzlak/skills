@@ -62,7 +62,7 @@ slide; the words you would *say* belong in the speaker notes, not on the slide.
 - **Prefer a keyword + a visual over a sentence.** If a slide is mostly text, ask
   whether one number, a diagram, or an image carries it better.
 - **This is a deck-wide generation default**, not a touch-up — write every slide to
-  budget, then let Gate 3 catch stragglers (`verification.md` "Overstuffed").
+  budget, then let the engine's self-verify catch stragglers ("Overstuffed").
 
 ## Typography, hierarchy, whitespace
 
@@ -92,8 +92,8 @@ slide; the words you would *say* belong in the speaker notes, not on the slide.
 - **This is a generation default, not a touch-up.** Most slide frameworks
   top-anchor content by default, so left alone slides look like drafts with a
   dead lower third. Set deck-wide rules so *every* slide fills and balances out of
-  the box (see the concrete Slidev recipe in `slidev-cheatsheet.md`), then catch
-  stragglers in the Gate 3 self-verify "under-filled" check.
+  the box (the engine has the layout recipe), then catch stragglers in the
+  engine's self-verify "under-filled" check.
 
 ## Color
 

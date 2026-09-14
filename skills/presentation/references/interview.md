@@ -1,16 +1,18 @@
-# Interview
+# Interview (core)
 
-Runs after Gate 1, before the storyboard. The brief makes the interview smart —
-skip anything it already answers; tailor options to detected context.
+Runs after Gate 1, before the storyboard. The brief makes the interview smart.
+Skip anything it already answers. Tailor options to detected context.
+
+The engine adds medium questions around this list (Slidev theme, or Three.js
+world / theme / story / timer). Do not duplicate those here.
 
 ## Conduct rules
 
 - **One question at a time.** Never dump the whole list.
 - **Structured picker** where possible: multiple choice + a recommended default +
-  free-text "Other". Easier and faster than open-ended.
-- **Adaptive.** Skip questions the research/grounding brief already answers (e.g.
-  don't ask "which library" if the user pointed you at the repo). Tailor option
-  sets to context (e.g. audience options differ for a workshop vs an exec pitch).
+  free-text "Other".
+- **Adaptive.** Skip questions the research/grounding brief already answers.
+  Tailor option sets to context (workshop vs exec pitch).
 - Lead each question with your recommended answer and a one-line why.
 
 ## Canonical question set
@@ -24,34 +26,20 @@ skip anything it already answers; tailor options to detected context.
    `technical-craft.md` per-context table.)*
 3. **Areas to cover + per-area depth.** Which sections/areas to include, and for
    **each** how deep: **mention** / **explain** / **deep-dive-with-code**.
-   *(Drives slide count and code/diagram density. This is the depth control —
-   always ask it per area, not just globally.)*
+   *(Drives slide count and code/diagram density. Always ask it per area.)*
 4. **Duration + single takeaway + tone.** Talk length (→ slide budget); the ONE
    thing the audience must remember; tone: professional / friendly / playful /
    academic.
 5. **Speaker notes?** Generate per-slide speaker notes (talking points, full-prose
    assertion, transitions, time cues)? yes / no.
 6. **Brand guidelines.** Colors / fonts / logo, and/or a brand *resource* (brand
-   doc, website, Figma, design system, reference deck/image). *(Routes the
-   branding mode — see table below.)*
+   doc, website, Figma, design system, reference deck/image). The engine applies
+   this to its medium.
 7. **Diagrams.** Generate diagrams? Which kinds — flow / sequence / architecture /
    before-after?
 8. **Ready-made assets.** Existing images, screenshots, logos, demo videos, code
    snippets — and where they live. *(Use these instead of placeholders.)*
-9. **Output location + export targets.** Where to create the project; which
-   exports beyond the live dev server — PDF / PPTX / hosted SPA.
-
-## Branding-mode routing (from Q6)
-
-| Brand answer | Mode | What the skill does |
-|--------------|------|---------------------|
-| Just colors/fonts/logo, or "no strong brand" | **Default** | Pick closest base theme (visual selection), apply brand colors/fonts/logo via headmatter + UnoCSS + scoped styles + a global logo layer |
-| Points to a brand resource (doc/site/Figma/design system/reference deck) | **Resource-derived custom theme** | Derive palette/type/spacing from the resource and scaffold a custom Slidev theme/styles |
-| "Keep it minimal / internal" | **Minimal** | Default theme + brand colors + logo only |
-
-For **Default** mode, do the theme pick **visually**: show 2–4 candidate themes
-matching brand/tone in the browser (gallery previews or a quick render) and let
-the user choose.
+9. **Output location.** Where to create the project.
 
 ## Slide-count heuristic
 
