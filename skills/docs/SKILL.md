@@ -17,8 +17,8 @@ The plan is not private. The user must see the readers and must choose the tone 
 Find docs
   → read neighbors
   → Phase 1: readers + pages
-  → PERSONA GATE (show the list, then stop)
-  → TONE GATE (ask, then stop)          [when writing pages]
+  → PERSONA GATE (write the reader list in the chat, then stop)
+  → TONE GATE (write the tone in the chat, then stop)   [when writing pages]
   → load simple-english + i-have-adhd   [when writing pages]
   → Phase 2: write
 ```
@@ -85,14 +85,19 @@ The page split comes out of this step. Do not skip it.
 ### Gate: show the personas
 
 <HARD-GATE>
-The user must see the list. Listing readers in a thought, a todo, or a buried plan is not this gate.
+The user must see the list in the chat. Listing readers in a thought, a todo, a buried plan, or only inside a question tool is not this gate.
 
-After step 4, send a message that contains only:
+Question tools (AskQuestion, ask_user_question, and similar forms) do not show their payload in the chat the user reads. A turn that only calls one of those tools fails this gate. The user is asked to confirm a list they cannot see.
 
-1. Each reader, one user story, and the page you will write for them.
-2. One question: confirm, drop a reader, or add one.
+After step 4, write a normal chat message. The message body is required even when a question tool is also called. The message contains:
 
-If the harness has an AskQuestion (or similar) tool, use it for that question. If it does not, use a numbered list.
+1. Each reader, as its own short block the user can scan:
+   - **Name** of the reader.
+   - One user story: "As a X, I want to Y, so I can Z."
+   - The page you will write for them.
+2. One question, written in that same message: confirm, drop a reader, or add one.
+
+A question tool is optional. Call it only after that list is already in the chat message. The tool asks the short choice only (confirm, drop, or add). Do not put the reader names, the stories, or the pages inside the tool. If the tool would be the only output of the turn, do not call it. Write the message instead.
 
 Then pick one path:
 
@@ -113,6 +118,7 @@ These are not skips:
 - "I already named them in the plan."
 - "There is only one reader."
 - "This is part of implementing a feature, keep going."
+- "The question tool will show them the list." It will not. The list goes in the chat.
 
 Writing docs is why this gate exists. It is not a reason to skip it.
 </HARD-GATE>
@@ -147,12 +153,12 @@ This gate runs before any page content is written. It does not run for a doc-imp
 
 Neighbors can suggest a default. They cannot answer for the user.
 
-Send a message that contains only:
+Write a normal chat message. The message body is required even when a question tool is also called. The message contains:
 
 1. The tone you inferred from neighboring pages, in one line (how formal, how much setup, second person or not).
-2. One question with options: use that tone, more casual, more formal, or the user names another.
+2. One question, written in that same message: use that tone, more casual, more formal, or the user names another.
 
-If the harness has an AskQuestion (or similar) tool, use it. If it does not, use a numbered list.
+A question tool is optional and comes after that line is in the chat. The tool asks the short choice only. Do not put the inferred tone only inside the tool. A turn that only calls the tool fails this gate.
 
 Then pick one path:
 
@@ -381,8 +387,9 @@ Then run the `simple-english` self-check on the same added text.
 | "we chose Y over zod because..." / "X is no longer needed" | Cut the rejected alternative. Document only what shipped, no comparison. |
 | Warning readers not to do a thing they never knew was possible (e.g. "don't pass locks as a store") | Delete it. If they never saw the old arrangement, the warning only confuses. Describe the thing in its own terms. |
 | Inventing a component the site lacks | Use only components the site already has. |
-| Skipping the persona message because readers are obvious | Show the list. Stop. Obvious is not a skip. |
-| Skipping the tone question because neighbors have a voice | Neighbors are the proposed default. Ask. Then stop. |
+| Skipping the persona message because readers are obvious | Show the list in the chat. Stop. Obvious is not a skip. |
+| Putting the reader list or the tone line only inside a question tool | The user is asked to confirm text they cannot see | Write the full list, or the tone line, in the chat message. The tool may ask only the short choice, and only after that text is visible. |
+| Skipping the tone question because neighbors have a voice | Neighbors are the proposed default. Write the tone in the chat. Ask. Then stop. |
 | Writing pages without loading simple-english and i-have-adhd | Load both. If either is missing, stop. |
 | Treating "write the docs" as permission to skip the gates | Writing docs is why the gates exist. |
 | Listing personas inside a larger plan and continuing | That is not the gate. The gate is a dedicated message that ends the turn. |
