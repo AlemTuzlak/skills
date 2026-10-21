@@ -32,6 +32,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [video-script](./skills/video-script) | Timed, paced video scripts with visual directions |
 | [remotion-video](./skills/remotion-video) | Rendered `mp4` + poster via Remotion (React-based) |
 | [hyperframes-video](./skills/hyperframes-video) | Rendered `mp4` + poster via HyperFrames (HTML/GSAP-based) |
+| [amazing-video](./skills/amazing-video) | Showreel-quality 30-second motion graphics video from one topic line, with slow pacing and no questions |
 | [marketing-pipeline](./skills/marketing-pipeline) | Orchestrate any combination of the above from one input |
 | [presentation](./skills/presentation) | Shared talk craft (research, interview, storyboard). Loaded by the two engines. Not a command. |
 | [slidedev-presentation](./skills/slidedev-presentation) | Research-grounded Slidev decks, live at localhost:3030 |
@@ -118,6 +119,9 @@ A live bug is `/fix-bug`, not `/build-feature`.
 
 ### [hyperframes-video](./skills/hyperframes-video)
 **Same shape as `remotion-video`, but on the HTML/GSAP stack.** Uses [HyperFrames](https://hyperframes.dev) for people who'd rather author in HTML/CSS than React. Enforces the canvas-fill rule (no letterboxing across formats), synchronized chapter narration, layout-before-animation discipline, and a brand scan + preview gate before render. Pairs with the `hyperframes` and `hyperframes-cli` skills if you have those installed.
+
+### [amazing-video](./skills/amazing-video)
+**One line in, a showreel out.** You type one line, such as `/amazing-video "make a video on PR #1234"`. The agent gets the same brief every time: a dynamic 30-second motion graphics video, made like a showreel for a résumé. The pacing stays slow enough for people to follow. The agent researches first, then makes every decision itself. It can make more than one video.
 
 ### [marketing-pipeline](./skills/marketing-pipeline)
 **One command, full launch kit.** Pick which skills to run (`brief, blog, social, newsletter, video`) and the order. Each step's output feeds the next, so the brief informs the blog, the blog informs the social posts, the changelog feeds the newsletter, and so on. No re-feeding context yourself.
@@ -356,6 +360,7 @@ Or invoke explicitly:
 /marketing-pipeline #1234
 /build-feature
 /fix-bug
+/amazing-video "make a video on PR #1234"
 ```
 
 ---
@@ -371,6 +376,7 @@ Or invoke explicitly:
 ├── CLAUDE.md                 # pointer to AGENTS.md
 ├── skills/
 │   ├── accessible-html/      # multi-file: references/, hooks/ (PreToolUse a11y guard)
+│   ├── amazing-video/SKILL.md # showreel-quality video from one topic line
 │   ├── architecture-impact/SKILL.md
 │   ├── blog-post/SKILL.md
 │   ├── build-feature/SKILL.md # driver: grill, spec, map, lego DAG, parallel implement
