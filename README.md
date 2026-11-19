@@ -47,6 +47,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [transcribe-video](./skills/transcribe-video) | Transcribe video/audio to text with word-level timestamps (local Whisper) |
 | [youtube-copy](./skills/youtube-copy) | YouTube metadata: title, SEO description, tags, timestamped chapters |
 | [image-to-3d-asset](./skills/image-to-3d-asset) | Game-ready GLB meshes with PBR textures from images (fal.ai Meshy, Smart Topology by default) |
+| [motion-for-3d-asset](./skills/motion-for-3d-asset) | Skeletal animation clips (FBX/GLB) on your own character from text, with Uthana, a prompt recipe, and Blender QA |
 | [i-have-adhd](./skills/i-have-adhd) | ADHD-shaped output: next action first, numbered steps, lists capped at 5. Also the writing filter `docs` loads before pages |
 | [accessible-html](./skills/accessible-html) | Accessible markup by default: loads on any UI code, plus a hook that catches defects as they are written |
 | [tanstack-branding](./skills/tanstack-branding) | TanStack brand kit: exact tokens, category accents, contrast data, plus the real logo and font files |
@@ -183,6 +184,10 @@ A live bug is `/fix-bug`, not `/build-feature`.
 ### [image-to-3d-asset](./skills/image-to-3d-asset)
 
 **A game asset from one picture.** Give it concept art of one object, and it gives back a low-poly GLB with PBR textures. Meshy Smart Topology keeps to the triangle budget, so the mesh is ready for a game engine. Many images run at the same time. The script uses only Node built-ins, counts the triangles of each mesh, and never prints your fal key.
+
+### [motion-for-3d-asset](./skills/motion-for-3d-asset)
+
+**Animation clips for your own character.** Upload a humanoid GLB once, describe the moves, and get FBX and GLB clips on that body. The skill holds a prompt recipe that gives the motion weight: grip, wind-up, whole-body action, the result of the weight, end state. Headless Blender measures air time, grip, loop seams, and impact frames, so the report has numbers, not guesses. The script uses only Node built-ins and never prints your Uthana key.
 
 ---
 
@@ -390,6 +395,7 @@ Or invoke explicitly:
 │   ├── fix-bug/SKILL.md      # root-cause fix: hot-path logs, then failing test
 │   ├── epic-workshop/SKILL.md
 │   ├── image-to-3d-asset/    # multi-file: scripts/ (fal Meshy image-to-3D runner)
+│   ├── motion-for-3d-asset/  # multi-file: scripts/ (Uthana runner, Blender QA), references/
 │   ├── i-have-adhd/SKILL.md  # ADHD output style; also a docs writing filter
 │   ├── lego-plan/SKILL.md    # layered DAG implementation plan, plan only
 │   ├── hyperframes-video/    # multi-file: patterns/, templates/, hooks/, references/
