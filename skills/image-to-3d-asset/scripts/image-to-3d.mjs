@@ -13,7 +13,7 @@ export const MODELS = {
   quad: { endpoint: 'meshy/v7.1/image-to-3d', input: { topology: 'quad' } },
 }
 
-const MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' }
+const MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' }
 const POLL_MS = 5_000
 const TIMEOUT_MS = 30 * 60_000
 
@@ -41,7 +41,7 @@ export function parseCli(argv) {
 export function toImageUrl(image) {
   if (/^(https?|data):/.test(image)) return image
   const mime = MIME[path.extname(image).toLowerCase()]
-  if (!mime) throw new Error(`${image}: use a .png, .jpg, .jpeg, or .webp image.`)
+  if (!mime) throw new Error(`${image}: use a .png, .jpg, or .jpeg image. Meshy does not take WebP.`)
   return `data:${mime};base64,${fs.readFileSync(image).toString('base64')}`
 }
 

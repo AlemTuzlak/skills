@@ -9,7 +9,7 @@ Turn images into game-ready GLB meshes with PBR textures. The bundled script sen
 
 ## Before you run
 
-1. **Get the images.** Each image must show one object on a plain background. A front view gives the best mesh. Local `.png`, `.jpg`, `.jpeg`, `.webp` files and `https://` URLs work.
+1. **Get the images.** Each image must show one object on a plain background. A front view gives the best mesh. Local `.png`, `.jpg`, and `.jpeg` files and `https://` URLs work. Meshy does not take WebP, so convert a `.webp` file to PNG first.
 2. **Get the fal key.** The script reads it from the `FAL_KEY` env var only.
    - If `FAL_KEY` is set, use it.
    - If it is not set, ask the user for the key with the harness secret tool (file delivery) when there is one. Otherwise ask the user to set `FAL_KEY`.
