@@ -4,6 +4,8 @@ These prompts went to `text-to-motion-3.0` and gave clips that passed QA. Each p
 
 The numbers come from `analyze.py`. Distances are in the units of the character, so compare them with `figureHeightM` of the same clip.
 
+These prompts say "both hands" on the handle and do not give each hand a hold. For a new prompt with a two-handed weapon, use the overhand and underhand hold from the recipe in SKILL.md. That wording is not tested yet.
+
 ## Combat idle (loop)
 
 ```text
@@ -57,6 +59,22 @@ Run-up variant (covers twice the ground):
 ```text
 a heavy warrior runs two big steps forward and leaps high and far into the air, raising a heavy two-handed axe over his head with both hands at the top of the jump. He lands with a heavy crash, legs bending deeply to absorb the fall, and drives the axe straight down into the ground in one huge overhead smash. He stays crouched for a moment, breathing hard, then rises.
 ```
+
+## War cry (in place, buff)
+
+```text
+a big heavy warrior with both hands together on the handle of a heavy two-handed axe, holding it across his body in front of his hips, stands low with feet wide apart. He sinks lower and fills his chest with a deep breath, then pushes up and lifts the axe high above his head with both hands still together on the handle, throws his head back and roars with his whole body, chest pushed forward and knees bent, shaking with effort. He holds the roar for a moment, then brings the axe back down with both hands to the front of his hips and returns to the same low stance. Both hands stay together on the axe handle the whole time. He stays in place and does not jump.
+```
+
+Result: wrist gap 0.18 of the figure height, 47 deg/s mean joint speed, 0.05 m of pelvis travel. The crouch is at frame 26 (lowest pelvis). The roar is at frame 66 (2.2 s, highest pelvis). The wrist speed peak at frame 91 is the axe coming back down, so it is not the cue for the buff. Loop window 3.3 s with a 2.5 degree seam.
+
+Weak version (the hands came apart overhead, wrist gap 0.49 of the figure height):
+
+```text
+a big heavy warrior holding a heavy two-handed axe with both hands in front of his hips stands low with feet wide apart. ... both arms lift the axe high above his head as he roars ...
+```
+
+The weak version gives the grip only at the start. The strong version says again at the end that both hands stay on the handle.
 
 ## Heavy-hit stagger (enemy)
 

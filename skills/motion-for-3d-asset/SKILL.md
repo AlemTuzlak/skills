@@ -58,7 +58,10 @@ Uthana 3.0 first makes a video of a person who does the action, then takes the m
 
 Write each prompt in this order:
 
-1. **Body and grip.** "a heavy warrior with both hands together on the handle of a heavy two-handed axe". The prop is not part of the motion. A clear grip keeps the hands in the correct place. For a one-hand prop, give each hand its job: "left hand holds the bow out in front, right hand pulls the string".
+1. **Body and grip.** The prop is not part of the motion, so the grip words are the only thing that keeps the hands in place.
+   - Give the grip at the start, and say again near the end that it stays: "Both hands stay on the axe handle the whole time." When the grip is only at the start, the hands can come apart during a big move. In a war cry test, the hands separated overhead (wrist gap 0.49 of the figure height). With the repeat, the gap was 0.18.
+   - For a two-handed weapon, give each hand its own hold: one hand overhand, one hand underhand. Nobody swings a two-handed weapon with both hands overhand. Write it: "the right hand holds the handle overhand near the head, the left hand holds it underhand near the end". This wording is not tested yet. The QA has no metric for the hold, so look at the hands on the contact sheet.
+   - For a one-hand prop, give each hand its job: "left hand holds the bow out in front, right hand pulls the string".
 2. **Start pose.** "sinks low", "standing in a guard stance".
 3. **Wind-up.** "slowly twists the torso back to the right, lifting the axe high over the right shoulder".
 4. **The action, driven by the whole body.** "the hips turn, the back foot pushes, and both arms swing the axe hard".
