@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Uthana text-to-motion runner: upload a character, make clips, check the balance.
-// Node 20+, no packages. Reads the key from the UTHANA_API_KEY env var only.
+// Uses TanStack AI (generateMotion + the Uthana adapter) for the jobs and the upload.
+// Node 20+. Run `npm install` in this folder once. Reads the key from the UTHANA_API_KEY env var only.
 //
 //   node uthana.mjs balance
 //   node uthana.mjs character <model.glb|.fbx> <name> [--no-auto-rig]
@@ -10,10 +11,10 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { parseArgs } from 'node:util'
 import { pathToFileURL } from 'node:url'
+import { generateMotion, getMotionJobStatus } from '@tanstack/ai'
+import { createUthanaCharacter, uthanaMotion, UTHANA_DEFAULT_CHARACTER_ID } from '@tanstack/ai-uthana'
 
 const BASE = 'https://uthana.com'
-// The default Uthana character. Its bones have Unreal mannequin names.
-export const DEFAULT_CHARACTER = 'cXi2eAP19XwQ'
 const POLL_MS = 5_000
 const JOB_TIMEOUT_MS = 15 * 60_000
 // Uthana refuses a 5th text-to-motion job while 4 are queued or running.
@@ -66,21 +67,6 @@ export function readClips(text) {
   return clips
 }
 
-/** Uthana job -> { state: 'waiting' | 'done' | 'failed', motionId?, error? }. */
-export function jobOutcome(job) {
-  const error = job.result?.exc ?? undefined
-  if (job.status === 'FAILED') return { state: 'failed', error: error ?? 'Uthana job failed' }
-  if (job.status !== 'FINISHED') return { state: 'waiting' }
-  if (error) return { state: 'failed', error }
-  const motionId = job.result?.result?.id
-  return motionId ? { state: 'done', motionId } : { state: 'failed', error: 'Finished job has no motion id' }
-}
-
-export function downloadUrl(characterId, motionId, format, fps) {
-  const file = `uthana-${motionId}.${format}`
-  return `${BASE}/motion/file/motion_viewer/${encodeURIComponent(characterId)}/${encodeURIComponent(motionId)}/${format}/${file}?fps=${fps}`
-}
-
 export const isJobLimit = (error) => /job_limit_exceeded|429/.test(String(error?.message ?? error))
 
 function auth() {
@@ -98,6 +84,7 @@ async function readGraphql(response) {
   return body.data
 }
 
+// The adapter has no balance query, so the balance is one direct GraphQL call.
 async function gql(query, variables = {}) {
   const response = await fetch(`${BASE}/graphql`, {
     method: 'POST',
@@ -116,35 +103,32 @@ async function balance() {
 }
 
 async function uploadCharacter(file, name, autoRig) {
-  // GraphQL multipart request: the file is the `file` variable.
-  const form = new FormData()
-  form.append('operations', JSON.stringify({
-    query: `mutation($file: Upload!, $name: String!, $auto_rig: Boolean) {
-      create_character(file: $file, name: $name, auto_rig: $auto_rig) { character { id name } auto_rig_confidence message } }`,
-    variables: { file: null, name, auto_rig: autoRig },
-  }))
-  form.append('map', JSON.stringify({ 0: ['variables.file'] }))
-  form.append('0', new Blob([fs.readFileSync(file)]), path.basename(file))
-  const response = await fetch(`${BASE}/graphql`, { method: 'POST', headers: { authorization: auth() }, body: form })
-  const created = (await readGraphql(response)).create_character
+  const created = await createUthanaCharacter({
+    file: new Blob([fs.readFileSync(file)]),
+    fileName: path.basename(file),
+    name,
+    autoRig,
+  })
   console.log(JSON.stringify({
     ok: true,
-    characterId: created.character.id,
-    name: created.character.name,
-    autoRigConfidence: created.auto_rig_confidence ?? null,
+    characterId: created.characterId,
+    name: created.name,
+    autoRigConfidence: created.autoRigConfidence ?? null,
     message: created.message ?? null,
   }))
 }
 
-async function submit(clip, model, characterId) {
+async function submit(clip, adapter, characterId, fps) {
   for (;;) {
     try {
-      const data = await gql(
-        `mutation($prompt: String!, $model: String!, $length: Float, $character_id: String) {
-          create_text_to_motion_job(prompt: $prompt, model: $model, length: $length, character_id: $character_id) { job { id } } }`,
-        { prompt: clip.prompt, model, length: clip.seconds ?? 4, character_id: characterId },
-      )
-      return data.create_text_to_motion_job.job.id
+      const { jobId } = await generateMotion({
+        adapter,
+        threadId: `motion-${clip.name}`,
+        prompt: clip.prompt,
+        duration: clip.seconds ?? 4,
+        modelOptions: { character_id: characterId, formats: ['fbx', 'glb'], fps },
+      })
+      return jobId
     } catch (error) {
       // Another process may hold job slots. Wait for one to free up.
       if (!isJobLimit(error)) throw error
@@ -154,49 +138,45 @@ async function submit(clip, model, characterId) {
   }
 }
 
-async function waitForJob(clip, jobId) {
+/** Polls until the job ends. Returns { status: 'completed', motion } or { status: 'failed', error }. */
+async function waitForJob(clip, adapter, jobId) {
   const start = Date.now()
   let last
   while (Date.now() - start < JOB_TIMEOUT_MS) {
-    const { job } = await gql('query($id: String) { job(job_id: $id) { id status result } }', { id: jobId })
-    if (!job) throw new Error(`job ${jobId} not found`)
-    if (job.status !== last) log(`[${clip.name}] ${job.status}`)
-    last = job.status
-    const outcome = jobOutcome(job)
-    if (outcome.state !== 'waiting') return outcome
+    const status = await getMotionJobStatus({ adapter, jobId })
+    if (status.status !== last) log(`[${clip.name}] ${status.status}`)
+    last = status.status
+    if (status.status === 'completed' || status.status === 'failed') return status
     await sleep(POLL_MS)
   }
-  return { state: 'failed', error: `timed out after ${JOB_TIMEOUT_MS / 60_000} min` }
+  return { status: 'failed', error: `timed out after ${JOB_TIMEOUT_MS / 60_000} min` }
 }
 
-async function download(url, file) {
-  const response = await fetch(url, { headers: { authorization: auth() } })
-  if (!response.ok) throw new Error(`download failed (${response.status}) for ${path.basename(file)}`)
-  const bytes = Buffer.from(await response.arrayBuffer())
+/** Writes a `data:` URL asset from the adapter to a file. */
+export function saveAsset(asset, file) {
+  const bytes = Buffer.from(asset.url.slice(asset.url.indexOf(',') + 1), 'base64')
   fs.writeFileSync(file, bytes)
   return { path: file, bytes: bytes.length, sha256: crypto.createHash('sha256').update(bytes).digest('hex') }
 }
 
 async function runClip(clip, opts) {
-  const characterId = clip.character ?? opts.character ?? DEFAULT_CHARACTER
+  const characterId = clip.character ?? opts.character ?? UTHANA_DEFAULT_CHARACTER_ID
+  const adapter = uthanaMotion(opts.model)
   const started = Date.now()
   // Uthana sometimes fails a job on its side ("failed during stage 1").
   // A second try usually works, so each clip gets one retry.
   let jobId, outcome
   for (let attempt = 1; attempt <= 2; attempt++) {
-    jobId = await submit(clip, opts.model, characterId)
+    jobId = await submit(clip, adapter, characterId, opts.fps)
     log(`[${clip.name}] job ${jobId}`)
-    outcome = await waitForJob(clip, jobId)
-    if (outcome.state === 'done') break
+    outcome = await waitForJob(clip, adapter, jobId)
+    if (outcome.status === 'completed') break
     log(`[${clip.name}] failed: ${outcome.error}`)
   }
-  if (outcome.state !== 'done') return { ok: false, name: clip.name, jobId, error: outcome.error }
+  if (outcome.status !== 'completed') return { ok: false, name: clip.name, jobId, error: outcome.error }
   const files = {}
-  for (const format of ['fbx', 'glb']) {
-    files[format] = await download(
-      downloadUrl(characterId, outcome.motionId, format, opts.fps),
-      path.join(opts.out, `${clip.name}.${format}`),
-    )
+  for (const asset of outcome.motion.assets) {
+    files[asset.format] = saveAsset(asset, path.join(opts.out, `${clip.name}.${asset.format}`))
   }
   return {
     ok: true,
@@ -207,7 +187,6 @@ async function runClip(clip, opts) {
     characterId,
     fps: opts.fps,
     jobId,
-    motionId: outcome.motionId,
     files,
     elapsedSeconds: Math.round((Date.now() - started) / 1000),
   }

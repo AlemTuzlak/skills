@@ -5,7 +5,7 @@ description: Use when the user wants a 3D model, mesh, or GLB made from one or m
 
 # Image to 3D Asset
 
-Turn images into game-ready GLB meshes with PBR textures. The bundled script sends each image to a fal.ai Meshy model, waits for the job, and saves the files next to the image.
+Turn images into game-ready GLB meshes with PBR textures. The bundled script sends each image to a fal.ai Meshy model through TanStack AI (`generate3DModel` with `fal3DModel` from `@tanstack/ai-fal`). It waits for the job and saves the files next to the image.
 
 ## Before you run
 
@@ -14,7 +14,8 @@ Turn images into game-ready GLB meshes with PBR textures. The bundled script sen
    - If `FAL_KEY` is set, use it.
    - If it is not set, ask the user for the key with the harness secret tool (file delivery) when there is one. Otherwise ask the user to set `FAL_KEY`.
    - Never print the key. Never put it in a file in the repo, in a command argument, or in a URL.
-3. **Tell the user the cost.** Each image is one paid fal job. A job takes 5 to 15 minutes.
+3. **Install the packages.** If `<skill-dir>/scripts/node_modules` does not exist, run `npm install --prefix <skill-dir>/scripts`. The versions are pinned in `scripts/package.json`.
+4. **Tell the user the cost.** Each image is one paid fal job. A job takes 5 to 15 minutes.
 
 ## Run
 
@@ -48,7 +49,7 @@ For each input image `<name>`, the script writes to the output folder:
 
 - `<name>.glb`: the mesh with its textures.
 - `<name>.preview.png`: the fal preview render.
-- `<name>.json`: the full fal result, with links to FBX, OBJ, USDZ, and the texture maps.
+- `<name>.json`: the TanStack AI result. `files` has the links to FBX, OBJ, USDZ, and the texture maps.
 
 Each stdout line is JSON:
 
@@ -63,6 +64,6 @@ A failed image gives `{"ok":false,"image":"...","error":"..."}`.
 1. Give the user each GLB path, its triangle count, and its size.
 2. Show the preview images when the harness can show images.
 3. Open the output folder for the user.
-4. If an image failed, give the error line. A fal `422` usually means a bad image or a bad option. A timeout after 30 minutes means the fal queue is busy, so run that image again.
+4. If an image failed, give the error line. A fal `422` usually means a bad image or a bad option. A timeout after 30 minutes means the fal queue is busy. TanStack AI cancels the job at the timeout, so run that image again.
 
 To check the script: `node --test <skill-dir>/scripts/image-to-3d.test.mjs`.

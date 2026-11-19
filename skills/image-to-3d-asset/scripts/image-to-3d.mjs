@@ -1,10 +1,13 @@
 #!/usr/bin/env node
-// Turns images into game-ready 3D meshes (GLB) with fal.ai Meshy models.
-// Node 20+, no packages. Reads the fal key from the FAL_KEY env var.
+// Turns images into game-ready 3D meshes (GLB) with fal.ai Meshy models,
+// through TanStack AI (generate3DModel + the fal 3D adapter).
+// Node 20+. Run `npm install` in this folder once. Reads the fal key from the FAL_KEY env var.
 import fs from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { pathToFileURL } from 'node:url'
+import { generate3DModel } from '@tanstack/ai'
+import { fal3DModel } from '@tanstack/ai-fal'
 
 export const MODELS = {
   // Meshy Smart Topology: clean triangles, keeps to the polycount budget.
@@ -15,6 +18,7 @@ export const MODELS = {
 
 const MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' }
 const POLL_MS = 5_000
+// At this limit TanStack AI stops the wait and cancels the fal job.
 const TIMEOUT_MS = 30 * 60_000
 
 export function parseCli(argv) {
@@ -59,13 +63,6 @@ export function countTriangles(glb) {
   return tris
 }
 
-async function fal(url, key, init = {}) {
-  const res = await fetch(url, { ...init, headers: { Authorization: `Key ${key}`, 'Content-Type': 'application/json' } })
-  const body = await res.text()
-  if (!res.ok) throw new Error(`fal ${res.status} for ${url}: ${body.slice(0, 500)}`)
-  return JSON.parse(body)
-}
-
 async function download(url, file) {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Download failed (${res.status}): ${url}`)
@@ -74,34 +71,31 @@ async function download(url, file) {
   return buf
 }
 
-async function run(image, index, opts, key) {
+async function run(image, index, opts) {
   const { endpoint, input } = MODELS[opts.model]
   const name = /^(https?|data):/.test(image) ? `mesh-${index + 1}` : path.parse(image).name
   const outDir = opts.out ?? (/^(https?|data):/.test(image) ? process.cwd() : path.dirname(path.resolve(image)))
   fs.mkdirSync(outDir, { recursive: true })
   const started = Date.now()
 
-  const job = await fal(`https://queue.fal.run/${endpoint}`, key, {
-    method: 'POST',
-    body: JSON.stringify({ image_url: toImageUrl(image), target_polycount: opts.polycount, enable_pbr: opts.pbr, ...input }),
+  console.error(`${name}: sent to ${endpoint}`)
+  const result = await generate3DModel({
+    adapter: fal3DModel(endpoint),
+    threadId: `image-to-3d-${name}`,
+    prompt: [{ type: 'image', source: { type: 'url', value: toImageUrl(image) } }],
+    modelOptions: { target_polycount: opts.polycount, enable_pbr: opts.pbr, ...input },
+    wait: true,
+    pollInterval: POLL_MS,
+    timeout: TIMEOUT_MS,
   })
-  console.error(`${name}: submitted to ${endpoint} (${job.request_id})`)
-  for (let last = ''; ; ) {
-    if (Date.now() - started > TIMEOUT_MS) throw new Error(`${name}: no result after 30 minutes (${job.request_id}).`)
-    await new Promise((r) => setTimeout(r, POLL_MS))
-    const { status } = await fal(job.status_url, key)
-    if (status !== last) console.error(`${name}: ${(last = status)}`)
-    if (status === 'COMPLETED') break
-  }
-  const output = await fal(job.response_url, key)
-  if (!output.model_glb?.url) throw new Error(`${name}: fal returned no model_glb: ${JSON.stringify(output).slice(0, 500)}`)
+  if (result.format !== 'glb') throw new Error(`${name}: fal returned no GLB (main file is ${result.format}).`)
 
   const glbFile = path.join(outDir, `${name}.glb`)
-  const glb = await download(output.model_glb.url, glbFile)
-  const previewFile = output.thumbnail?.url ? path.join(outDir, `${name}.preview.png`) : null
-  if (previewFile) await download(output.thumbnail.url, previewFile)
+  const glb = await download(result.url, glbFile)
+  const previewFile = result.previewImageUrl ? path.join(outDir, `${name}.preview.png`) : null
+  if (previewFile) await download(result.previewImageUrl, previewFile)
   const jsonFile = path.join(outDir, `${name}.json`)
-  fs.writeFileSync(jsonFile, JSON.stringify({ endpoint, requestId: job.request_id, output }, null, 2))
+  fs.writeFileSync(jsonFile, JSON.stringify({ endpoint, ...result }, null, 2))
 
   return {
     ok: true,
@@ -118,10 +112,9 @@ async function run(image, index, opts, key) {
 
 async function main() {
   const opts = parseCli(process.argv.slice(2))
-  const key = process.env.FAL_KEY
-  if (!key) throw new Error('Set the FAL_KEY env var to a fal.ai API key.')
+  if (!process.env.FAL_KEY) throw new Error('Set the FAL_KEY env var to a fal.ai API key.')
   // All jobs go to the fal queue at the same time.
-  const results = await Promise.allSettled(opts.images.map((image, i) => run(image, i, opts, key)))
+  const results = await Promise.allSettled(opts.images.map((image, i) => run(image, i, opts)))
   let failed = 0
   for (const [i, r] of results.entries()) {
     if (r.status === 'fulfilled') console.log(JSON.stringify(r.value))

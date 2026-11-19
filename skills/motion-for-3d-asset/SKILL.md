@@ -5,7 +5,7 @@ description: Use when the user wants skeletal animation clips (FBX or GLB) for a
 
 # Motion for 3D Asset
 
-Make real skeletal animation clips for a humanoid character with Uthana text-to-motion. The bundled script uploads the character, sends the prompts, and saves an FBX and a GLB for each clip. The Blender scripts measure each clip, so you report facts, not guesses.
+Make real skeletal animation clips for a humanoid character with Uthana text-to-motion. The bundled script uses TanStack AI (`generateMotion` and `createUthanaCharacter` from `@tanstack/ai-uthana`). It uploads the character, sends the prompts, and saves an FBX and a GLB for each clip. The Blender scripts measure each clip, so you report facts, not guesses.
 
 The prompt decides the quality. Most of this skill is how to write it.
 
@@ -15,8 +15,9 @@ The prompt decides the quality. Most of this skill is how to write it.
    - If it is not set, look in the user's vault or secret store first.
    - If it is not there, ask the user with the harness secret tool (file delivery). Then run `UTHANA_API_KEY="$(cat <key-file>)" node ...`.
    - Never print the key. Never put it in a repo file, a command argument, or a URL.
-2. **Check the balance.** Run `node <skill-dir>/scripts/uthana.mjs balance`. A 4-second clip costs about $0.40. Tell the user the total cost before you start.
-3. **Get the character.** A humanoid `.glb` or `.fbx` gives clips on the real body and proportions. Without one, the clips use the default Uthana character.
+2. **Install the packages.** If `<skill-dir>/scripts/node_modules` does not exist, run `npm install --prefix <skill-dir>/scripts`. The versions are pinned in `scripts/package.json`.
+3. **Check the balance.** Run `node <skill-dir>/scripts/uthana.mjs balance`. A 4-second clip costs about $0.40. Tell the user the total cost before you start.
+4. **Get the character.** A humanoid `.glb` or `.fbx` gives clips on the real body and proportions. Without one, the clips use the default Uthana character.
 
 ## Workflow
 

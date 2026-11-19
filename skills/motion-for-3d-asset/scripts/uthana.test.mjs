@@ -1,6 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { downloadUrl, isJobLimit, jobOutcome, parseCli, readClips } from './uthana.mjs'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { isJobLimit, parseCli, readClips, saveAsset } from './uthana.mjs'
 
 test('parseCli reads generate options', () => {
   assert.deepEqual(parseCli(['generate', 'clips.json', '--only', 'a,b', '--character', 'c1', '--fps', '60']), {
@@ -24,18 +27,12 @@ test('readClips refuses a duplicate name', () => {
   assert.throws(() => readClips(JSON.stringify([clip, clip])), /used twice/)
 })
 
-test('jobOutcome maps Uthana job states', () => {
-  assert.deepEqual(jobOutcome({ status: 'RESERVED' }), { state: 'waiting' })
-  assert.deepEqual(jobOutcome({ status: 'FINISHED', result: { exc: null, result: { id: 'm1' } } }), { state: 'done', motionId: 'm1' })
-  assert.deepEqual(jobOutcome({ status: 'FINISHED', result: { exc: 'boom' } }), { state: 'failed', error: 'boom' })
-  assert.deepEqual(jobOutcome({ status: 'FAILED', result: { exc: 'RuntimeError: stage 1' } }), { state: 'failed', error: 'RuntimeError: stage 1' })
-})
-
-test('downloadUrl builds the motion file path', () => {
-  assert.equal(
-    downloadUrl('cQqy57L59QaH', 'm9', 'glb', 30),
-    'https://uthana.com/motion/file/motion_viewer/cQqy57L59QaH/m9/glb/uthana-m9.glb?fps=30',
-  )
+test('saveAsset writes the bytes of a data: URL asset', () => {
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'uthana-')), 'clip.fbx')
+  const saved = saveAsset({ url: `data:application/fbx;base64,${Buffer.from('FBX').toString('base64')}`, format: 'fbx' }, file)
+  assert.equal(fs.readFileSync(file, 'utf8'), 'FBX')
+  assert.equal(saved.bytes, 3)
+  fs.rmSync(path.dirname(file), { recursive: true })
 })
 
 test('isJobLimit spots the concurrent job limit', () => {

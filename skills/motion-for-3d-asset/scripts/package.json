@@ -1,0 +1,9 @@
+{
+  "name": "motion-for-3d-asset-scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@tanstack/ai": "1.7.0",
+    "@tanstack/ai-uthana": "0.1.0"
+  }
+}
