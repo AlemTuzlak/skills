@@ -45,7 +45,7 @@ const CHARACTER = {
   remove_lighting: true,
   pose_mode: 'a-pose',
   topology: 'triangle',
-  target_polycount: 60000,
+  target_polycount: 300000,
   should_remesh: true,
   texture_resolution: '4k',
   save_pre_remeshed_model: true,

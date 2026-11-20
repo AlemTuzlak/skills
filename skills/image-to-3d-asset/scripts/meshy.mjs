@@ -174,9 +174,10 @@ const CHARACTER = {
   ...SHARED_QUALITY,
   pose_mode: 'a-pose',
   // Triangles, because Meshy cannot add finger bones to a quad mesh.
-  // 60000 triangles is the same density as 30000 quads.
   topology: 'triangle',
-  target_polycount: 60_000,
+  // 300000 is the highest target_polycount that Meshy accepts. It gives the most detail for close-up screens.
+  // It is also below the rig limit of 380000 triangles. Make lower LODs with the remesh command.
+  target_polycount: 300_000,
   // Without the remesh step, Meshy ignores target_polycount and returns the raw mesh (2 million triangles at 2k).
   should_remesh: true,
   texture_resolution: '4k',

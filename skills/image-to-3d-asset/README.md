@@ -4,10 +4,11 @@ You have concept art of a game character, and you need a model that moves in the
 
 ## What you get
 
-- A mesh of about 60,000 triangles with 4k PBR textures (GLB, FBX, USDZ, OBJ, STL).
+- A mesh of about 300,000 triangles (the Meshy maximum) with 4k PBR textures (GLB, FBX, USDZ, OBJ, STL).
 - A rigged GLB and FBX: 44 Mixamo bones, root `mixamorig:Hips`. It maps to Unity Humanoid.
 - Library clips (805 motion capture clips) and text-to-motion clips, as GLB and FBX.
 - Blender checks: 4 renders of the mesh, and a contact sheet and numbers for each clip.
+- Optional LODs of 80,000 and 25,000 triangles for battle views.
 
 ## Quick start
 
@@ -51,13 +52,27 @@ Use the same `--out` for every step. The script keeps the Meshy task ids in `man
 
 For a prop, run `node scripts/meshy.mjs mesh chest.png --mode prop --out C:/out/props`.
 
+## LODs for games
+
+The 300,000-triangle rig is for close-up screens. In battle, the engine can show a lighter LOD. In the test, a 61,890-triangle mesh had flat facets on the face in a close-up, but looked the same at full-body distance.
+
+1. Rig the full mesh first. Then make each LOD in its own folder. Get the id from `meshTaskId` in `C:/out/samurai/manifest.json`:
+
+   ```bash
+   node scripts/meshy.mjs remesh --polycount 80000 --task <meshTaskId> --out C:/out/samurai/lod1
+   node scripts/meshy.mjs remesh --polycount 25000 --task <meshTaskId> --out C:/out/samurai/lod2
+   ```
+
+2. In Blender, transfer the weights from the rigged mesh to each LOD, and bind each LOD to the same armature. Then all LODs share one rig and one set of clips. [SKILL.md step 6](SKILL.md#6-lods-for-games-optional) has the steps.
+3. In the engine, put the three meshes in one LOD group. The engine switches them by distance or by a quality setting.
+
 ## Cost per step
 
 | Step | Credits | Time in the test |
 |---|---|---|
 | `balance`, `actions` | 0 | under 5 s |
 | `mesh` (character, 3 views) | 40 | about 4 min |
-| `remesh` (only above 380,000 triangles) | 5 | about 4 min |
+| `remesh`, each LOD | 5 | about 4 min |
 | `rig` | 5 | about 1.5 min |
 | `animate`, each library clip | 3 | about 30 s |
 | `motion`, each text clip | about 11 | about 1 min |
