@@ -1,0 +1,266 @@
+{
+  "version": 1,
+  "domains": [
+    {
+      "id": "accessible-html",
+      "owns": [
+        "skills/accessible-html"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "amazing-video",
+      "owns": [
+        "skills/amazing-video"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "architecture-impact",
+      "owns": [
+        "skills/architecture-impact"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "blog-post",
+      "owns": [
+        "skills/blog-post"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "build-feature",
+      "owns": [
+        "skills/build-feature"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "changelog",
+      "owns": [
+        "skills/changelog"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "docs",
+      "owns": [
+        "skills/docs"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "epic-workshop",
+      "owns": [
+        "skills/epic-workshop"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "fix-bug",
+      "owns": [
+        "skills/fix-bug"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "hyperframes-video",
+      "owns": [
+        "skills/hyperframes-video"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "i-have-adhd",
+      "owns": [
+        "skills/i-have-adhd"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "image-to-3d-asset",
+      "owns": [
+        "skills/image-to-3d-asset"
+      ],
+      "talksTo": [
+        "motion-for-3d-asset"
+      ]
+    },
+    {
+      "id": "lego-plan",
+      "owns": [
+        "skills/lego-plan"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "marketing-brief",
+      "owns": [
+        "skills/marketing-brief"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "marketing-pipeline",
+      "owns": [
+        "skills/marketing-pipeline"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "motion-for-3d-asset",
+      "owns": [
+        "skills/motion-for-3d-asset"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "newsletter",
+      "owns": [
+        "skills/newsletter"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "pr-description",
+      "owns": [
+        "skills/pr-description"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "presentation",
+      "owns": [
+        "skills/presentation"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "produce-video",
+      "owns": [
+        "skills/produce-video"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "prove-it",
+      "owns": [
+        "skills/prove-it"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "remotion-video",
+      "owns": [
+        "skills/remotion-video"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "reuse-first",
+      "owns": [
+        "skills/reuse-first"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "rfc",
+      "owns": [
+        "skills/rfc"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "slidedev-presentation",
+      "owns": [
+        "skills/slidedev-presentation"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "social-copy",
+      "owns": [
+        "skills/social-copy"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "tanstack-branding",
+      "owns": [
+        "skills/tanstack-branding"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "teach-me",
+      "owns": [
+        "skills/teach-me"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "test-hygiene",
+      "owns": [
+        "skills/test-hygiene"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "threejs-presentation",
+      "owns": [
+        "skills/threejs-presentation"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "to-prd",
+      "owns": [
+        "skills/to-prd"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "touch-map",
+      "owns": [
+        "skills/touch-map"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "transcribe-video",
+      "owns": [
+        "skills/transcribe-video"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "typescript-standards",
+      "owns": [
+        "skills/typescript-standards"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "upgrade-dependencies",
+      "owns": [
+        "skills/upgrade-dependencies"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "video-script",
+      "owns": [
+        "skills/video-script"
+      ],
+      "talksTo": []
+    },
+    {
+      "id": "youtube-copy",
+      "owns": [
+        "skills/youtube-copy"
+      ],
+      "talksTo": []
+    }
+  ]
+}

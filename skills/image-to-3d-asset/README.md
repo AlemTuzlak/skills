@@ -1,42 +1,81 @@
 # image-to-3d-asset
 
-Give the agent an image of an object, and get back a game-ready 3D mesh (GLB) with PBR textures. The skill runs fal.ai Meshy models from a small Node script that uses [TanStack AI](https://tanstack.com/ai) (`generate3DModel` with the `@tanstack/ai-fal` adapter).
+You have concept art of a game character, and you need a model that moves in the engine. This skill turns the art into a textured mesh, adds a Mixamo skeleton, and puts animation clips on it. It uses Meshy through [TanStack AI](https://tanstack.com/ai) (`@tanstack/ai` and `@tanstack/ai-meshy`). Props (chests, barrels, weapons) get a mesh only.
 
-## What it does
+## What you get
 
-- **One image or many:** each image becomes one GLB. All images go to fal at the same time.
-- **Low-poly by default:** Meshy Smart Topology (`meshy/t2.5/image-to-3d`) makes clean triangles and keeps to the triangle budget (10,000 by default).
-- **Quads when you ask:** `--model quad` uses Meshy 7.1 with quad faces, for sculpting or subdivision in Blender.
-- **Checks the result:** the script counts the triangles in each GLB and reports the file size and the time.
-- **Published packages only:** the script uses the npm releases `@tanstack/ai@1.7.0` and `@tanstack/ai-fal@1.2.0`. It needs Node 20 or newer.
+- A mesh of about 60,000 triangles with 4k PBR textures (GLB, FBX, USDZ, OBJ, STL).
+- A rigged GLB and FBX: 44 Mixamo bones, root `mixamorig:Hips`. It maps to Unity Humanoid.
+- Library clips (805 motion capture clips) and text-to-motion clips, as GLB and FBX.
+- Blender checks: 4 renders of the mesh, and a contact sheet and numbers for each clip.
 
-## Usage
+## Quick start
 
-Ask in plain words:
+Ask the agent: `/image-to-3d-asset make a rigged character from samurai-turnaround.png`. Or run it by hand from the skill folder. You need Node 20 or newer, Blender 5.x, and a Meshy API key in `MESHY_API_KEY`.
 
-```
-/image-to-3d-asset
-turn concept/orc.png into a 3D model
-make low-poly meshes from these 3 images
-```
+1. Install the packages once:
 
-The agent asks for your fal key if `FAL_KEY` is not set. You can also run the script yourself. Install the packages once:
+   ```bash
+   npm install --prefix scripts
+   node scripts/meshy.mjs balance
+   ```
 
-```bash
-npm install --prefix skills/image-to-3d-asset/scripts
-FAL_KEY=... node skills/image-to-3d-asset/scripts/image-to-3d.mjs orc.png chest.png --polycount 8000
-```
+2. Split the turnaround sheet into 3 views:
 
-Each image is one paid fal job, and a job takes 5 to 15 minutes.
+   ```bash
+   blender --background --factory-startup --python scripts/qa/split-sheet.py -- C:/art/samurai-sheet.png 3 C:/out/samurai/views
+   ```
 
-For the best mesh, use an image of one object on a plain background, seen from the front.
+3. Make the mesh, then check it. Look at `samurai.renders.png` before you rig:
 
-## Output
+   ```bash
+   node scripts/meshy.mjs mesh C:/out/samurai/views/view-1.png C:/out/samurai/views/view-2.png C:/out/samurai/views/view-3.png --name samurai --out C:/out/samurai
+   blender --background --factory-startup --python scripts/qa/mesh-check.py -- C:/out/samurai/samurai.glb C:/out/samurai/samurai.check.json C:/out/samurai/samurai.renders.png
+   ```
 
-Next to each image (or in `--out <dir>`):
+4. Rig it. Give the height in meters:
 
-- `<name>.glb`: the mesh with its textures.
-- `<name>.preview.png`: the fal preview render.
-- `<name>.json`: the full fal result, with links to FBX, OBJ, USDZ, and the texture maps.
+   ```bash
+   node scripts/meshy.mjs rig --height 1.8 --out C:/out/samurai
+   ```
 
-The script prints one JSON line for each image with the GLB path, the triangle count, the size, and the time.
+5. Add clips. Find ids with `actions`, then add one library clip for each call. Add text clips from a `clips.json` file:
+
+   ```bash
+   node scripts/meshy.mjs actions --category Fighting
+   node scripts/meshy.mjs animate --actions 0 --out C:/out/samurai
+   node scripts/meshy.mjs motion clips.json --out C:/out/samurai
+   ```
+
+Use the same `--out` for every step. The script keeps the Meshy task ids in `manifest.json` there, so each step finds the step before it.
+
+For a prop, run `node scripts/meshy.mjs mesh chest.png --mode prop --out C:/out/props`.
+
+## Cost per step
+
+| Step | Credits | Time in the test |
+|---|---|---|
+| `balance`, `actions` | 0 | under 5 s |
+| `mesh` (character, 3 views) | 40 | about 4 min |
+| `remesh` (only above 380,000 triangles) | 5 | about 4 min |
+| `rig` | 5 | about 1.5 min |
+| `animate`, each library clip | 3 | about 30 s |
+| `motion`, each text clip | about 11 | about 1 min |
+
+The full test run (mesh, remesh, rig, 6 library clips, 3 text clips) cost 102 credits. Meshy deletes the task files after 3 days. The script downloads every file at once.
+
+## The input rules that matter most
+
+1. **No weapon in the hand.** A sword joins the hand and the leg, and the rig cannot separate them. Make the weapon as a prop, and attach it to the hand bone in the engine.
+2. **A-pose or T-pose, with open, empty hands** away from the body.
+3. **A turnaround sheet** (front, side, back) of one character on a plain background.
+
+## What worked in the test
+
+| Clip type | Use | Why |
+|---|---|---|
+| Idle, walk, run, hit | Library clips | The library idle and hit were good. Walk and run are clean loops in place. The text idle was frozen. |
+| Signature attack | Text to motion | The katana cleave had a big wind-up and both hands stayed on the handle. |
+| Weapon | Prop mode, attached in the engine | A weapon in the concept art breaks the mesh. |
+
+Known limit: the hand has only thumb and middle finger bones. The hand closes like a mitten.
