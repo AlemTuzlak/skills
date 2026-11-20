@@ -184,7 +184,8 @@ const CHARACTER = {
   save_pre_remeshed_model: true,
   multi_view_thumbnails: true,
 }
-const PROP = { ...SHARED_QUALITY, topology: 'triangle', target_polycount: 10_000, texture_resolution: '2k' }
+// Smart Topology (meshy-t2.5) refuses remove_lighting with a 400, so the prop preset leaves it out.
+const PROP = { enable_pbr: true, topology: 'triangle', target_polycount: 10_000, texture_resolution: '2k' }
 
 function preset(mode, imageCount) {
   if (imageCount < 1) throw new Error('mesh needs at least one image.')
@@ -403,8 +404,32 @@ const seconds = (started) => Math.round((Date.now() - started) / 1000)
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const log = (...parts) => console.error(...parts)
 
+/** True for the Meshy 429 that says the account has too many tasks in the queue. */
+export const isQueueFull = (error) => /429|NoMorePendingTasks/.test(String(error?.message ?? error))
+
+const QUEUE_WAIT_MS = 30_000
+const QUEUE_TRIES = 20
+
+/**
+ * Runs a Meshy step. When the queue of the account is full (429), it waits and sends the task again.
+ * The 429 comes before Meshy makes the task, so a new try never pays twice.
+ */
+async function whenQueueFrees(name, send) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await send()
+    } catch (error) {
+      if (!isQueueFull(error) || attempt === QUEUE_TRIES) throw error
+      log(`${name}: the Meshy queue is full, trying again in ${QUEUE_WAIT_MS / 1000} s (${attempt}/${QUEUE_TRIES - 1})`)
+      await sleep(QUEUE_WAIT_MS)
+    }
+  }
+}
+
 function generate(adapter, prompt, modelOptions, threadId) {
-  return generate3DModel({ adapter, prompt, modelOptions, threadId, wait: true, pollInterval: POLL_MS, timeout: TIMEOUT_MS })
+  return whenQueueFrees(threadId, () =>
+    generate3DModel({ adapter, prompt, modelOptions, threadId, wait: true, pollInterval: POLL_MS, timeout: TIMEOUT_MS }),
+  )
 }
 
 async function balance() {
@@ -537,7 +562,9 @@ async function runClip(clip, rigTaskId, cli) {
   const started = Date.now()
   const adapter = meshyMotion('prime')
   const threadId = `meshy-motion-${clip.name}`
-  const { jobId } = await generateMotion({ adapter, prompt: clip.prompt, duration: clip.seconds, threadId })
+  const { jobId } = await whenQueueFrees(threadId, () =>
+    generateMotion({ adapter, prompt: clip.prompt, duration: clip.seconds, threadId }),
+  )
   log(`[${clip.name}] motion job ${jobId}`)
   const motion = await waitForMotion(adapter, jobId, clip.name)
   const [asset] = motion.assets

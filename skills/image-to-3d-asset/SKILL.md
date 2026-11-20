@@ -186,7 +186,8 @@ Use prop mode for a chest, a barrel, or the weapon of a character.
 node <skill-dir>/scripts/meshy.mjs mesh katana.png --mode prop --out <out>/props
 ```
 
-- One image only. `meshy-t2.5` (Smart Topology), 10,000 triangles, 2k PBR textures, no rig.
+- One image only. `meshy-t2.5` (Smart Topology), 10,000 triangles, 2k PBR textures, no rig. Smart Topology takes at most 30,000 triangles (`--polycount 30000`).
+- Prop mode does not send `remove_lighting`, because Smart Topology refuses it with a 400.
 - Run step 3 on the result.
 - For a weapon: in the engine, attach the prop to the hand bone (`mixamorig:RightHand`).
 
@@ -301,6 +302,7 @@ Run `animate` and `motion` with the same `--out` as `rig`. In a new `--out`, the
 | `Meshy cannot add finger bones to a mesh with quad topology` | Quad mesh with fingers. The script stops before it spends credits. | `rig --no-fingers`, or make the mesh again with `--opt topology=triangle`. |
 | Meshy 400 | A bad option, finger bones on a quad mesh, or a mesh above 380,000 triangles for the rig | Read the message. Fix the option, or run `remesh` first. |
 | Meshy 422 | Meshy cannot use the image or the option value | Use a clear image that obeys the Input rules. Check `--opt` values. |
+| Meshy 429 `NoMorePendingTasks` | The plan of the account allows only a few tasks in the queue | The script waits 30 s and sends the task again, up to 19 times. Meshy makes no task on a 429, so a new try costs nothing. Do not start more than about 4 Meshy commands at the same time. |
 | Not enough credits | The account balance is too low | Run `balance`. Tell the user to add credits. |
 | Timeout (30 min for a 3D task, 15 min for a motion) | The Meshy queue is slow | Meshy still finishes and bills the task. Do not run it again at once. Get the task id from the Meshy web app, and give it to the next step with `--task <id>`. |
 | A step fails on a task that is more than 3 days old | Meshy deleted the task files | Run the earlier step again. |

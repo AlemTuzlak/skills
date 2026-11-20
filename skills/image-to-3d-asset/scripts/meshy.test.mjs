@@ -7,6 +7,7 @@ import os from 'node:os'
 import path from 'node:path'
 import {
   countTriangles,
+  isQueueFull,
   meshOptions,
   parseCli,
   parseOpt,
@@ -218,7 +219,7 @@ test('prop uses Smart Topology with 10000 triangles and 2k textures', () => {
   assert.deepEqual(meshOptions('prop', 1), {
     endpoint: 'image-to-3d',
     aiModel: 'meshy-t2.5',
-    modelOptions: { enable_pbr: true, remove_lighting: true, topology: 'triangle', target_polycount: 10000, texture_resolution: '2k' },
+    modelOptions: { enable_pbr: true, topology: 'triangle', target_polycount: 10000, texture_resolution: '2k' },
   })
 })
 
@@ -403,4 +404,13 @@ test('remesh defaults to 60000 triangles, and checks its flags', () => {
   assert.throws(() => parseCli(['remesh', '--topology', 'ngon']), /--topology/)
   assert.throws(() => parseCli(['remesh', '--polycount', '50']), /--polycount/)
   assert.throws(() => parseCli(['remesh', 'a.glb']), /no file arguments/)
+})
+
+test('the prop preset leaves out remove_lighting, which Smart Topology refuses', () => {
+  assert.equal('remove_lighting' in meshOptions('prop', 1).modelOptions, false)
+})
+
+test('isQueueFull matches the Meshy 429 queue error and nothing else', () => {
+  assert.equal(isQueueFull(new Error('Meshy request failed (429): NoMorePendingTasks: Upgrade your plan')), true)
+  assert.equal(isQueueFull(new Error('Meshy request failed (400): remove_lighting is not supported')), false)
 })
