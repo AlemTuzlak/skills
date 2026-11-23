@@ -49,6 +49,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [image-to-3d-asset](./skills/image-to-3d-asset) | Game-ready GLB meshes with PBR textures from images (fal.ai Meshy, Smart Topology by default) |
 | [motion-for-3d-asset](./skills/motion-for-3d-asset) | Skeletal animation clips (FBX/GLB) on your own character from text, with Uthana, a prompt recipe, and Blender QA |
 | [build-game-area](./skills/build-game-area) | Build a 3D game area with you, stage by stage: brief, paper map, blockout, play pass, asset list, dressing, checks |
+| [design-game-character](./skills/design-game-character) | A believable game character with evolution stages: pitches, character sheet, evolution arc, silhouettes, concept art, turnarounds |
 | [i-have-adhd](./skills/i-have-adhd) | ADHD-shaped output: next action first, numbered steps, lists capped at 5. Also the writing filter `docs` loads before pages |
 | [accessible-html](./skills/accessible-html) | Accessible markup by default: loads on any UI code, plus a hook that catches defects as they are written |
 | [tanstack-branding](./skills/tanstack-branding) | TanStack brand kit: exact tokens, category accents, contrast data, plus the real logo and font files |
@@ -193,6 +194,10 @@ A live bug is `/fix-bug`, not `/build-feature`.
 ### [build-game-area](./skills/build-game-area)
 
 **A level built with you, not for you.** The agent writes a brief with beats and sites, draws 2 or 3 paper maps, blocks out in grey, walks the main path, lists the assets with their costs, then dresses in order. You approve each stage from the same named camera views. A research file condenses level design practice: Lynch's five elements, weenies, sightlines, leading lines, composition in depth layers, and MMO starting zones.
+
+### [design-game-character](./skills/design-game-character)
+
+**A person first, a picture second.** The agent reads your art rules and roster, pitches 3 different people, then writes a sheet with want, need, wound, lie, flaw, contradiction, voice, barks and an idle habit. Evolution stages are story beats with identity anchors, not a ladder of more gold. Silhouettes, concept art and turnaround sheets follow, ready for `image-to-3d-asset`. Even "just give me the prompts" gets a short core that the prompts are built from.
 
 ---
 
@@ -396,6 +401,7 @@ Or invoke explicitly:
 │   ├── blog-post/SKILL.md
 │   ├── build-feature/SKILL.md # driver: grill, spec, map, lego DAG, parallel implement
 │   ├── build-game-area/      # multi-file: references/ (level design principles with sources)
+│   ├── design-game-character/ # multi-file: references/ (character design principles with sources)
 │   ├── changelog/SKILL.md
 │   ├── docs/SKILL.md
 │   ├── fix-bug/SKILL.md      # root-cause fix: hot-path logs, then failing test
