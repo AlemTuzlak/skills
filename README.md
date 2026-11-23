@@ -48,6 +48,7 @@ I kept rewriting the same prompts: "summarize this PR for marketing", "draft the
 | [youtube-copy](./skills/youtube-copy) | YouTube metadata: title, SEO description, tags, timestamped chapters |
 | [image-to-3d-asset](./skills/image-to-3d-asset) | Game-ready GLB meshes with PBR textures from images (fal.ai Meshy, Smart Topology by default) |
 | [motion-for-3d-asset](./skills/motion-for-3d-asset) | Skeletal animation clips (FBX/GLB) on your own character from text, with Uthana, a prompt recipe, and Blender QA |
+| [build-game-area](./skills/build-game-area) | Build a 3D game area with you, stage by stage: brief, paper map, blockout, play pass, asset list, dressing, checks |
 | [i-have-adhd](./skills/i-have-adhd) | ADHD-shaped output: next action first, numbered steps, lists capped at 5. Also the writing filter `docs` loads before pages |
 | [accessible-html](./skills/accessible-html) | Accessible markup by default: loads on any UI code, plus a hook that catches defects as they are written |
 | [tanstack-branding](./skills/tanstack-branding) | TanStack brand kit: exact tokens, category accents, contrast data, plus the real logo and font files |
@@ -188,6 +189,10 @@ A live bug is `/fix-bug`, not `/build-feature`.
 ### [motion-for-3d-asset](./skills/motion-for-3d-asset)
 
 **Animation clips for your own character.** Upload a humanoid GLB once, describe the moves, and get FBX and GLB clips on that body. The skill holds a prompt recipe that gives the motion weight: grip, wind-up, whole-body action, the result of the weight, end state. Headless Blender measures air time, grip, loop seams, and impact frames, so the report has numbers, not guesses. The script uses only Node built-ins and never prints your Uthana key.
+
+### [build-game-area](./skills/build-game-area)
+
+**A level built with you, not for you.** The agent writes a brief with beats and sites, draws 2 or 3 paper maps, blocks out in grey, walks the main path, lists the assets with their costs, then dresses in order. You approve each stage from the same named camera views. A research file condenses level design practice: Lynch's five elements, weenies, sightlines, leading lines, composition in depth layers, and MMO starting zones.
 
 ---
 
@@ -390,6 +395,7 @@ Or invoke explicitly:
 │   ├── architecture-impact/SKILL.md
 │   ├── blog-post/SKILL.md
 │   ├── build-feature/SKILL.md # driver: grill, spec, map, lego DAG, parallel implement
+│   ├── build-game-area/      # multi-file: references/ (level design principles with sources)
 │   ├── changelog/SKILL.md
 │   ├── docs/SKILL.md
 │   ├── fix-bug/SKILL.md      # root-cause fix: hot-path logs, then failing test
