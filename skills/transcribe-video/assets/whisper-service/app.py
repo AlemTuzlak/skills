@@ -112,6 +112,8 @@ def healthz():
         "bin": WHISPER_BIN,
     }
 
+_LANGUAGE_RE = re.compile(r"^[a-zA-Z]{2,3}(-[a-zA-Z]{2,8})?$")
+
 def _run(bin_name: str, tmp_path: str, out_prefix: str, language, task, word_ts: bool):
     cmd = [
         bin_name, "-m", MODEL_PATH, "-f", tmp_path,
