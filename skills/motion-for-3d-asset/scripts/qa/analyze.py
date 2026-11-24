@@ -1,13 +1,88 @@
 # Headless Blender QA for one motion FBX.
-#   blender --background --factory-startup --python analyze.py -- <fbx> <out.json> <sheet.png>
+#   blender --background --factory-startup --python analyze.py -- <fbx> <out.json> <sheet.png> [--native <native.qa.json>]
 # Measures root drift, airborne frames, foot sliding, loop seam, hand speed
 # peaks, and renders an isometric contact sheet of the skinned mannequin.
-import bpy, sys, json, math
+# "identity" names what was measured: the SHA-256 and size of the file, and the
+# take (the Blender action name, frame rate, and first and last frame).
+# Without --native, the file is the native provider file. With --native, the
+# file is a corrected copy (converted, retargeted, or edited). Its report names
+# the native report and gives the change of the main measures. A report never
+# writes over the native report or the report of another file.
+import bpy, sys, json, math, hashlib, os
 import numpy as np
 from mathutils import Vector
 
 args = sys.argv[sys.argv.index('--') + 1:]
+if len(args) not in (3, 5) or (len(args) == 5 and args[3] != '--native'):
+    print('usage: blender --background --factory-startup --python analyze.py -- <fbx> <out.json> <sheet.png> [--native <native.qa.json>]')
+    sys.exit(2)
 fbx, out_json, sheet_png = args[0], args[1], args[2]
+native_json = args[4] if len(args) == 5 else None
+
+
+def file_identity(path):
+    """The path, SHA-256, and size of a file. A report binds to these exact bytes."""
+    digest = hashlib.sha256()
+    with open(path, 'rb') as stream:
+        for block in iter(lambda: stream.read(1 << 20), b''):
+            digest.update(block)
+    return {'file': os.path.abspath(path), 'sha256': digest.hexdigest(), 'bytes': os.path.getsize(path)}
+
+
+def native_reference(native, native_path, measured):
+    """The native part of a corrected identity. Raises ValueError when the report cannot be the native report."""
+    source = native.get('identity', {})
+    if source.get('stage') != 'native':
+        raise ValueError(f'{native_path} is not the report of a native file. Measure the provider file first, without --native.')
+    if source.get('sha256') == measured['sha256']:
+        raise ValueError('This file has the same bytes as the native file. It is the native file, not a corrected copy.')
+    return {'report': os.path.abspath(native_path), 'reportSha256': file_identity(native_path)['sha256'],
+            'file': source.get('file'), 'sha256': source.get('sha256'), 'take': source.get('take')}
+
+
+def report_target_problem(out_path, measured, native_path=None):
+    """Why this run must not write out_path, or None. A report never replaces the native report or the report of another file."""
+    if native_path and os.path.abspath(out_path) == os.path.abspath(native_path):
+        return 'Write the corrected report to a new file. The native report stays unchanged.'
+    if os.path.exists(out_path):
+        with open(out_path) as fh:
+            earlier = json.load(fh).get('identity', {})
+        if earlier.get('sha256') not in (None, measured['sha256']):
+            return f'{out_path} is the report of another file ({earlier.get("file")}). Write this report to a new file.'
+    return None
+
+
+def change_from_native(report, native):
+    """The main measures of the native and the corrected file, side by side. Distances are shares of the
+    figure height, because a conversion can change the units. The native value stays the reference."""
+    def measures(r):
+        height = r['figureHeightM'] or 1.0
+        return {
+            'durationSeconds': r['durationSeconds'],
+            'wristGapMedianPerHeight': r['wristGapM']['median'] / height,
+            'wristGapMaxPerHeight': r['wristGapM']['max'] / height,
+            'pelvisTravelPerHeight': r['pelvis']['horizontalTravelM'] / height,
+            'facingTurnDeg': r['facing']['turnDeg'],
+        }
+    before, after = measures(native), measures(report)
+    return {key: {'native': round(before[key], 3), 'corrected': round(after[key], 3), 'change': round(after[key] - before[key], 3)}
+            for key in before}
+
+
+# Check the target files before the slow import.
+measured = file_identity(fbx)
+native = native_ref = None
+try:
+    if native_json:
+        with open(native_json) as fh:
+            native = json.load(fh)
+        native_ref = native_reference(native, native_json, measured)
+    problem = report_target_problem(out_json, measured, native_json)
+    if problem:
+        raise ValueError(problem)
+except (OSError, ValueError) as error:
+    print(f'ERROR: {error}')
+    sys.exit(2)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.fbx(filepath=fbx)
@@ -16,6 +91,11 @@ arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
 action = arm.animation_data.action
 f0, f1 = (int(round(v)) for v in action.frame_range)
 fps = sc.render.fps / sc.render.fps_base
+# The take has the shape of a production take: name, frame rate, and an inclusive frame range.
+identity = {'stage': 'corrected' if native_ref else 'native', **measured,
+            'take': {'takeName': action.name, 'sourceFps': fps, 'startFrame': f0, 'endFrame': f1}}
+if native_ref:
+    identity['native'] = native_ref
 
 # SMPL-H names (fal Hunyuan) and their Mixamo equivalents (Uthana).
 MIXAMO = {'Pelvis': 'Hips', 'L_Hip': 'LeftUpLeg', 'R_Hip': 'RightUpLeg', 'Head': 'Head',
@@ -93,6 +173,7 @@ def facing(i):
 face0, face1 = facing(0), facing(-1)
 travel = pel[-1, :2] - pel[0, :2]
 report = {
+    'identity': identity,
     'file': fbx,
     'skeleton': {'armature': arm.name, 'bones': len(arm.data.bones), 'root': [b.name for b in arm.data.bones if b.parent is None], 'convention': 'mixamo' if any(b.name.startswith('mixamorig') for b in arm.data.bones) else 'smpl-h'},
     'action': action.name,
@@ -114,10 +195,12 @@ report = {
     'airborne': {'frames': len(air_frames), 'first': air_frames[0] if air_frames else None, 'last': air_frames[-1] if air_frames else None, 'maxFootClearanceM': round(float((foot_z - ground).max()), 3)},
     'footSlide': {'L_FootM_and_plantedFrames': slide('L_Foot'), 'R_FootM_and_plantedFrames': slide('R_Foot')},
     'peakSpeed': {'R_Wrist': speed('R_Wrist'), 'L_Wrist': speed('L_Wrist')},
-    'wristGapM': {'min': round(float(gap.min()), 3), 'median': round(float(np.median(gap)), 3), 'max': round(float(gap.max()), 3)},
+    'wristGapM': {'min': round(float(gap.min()), 3), 'median': round(float(np.median(gap)), 3), 'max': round(float(gap.max()), 3), 'maxFrame': int(frames[int(gap.argmax())])},
     'liveliness': {'meanJointSpeedDegPerSec': round(float(np.mean(ang)), 1), 'p90JointSpeedDegPerSec': round(float(np.percentile(ang, 90)), 1), 'torsoTwistRangeDeg': round(torso_twist, 1), 'pelvisVerticalRangeM': round(float(np.ptp(pel[:, 2])), 3)},
     'loopSeam': {'meanLocalRotDiffDeg': round(float(seam), 2), 'pelvisOffsetM': round(float(np.linalg.norm(pel[-1] - pel[0])), 3)},
 }
+if native is not None:
+    report['changeFromNative'] = change_from_native(report, native)
 with open(out_json, 'w') as fh:
     json.dump(report, fh, indent=2)
 

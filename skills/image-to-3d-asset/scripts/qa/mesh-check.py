@@ -1,16 +1,19 @@
 # Headless Blender QA for one generated GLB, before we pay for a rig.
 #   blender --background --factory-startup --python mesh-check.py -- <model.glb> <out.json> <renders.png>
-# Writes the triangle and vertex counts, the loose parts (mesh islands), the
-# non-manifold edges, the bounding box, the materials and texture sizes, and
-# the skeleton facts. Renders a 2x2 sheet of the textured model:
+# Writes the SHA-256 and size of the file, the triangle and vertex counts, the
+# loose parts (mesh islands), the non-manifold edges, the bounding box, the
+# materials and texture sizes, the skeleton facts, and the vertices with no
+# bone weight. Renders a 2x2 sheet of the textured model:
 #   top row: front, right side; bottom row: back, 3/4.
 # A rigged model is measured and rendered in its rest pose.
 # "vertices" is the count in the file. glTF splits vertices at UV seams, so
 # it is larger than the vertex count in a modeling tool.
+# The SHA-256 ties the report to the exact bytes. When it equals the hash in
+# the Meshy manifest.json, the report measures the native Meshy file.
 #
 # glTF characters face +Z. Blender imports them facing -Y, so the front
 # camera looks from -Y. "Right side" is the character's right side (-X).
-import bpy, bmesh, sys, os, json
+import bpy, bmesh, sys, os, json, hashlib
 import numpy as np
 from mathutils import Vector
 
@@ -41,6 +44,27 @@ for arm in armatures:
     arm.data.pose_position = 'REST'
 bpy.context.view_layer.update()
 depsgraph = bpy.context.evaluated_depsgraph_get()
+
+
+def file_sha256(path):
+    """The SHA-256 of a file, read in blocks."""
+    digest = hashlib.sha256()
+    with open(path, 'rb') as stream:
+        for block in iter(lambda: stream.read(1 << 20), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def unweighted_vertices(obj):
+    """Vertices with no weight above 0 on a deform bone. None for a mesh with no armature.
+    After a weight transfer to a LOD, this must be 0, or those vertices stay behind when the rig moves."""
+    armature = obj.find_armature()
+    if armature is None:
+        return None
+    deform = {bone.name for bone in armature.data.bones if bone.use_deform}
+    groups = {group.index for group in obj.vertex_groups if group.name in deform}
+    return sum(1 for vertex in obj.data.vertices
+               if not any(item.group in groups and item.weight > 0 for item in vertex.groups))
 
 
 def islands(bm):
@@ -98,6 +122,7 @@ for obj in meshes:
         'nonManifoldEdges': non_manifold,
         'boundaryEdges': boundary,
         'skinned': obj.find_armature() is not None,
+        'unweightedVertices': unweighted_vertices(obj),
     })
     evaluated.to_mesh_clear()
 
@@ -122,8 +147,11 @@ def rounded(values):
     return [round(float(v), 4) for v in values]
 
 
+skinned = [o for o in objects if o['unweightedVertices'] is not None]
 report = {
     'file': os.path.abspath(glb),
+    'sha256': file_sha256(glb),
+    'bytes': os.path.getsize(glb),
     'triangles': sum(o['triangles'] for o in objects),
     'vertices': sum(o['vertices'] for o in objects),
     'meshObjects': len(objects),
@@ -141,6 +169,8 @@ report = {
         'fingerBones': len(finger_bones),
         'rootBones': [b.name for b in bones if b.parent is None],
     },
+    # Summed over the skinned meshes. None when no mesh has an armature.
+    'unweightedVertices': sum(o['unweightedVertices'] for o in skinned) if skinned else None,
     'objects': objects,
     'renders': {'path': os.path.abspath(renders_png), 'layout': [['front', 'right'], ['back', 'threeQuarter']]},
 }

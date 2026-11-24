@@ -185,11 +185,11 @@ A live bug is `/fix-bug`, not `/build-feature`.
 
 ### [image-to-3d-asset](./skills/image-to-3d-asset)
 
-**A game asset from one picture.** Give it concept art of one object, and it gives back a low-poly GLB with PBR textures. Meshy Smart Topology keeps to the triangle budget, so the mesh is ready for a game engine. Many images run at the same time. The script uses only Node built-ins, counts the triangles of each mesh, and never prints your fal key.
+**A game character from one picture.** Give it concept art, and it gives back a textured mesh, a Mixamo rig, LODs, and animation clips from the Meshy library and from text. A prop gets a mesh only. The script calls Meshy through TanStack AI. Each output folder holds one mesh and the tasks made from it. The script never writes over a Meshy file, and it records the SHA-256 of each file. Before it spends credits, it stops on a stale parent or on a task of another folder. Blender QA judges the native files, and a corrected copy gets a separate report. In a game repo with production gates, the files go in only through those gates.
 
 ### [motion-for-3d-asset](./skills/motion-for-3d-asset)
 
-**Animation clips for your own character.** Upload a humanoid GLB once, describe the moves, and get FBX and GLB clips on that body. The skill holds a prompt recipe that gives the motion weight: grip, wind-up, whole-body action, the result of the weight, end state. Headless Blender measures air time, grip, loop seams, and impact frames, so the report has numbers, not guesses. The script uses only Node built-ins and never prints your Uthana key.
+**Animation clips for your own character.** Upload a humanoid GLB once, describe the moves, and get FBX and GLB clips on that body. The skill holds a prompt recipe that gives the motion weight: grip, wind-up, whole-body action, the result of the weight, end state. Headless Blender measures air time, grip, loop seams, and impact frames, so the report has numbers, not guesses. Each report names the SHA-256 and the take of its file. A clip is judged on the native file, and a corrected copy gets a separate report. Unity Humanoid import comes only after a check. The script calls Uthana through TanStack AI and never prints your Uthana key.
 
 ### [build-game-area](./skills/build-game-area)
 
@@ -406,7 +406,7 @@ Or invoke explicitly:
 │   ├── docs/SKILL.md
 │   ├── fix-bug/SKILL.md      # root-cause fix: hot-path logs, then failing test
 │   ├── epic-workshop/SKILL.md
-│   ├── image-to-3d-asset/    # multi-file: scripts/ (fal Meshy image-to-3D runner)
+│   ├── image-to-3d-asset/    # multi-file: scripts/ (Meshy runner, Blender QA)
 │   ├── motion-for-3d-asset/  # multi-file: scripts/ (Uthana runner, Blender QA), references/
 │   ├── i-have-adhd/SKILL.md  # ADHD output style; also a docs writing filter
 │   ├── lego-plan/SKILL.md    # layered DAG implementation plan, plan only

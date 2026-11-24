@@ -2,11 +2,14 @@
 // No network. No Meshy calls.
 import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import {
+  checkNewTakes,
   countTriangles,
+  download,
   isQueueFull,
   meshOptions,
   parseCli,
@@ -15,6 +18,8 @@ import {
   readManifest,
   readMotionClips,
   rigOptions,
+  saveResult,
+  stepParent,
   toImageUrl,
   writeManifest,
 } from './meshy.mjs'
@@ -413,4 +418,90 @@ test('the prop preset leaves out remove_lighting, which Smart Topology refuses',
 test('isQueueFull matches the Meshy 429 queue error and nothing else', () => {
   assert.equal(isQueueFull(new Error('Meshy request failed (429): NoMorePendingTasks: Upgrade your plan')), true)
   assert.equal(isQueueFull(new Error('Meshy request failed (400): remove_lighting is not supported')), false)
+})
+
+// provider files: a download never replaces an earlier file, and each file keeps its hash
+
+const sha = (text) => crypto.createHash('sha256').update(text).digest('hex')
+const dataUrl = (text) => `data:application/octet-stream;base64,${Buffer.from(text).toString('base64')}`
+
+test('download writes a new file and never writes over a file that exists', async () => {
+  const file = path.join(tempDir(), 'orc.glb')
+  assert.equal((await download(dataUrl('first'), file)).toString(), 'first')
+  await assert.rejects(download(dataUrl('second'), file), /EEXIST/)
+  assert.equal(fs.readFileSync(file, 'utf8'), 'first')
+})
+
+test('planDownloads gives a free name when the folder already has a file of that name', () => {
+  const result = { url: url('model.glb'), format: 'glb', files: [{ url: url('model.glb'), role: 'base', format: 'glb' }] }
+  assert.deepEqual(planDownloads(result, 'orc', new Set(['orc.glb', 'orc-2.glb'])).map((item) => item.file), ['orc-3.glb'])
+})
+
+test('saveResult keeps an earlier file in any letter case, and records the path, role, hash, and size', async () => {
+  const dir = tempDir()
+  fs.writeFileSync(path.join(dir, 'Orc.GLB'), 'earlier')
+  const mesh = dataUrl('new mesh')
+  const { saved, main } = await saveResult({ url: mesh, format: 'glb', files: [{ url: mesh, role: 'base', format: 'glb' }] }, 'orc', dir)
+  assert.equal(main.toString(), 'new mesh')
+  assert.deepEqual(saved, [{ path: 'orc-2.glb', role: 'base', sha256: sha('new mesh'), bytes: 8 }])
+  assert.equal(fs.readFileSync(path.join(dir, 'Orc.GLB'), 'utf8'), 'earlier')
+})
+
+// lineage: one folder holds one mesh and the tasks made from it
+
+const MESH = { name: 'orc', meshTaskId: 'm-1', mesh: { taskId: 'm-1' } }
+const REMESH = { remeshTaskId: 'r-1', remesh: { taskId: 'r-1', meshTaskId: 'm-1' } }
+const RIG = { rigTaskId: 'g-1', rig: { taskId: 'g-1', meshTaskId: 'r-1' } }
+const FOLDER = { ...MESH, ...REMESH, ...RIG }
+const parent = (argv, manifest) => stepParent(manifest, parseCli([...argv, '--out', 'orc']))
+
+test('each step takes its parent from the folder: the rig prefers the remesh, and clips use the rig', () => {
+  assert.equal(parent(['remesh'], MESH), 'm-1')
+  assert.equal(parent(['rig'], MESH), 'm-1')
+  assert.equal(parent(['rig'], { ...MESH, ...REMESH }), 'r-1')
+  assert.equal(parent(['animate', '--actions', '0'], FOLDER), 'g-1')
+  assert.equal(parent(['motion', 'clips.json'], FOLDER), 'g-1')
+})
+
+test('a new folder takes the parent from --task, and asks for it when it is missing', () => {
+  assert.equal(parent(['mesh', 'a.png'], {}), undefined)
+  assert.equal(parent(['remesh', '--task', 'm-9'], {}), 'm-9')
+  assert.throws(() => parent(['rig'], {}), /No meshTaskId in orc.manifest\.json/)
+  assert.throws(() => parent(['animate', '--actions', '0'], {}), /No rigTaskId/)
+})
+
+test('a step never replaces an earlier task of its folder', () => {
+  assert.throws(() => parent(['mesh', 'a.png'], MESH), /already exists\. A new mesh starts a new generation/)
+  assert.throws(() => parent(['remesh'], { ...MESH, ...REMESH }), /already has remesh task r-1/)
+  assert.throws(() => parent(['remesh'], { ...MESH, rigTaskId: 'g-1', rig: { taskId: 'g-1', meshTaskId: 'm-1' } }), /cannot be the parent of that rig/)
+  assert.throws(() => parent(['rig'], FOLDER), /already has rig task g-1/)
+})
+
+test('rejects a stale remesh, a stale rig, and clips of another rig, before any credit is spent', () => {
+  // An older script let a second mesh replace meshTaskId and kept the tasks of the first mesh.
+  const newMesh = { ...MESH, meshTaskId: 'm-2', mesh: { taskId: 'm-2' } }
+  assert.throws(() => parent(['rig'], { ...newMesh, ...REMESH }), /Stale remesh: remesh task r-1 comes from mesh task m-1, but this folder holds mesh task m-2/)
+  assert.throws(() => parent(['motion', 'clips.json'], { ...newMesh, rigTaskId: 'g-1', rig: { taskId: 'g-1', meshTaskId: 'm-1' } }), /Stale rig: rig task g-1/)
+  const mixed = { ...FOLDER, clips: { slash: { motionTaskId: 't-0', rigTaskId: 'g-0' } } }
+  assert.throws(() => parent(['animate', '--actions', '0'], mixed), /Mixed takes: clip slash uses rig task g-0/)
+})
+
+test('--task must name a task of the folder, so one folder never mixes two generations', () => {
+  assert.equal(parent(['rig', '--task', 'm-1'], { ...MESH, ...REMESH }), 'm-1')
+  assert.throws(() => parent(['rig', '--task', 'm-7'], { ...MESH, ...REMESH }), /--task m-7 is not a mesh task of orc/)
+  assert.throws(() => parent(['motion', 'clips.json', '--task', 'g-7'], FOLDER), /--task g-7 is not a rig task of orc/)
+  const clipsOnly = { clips: { slash: { motionTaskId: 't-1', rigTaskId: 'g-5' } } }
+  assert.equal(parent(['motion', 'clips.json'], clipsOnly), 'g-5')
+  assert.throws(() => parent(['animate', '--actions', '0', '--task', 'g-6'], clipsOnly), /--task g-6/)
+})
+
+test('a take keeps its name: a clip name or a library id list that is in the folder is refused', () => {
+  const folder = {
+    ...FOLDER,
+    animations: [{ taskId: 'a-1', rigTaskId: 'g-1', clips: [{ id: 0, name: 'Idle' }, { id: 21, name: 'Walk' }] }],
+    clips: { slash: { motionTaskId: 't-1', rigTaskId: 'g-1' } },
+  }
+  assert.throws(() => checkNewTakes(folder, { names: ['slash'] }), /Clip slash already has a take \(motion task t-1\).*slash_2/)
+  assert.throws(() => checkNewTakes(folder, { actions: [0, 21] }), /animation task a-1/)
+  assert.doesNotThrow(() => checkNewTakes(folder, { names: ['slash_2'], actions: [0] }))
 })

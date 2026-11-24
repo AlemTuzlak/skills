@@ -3,8 +3,11 @@
 // mesh, rig, library animations, and text-to-motion clips.
 // It calls Meshy through TanStack AI (generate3DModel, generateMotion) and the Meshy adapter.
 // Node 20+. Run `npm install` in this folder once. The adapter reads the key from the MESHY_API_KEY env var.
-// Each step writes its Meshy task id to <out>/manifest.json, so the next step can run later.
-// Meshy deletes task files after 3 days, so each step downloads its files at once.
+// Each step writes its Meshy task id, its parent task id, and the SHA-256 of each file to <out>/manifest.json,
+// so the next step can run later. Meshy deletes task files after 3 days, so each step downloads its files at once.
+// One <out> folder holds one mesh and the tasks made from it. A step never writes over a downloaded file or an
+// earlier task. Before it spends credits, it stops on a stale parent or on a task of another folder.
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
@@ -326,9 +329,10 @@ function wantedName(file, base, primaryRole, taken) {
  * - Another GLB of a mesh task is the model before the remesh: `<base>.pre-remesh.glb`.
  * - The walk and run clips of a rigging task are `<base>.basic-<url file name>`.
  * - A texture is `<base>.tex-<url file name>`. The preview image is `<base>.thumb-preview.<ext>`.
- * - A name that is already taken gets `-2`, `-3`, and so on.
+ * - A name that is already taken gets `-2`, `-3`, and so on. `existing` holds the lowercase names of the files
+ *   that are already in the folder, so a new file never replaces an earlier file.
  */
-export function planDownloads(result, base) {
+export function planDownloads(result, base, existing = new Set()) {
   const files = result.files ?? []
   const mainFile = files.find((file) => file.url === result.url) ?? { url: result.url, format: result.format, role: 'base' }
   const others = files.filter((file) => file.url !== result.url)
@@ -338,7 +342,7 @@ export function planDownloads(result, base) {
     const ext = path.extname(wanted)
     const stem = wanted.slice(0, wanted.length - ext.length)
     let unique = wanted
-    for (let n = 2; taken.has(unique); n++) unique = `${stem}-${n}${ext}`
+    for (let n = 2; taken.has(unique) || existing.has(unique.toLowerCase()); n++) unique = `${stem}-${n}${ext}`
     taken.add(unique)
     plan.push({ url: file.url, file: unique, role, main: file === mainFile })
   }
@@ -352,28 +356,35 @@ export function planDownloads(result, base) {
   return plan
 }
 
-/** Downloads a URL to a file and returns the bytes. */
+/** Downloads a URL to a new file and returns the bytes. It never writes over a file that exists. */
 export async function download(url, file) {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Download failed (${res.status}): ${url}`)
   const buf = Buffer.from(await res.arrayBuffer())
-  fs.writeFileSync(file, buf)
+  fs.writeFileSync(file, buf, { flag: 'wx' })
   return buf
 }
 
-// Downloads every planned file into `out`. Returns the local paths by role, and the main file bytes.
-async function saveResult(result, base, out) {
-  const plan = planDownloads(result, base)
+const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex')
+
+/**
+ * Downloads every planned file into the folder `out`, which must exist. Returns the main file bytes, and `saved`:
+ * `[{ path, role, sha256, bytes }]`, with each path relative to `out`. An earlier file in `out` stays unchanged.
+ */
+export async function saveResult(result, base, out) {
+  const existing = new Set(fs.readdirSync(out).map((name) => name.toLowerCase()))
   const saved = []
   let main
-  for (const item of plan) {
-    const file = path.join(out, item.file)
-    const bytes = await download(item.url, file)
+  for (const item of planDownloads(result, base, existing)) {
+    const bytes = await download(item.url, path.join(out, item.file))
     if (item.main) main = bytes
-    saved.push({ role: item.role, path: file })
+    saved.push({ path: item.file, role: item.role, sha256: sha256(bytes), bytes: bytes.length })
   }
   return { saved, main }
 }
+
+// The paths of saved files, for the JSON line on stdout.
+const outPaths = (out, saved) => saved.map((file) => path.join(out, file.path))
 
 /** Reads `<out>/manifest.json`. Returns `{}` when there is no manifest yet. */
 export function readManifest(out) {
@@ -393,10 +404,102 @@ export function writeManifest(out, patch) {
   return manifest
 }
 
-function taskIdFrom(cli, manifest, key, step) {
-  const id = cli.task ?? manifest[key]
-  if (!id) throw new Error(`No ${key} in ${path.join(cli.out, MANIFEST)}. Run ${step} first with the same --out, or give --task <id>.`)
-  return id
+// The rig of the clips in a folder. A folder of clips made with --task has no rig step, so its first clip names it.
+function folderRig(manifest) {
+  const takes = [...(manifest.animations ?? []), ...Object.values(manifest.clips ?? {})]
+  return manifest.rigTaskId ?? takes[0]?.rigTaskId
+}
+
+/**
+ * Checks that each task in a manifest descends from the mesh of the folder, and that all clips use one rig.
+ * Throws for a stale descendant (a remesh or a rig of an earlier mesh) and for a clip of another rig.
+ * An older version of this script let a new mesh or rig replace the old one, so an old folder can fail here.
+ */
+export function checkLineage(manifest) {
+  const { meshTaskId, remesh, rig } = manifest
+  if (remesh && meshTaskId && remesh.meshTaskId !== meshTaskId) {
+    throw new Error(
+      `Stale remesh: remesh task ${remesh.taskId} comes from mesh task ${remesh.meshTaskId}, but this folder holds mesh task ${meshTaskId}. Make the tasks of the new mesh in a new --out.`,
+    )
+  }
+  const parents = [meshTaskId, remesh?.taskId].filter(Boolean)
+  if (rig && parents.length > 0 && !parents.includes(rig.meshTaskId)) {
+    throw new Error(
+      `Stale rig: rig task ${rig.taskId} comes from task ${rig.meshTaskId}, but this folder holds task ${parents.join(' and task ')}. Make the tasks of the new mesh in a new --out.`,
+    )
+  }
+  const rigTaskId = folderRig(manifest)
+  const takes = [
+    ...(manifest.animations ?? []).map((entry) => [entry.clips.map((clip) => clip.name ?? clip.id).join(', '), entry]),
+    ...Object.entries(manifest.clips ?? {}),
+  ]
+  for (const [name, take] of takes) {
+    if (take.rigTaskId !== rigTaskId) {
+      throw new Error(
+        `Mixed takes: clip ${name} uses rig task ${take.rigTaskId}, but this folder holds rig task ${rigTaskId}. Keep the clips of each rig in their own --out.`,
+      )
+    }
+  }
+}
+
+// The parent of a step: --task, or else the first id that the folder holds. When the folder holds a parent,
+// --task must name it, so one folder never mixes two generations.
+function parentFrom(cli, ids, key, step) {
+  const held = ids.filter(Boolean)
+  if (cli.task === undefined) {
+    if (held.length === 0) throw new Error(`No ${key} in ${path.join(cli.out, MANIFEST)}. Run ${step} first with the same --out, or give --task <id>.`)
+    return held[0]
+  }
+  if (held.length > 0 && !held.includes(cli.task)) {
+    throw new Error(`--task ${cli.task} is not a ${step} task of ${cli.out} (${held.join(', ')}). Use a new --out for a task of another generation.`)
+  }
+  return cli.task
+}
+
+/**
+ * Checks that the paid step `cli.command` can run in the folder of `manifest`. Returns the id of its parent task
+ * (none for mesh). Before any credit is spent, it throws for a step that replaces an earlier task of the folder,
+ * uses a stale parent, or brings in a task of another folder.
+ */
+export function stepParent(manifest, cli) {
+  checkLineage(manifest)
+  switch (cli.command) {
+    case 'mesh':
+      if (Object.keys(manifest).length > 0) {
+        throw new Error(`${path.join(cli.out, MANIFEST)} already exists. A new mesh starts a new generation: use a new --out. The earlier files stay unchanged.`)
+      }
+      return undefined
+    case 'remesh':
+      if (manifest.remesh) throw new Error(`${cli.out} already has remesh task ${manifest.remesh.taskId}. Make each new remesh in its own --out, with --task <meshTaskId>.`)
+      if (manifest.rig) {
+        throw new Error(`${cli.out} already has rig task ${manifest.rig.taskId}. A remesh here cannot be the parent of that rig. Make the remesh in its own --out, with --task <meshTaskId>.`)
+      }
+      return parentFrom(cli, [manifest.meshTaskId], 'meshTaskId', 'mesh')
+    case 'rig':
+      if (manifest.rig) throw new Error(`${cli.out} already has rig task ${manifest.rig.taskId}. Make a new rig in its own --out, with --task <meshTaskId>.`)
+      // A remeshed copy wins over the first mesh, because it has the triangle budget.
+      return parentFrom(cli, [manifest.remeshTaskId, manifest.meshTaskId], 'meshTaskId', 'mesh')
+    case 'animate':
+    case 'motion':
+      return parentFrom(cli, [folderRig(manifest)], 'rigTaskId', 'rig')
+    default:
+      throw new Error(`${cli.command} is not a paid step.`)
+  }
+}
+
+/**
+ * Throws when a take is already in the folder: a text clip name (`names`) or a library id list (`actions`).
+ * A take keeps its name, its files, and its task ids for good. A new take needs a new clip name.
+ */
+export function checkNewTakes(manifest, { names = [], actions } = {}) {
+  for (const name of names) {
+    const earlier = manifest.clips?.[name]
+    if (earlier) throw new Error(`Clip ${name} already has a take (motion task ${earlier.motionTaskId}). Give the new take a new name, for example ${name}_2.`)
+  }
+  if (actions === undefined) return
+  const ids = actions.join(',')
+  const earlier = (manifest.animations ?? []).find((entry) => entry.clips.map((clip) => clip.id).join(',') === ids)
+  if (earlier) throw new Error(`Library clips ${ids} are already on this rig (animation task ${earlier.taskId}). The earlier files stay unchanged.`)
 }
 
 const meshyFile = (taskId) => ({ type: 'model3d', source: { type: 'file', value: taskId, provider: 'meshy' } })
@@ -438,6 +541,8 @@ async function balance() {
 }
 
 async function mesh(cli) {
+  // One folder holds one mesh. A new mesh needs a new folder, so earlier tasks keep their files.
+  stepParent(readManifest(cli.out), cli)
   const { endpoint, aiModel, modelOptions } = meshOptions(cli.mode, cli.images.length, cli)
   const [first] = cli.images
   const name = cli.name ?? (/^(https?|data):/.test(first) ? 'mesh' : path.parse(first).name)
@@ -449,18 +554,18 @@ async function mesh(cli) {
   if (result.format !== 'glb') throw new Error(`${name}: Meshy returned no GLB (main file is ${result.format}).`)
   fs.mkdirSync(cli.out, { recursive: true })
   const { saved, main } = await saveResult(result, name, cli.out)
-  const files = saved.map((file) => file.path)
   writeManifest(cli.out, {
     name,
     meshTaskId: result.jobId,
-    mesh: { taskId: result.jobId, mode: cli.mode, endpoint, aiModel, modelOptions, images: cli.images.length, files },
+    mesh: { taskId: result.jobId, mode: cli.mode, endpoint, aiModel, modelOptions, images: cli.images.length, files: saved },
   })
+  const files = outPaths(cli.out, saved)
   return {
     ok: true,
     endpoint,
     aiModel,
     taskId: result.jobId,
-    glb: saved[0].path,
+    glb: files[0],
     triangles: countTriangles(main),
     sizeMB: +(main.length / 1e6).toFixed(1),
     seconds: seconds(started),
@@ -471,7 +576,7 @@ async function mesh(cli) {
 /** Makes a copy of the mesh with a new triangle budget. The rig step then uses this copy. */
 async function remesh(cli) {
   const manifest = readManifest(cli.out)
-  const meshTaskId = taskIdFrom(cli, manifest, 'meshTaskId', 'mesh')
+  const meshTaskId = stepParent(manifest, cli)
   const name = manifest.name ?? 'model'
   const modelOptions = { target_polycount: cli.polycount, topology: cli.topology, target_formats: ['glb', 'fbx'], ...cli.opt }
   const started = Date.now()
@@ -480,18 +585,17 @@ async function remesh(cli) {
   const result = await generate(meshy3DModel('remesh'), [meshyFile(meshTaskId)], modelOptions, `meshy-${name}`)
   fs.mkdirSync(cli.out, { recursive: true })
   const { saved, main } = await saveResult(result, `${name}.remesh`, cli.out)
-  const files = saved.map((file) => file.path)
-  writeManifest(cli.out, { remeshTaskId: result.jobId, remesh: { taskId: result.jobId, meshTaskId, modelOptions, files } })
-  return { ok: true, taskId: result.jobId, glb: saved[0].path, triangles: countTriangles(main), sizeMB: +(main.length / 1e6).toFixed(1), seconds: seconds(started), files }
+  writeManifest(cli.out, { remeshTaskId: result.jobId, remesh: { taskId: result.jobId, meshTaskId, modelOptions, files: saved } })
+  const files = outPaths(cli.out, saved)
+  return { ok: true, taskId: result.jobId, glb: files[0], triangles: countTriangles(main), sizeMB: +(main.length / 1e6).toFixed(1), seconds: seconds(started), files }
 }
 
 async function rig(cli) {
   const manifest = readManifest(cli.out)
-  // A remeshed copy wins over the first mesh, because it has the triangle budget.
-  const useRemesh = !cli.task && manifest.remeshTaskId !== undefined
-  const meshTaskId = useRemesh ? manifest.remeshTaskId : taskIdFrom(cli, manifest, 'meshTaskId', 'mesh')
-  const meshTopology = cli.task ? undefined : (useRemesh ? manifest.remesh?.modelOptions?.topology : manifest.mesh?.modelOptions?.topology)
-  const modelOptions = rigOptions(cli, meshTopology)
+  const meshTaskId = stepParent(manifest, cli)
+  // The topology is known when the parent is a task of this folder.
+  const parent = meshTaskId === manifest.remeshTaskId ? manifest.remesh : meshTaskId === manifest.meshTaskId ? manifest.mesh : undefined
+  const modelOptions = rigOptions(cli, parent?.modelOptions?.topology)
   const name = manifest.name ?? 'model'
   const started = Date.now()
 
@@ -500,9 +604,8 @@ async function rig(cli) {
   fs.mkdirSync(cli.out, { recursive: true })
   // The base name `<name>.rig` keeps the rigged files apart from the mesh `<name>.glb`.
   const { saved } = await saveResult(result, `${name}.rig`, cli.out)
-  const files = saved.map((file) => file.path)
-  writeManifest(cli.out, { rigTaskId: result.jobId, rig: { taskId: result.jobId, meshTaskId, modelOptions, files } })
-  return { ok: true, taskId: result.jobId, modelOptions, seconds: seconds(started), files }
+  writeManifest(cli.out, { rigTaskId: result.jobId, rig: { taskId: result.jobId, meshTaskId, modelOptions, files: saved } })
+  return { ok: true, taskId: result.jobId, modelOptions, seconds: seconds(started), files: outPaths(cli.out, saved) }
 }
 
 async function actions(cli) {
@@ -519,7 +622,8 @@ async function actions(cli) {
 
 async function animate(cli) {
   const manifest = readManifest(cli.out)
-  const rigTaskId = taskIdFrom(cli, manifest, 'rigTaskId', 'rig')
+  const rigTaskId = stepParent(manifest, cli)
+  checkNewTakes(manifest, { actions: cli.actions })
   // The library list is free. Check the ids here, so a wrong id costs no credits.
   const library = await listMeshyAnimations({ actionIds: cli.actions })
   const missing = cli.actions.filter((id) => !library.some((item) => item.actionId === id))
@@ -537,10 +641,9 @@ async function animate(cli) {
   const result = await generate(meshy3DModel('animation'), [meshyFile(rigTaskId)], modelOptions, `meshy-${name}`)
   fs.mkdirSync(cli.out, { recursive: true })
   const { saved } = await saveResult(result, base, cli.out)
-  const files = saved.map((file) => file.path)
-  const entry = { taskId: result.jobId, rigTaskId, clips, files }
+  const entry = { taskId: result.jobId, rigTaskId, clips, files: saved }
   writeManifest(cli.out, { animations: [...(readManifest(cli.out).animations ?? []), entry] })
-  return { ok: true, taskId: result.jobId, clips, seconds: seconds(started), files }
+  return { ok: true, taskId: result.jobId, clips, seconds: seconds(started), files: outPaths(cli.out, saved) }
 }
 
 /** Polls a motion job until it ends. Returns the finished motion, or throws with the Meshy error. */
@@ -568,17 +671,17 @@ async function runClip(clip, rigTaskId, cli) {
   log(`[${clip.name}] motion job ${jobId}`)
   const motion = await waitForMotion(adapter, jobId, clip.name)
   const [asset] = motion.assets
-  const motionFile = path.join(cli.out, `${clip.name}.motion.${asset.format}`)
-  await download(asset.url, motionFile)
+  // The raw motion is `<clip>.motion.<format>`. It keeps its own hash, apart from the clip on the rig.
+  const raw = { url: asset.url, format: asset.format, files: [{ url: asset.url, role: 'motion', format: asset.format }] }
+  const { saved: motionFiles } = await saveResult(raw, `${clip.name}.motion`, cli.out)
 
   log(`[${clip.name}] putting the motion on rig ${rigTaskId}`)
   const modelOptions = { motion_task_id: jobId, ...cli.opt }
   const result = await generate(meshy3DModel('animation'), [meshyFile(rigTaskId)], modelOptions, threadId)
   const { saved } = await saveResult(result, clip.name, cli.out)
-  const files = [motionFile, ...saved.map((file) => file.path)]
-  const entry = { motionTaskId: jobId, animationTaskId: result.jobId, rigTaskId, prompt: clip.prompt, seconds: clip.seconds, files }
+  const entry = { motionTaskId: jobId, animationTaskId: result.jobId, rigTaskId, prompt: clip.prompt, seconds: clip.seconds, files: [...motionFiles, ...saved] }
   writeManifest(cli.out, { clips: { ...readManifest(cli.out).clips, [clip.name]: entry } })
-  return { ok: true, name: clip.name, ...entry, elapsedSeconds: seconds(started) }
+  return { ok: true, name: clip.name, ...entry, files: outPaths(cli.out, entry.files), elapsedSeconds: seconds(started) }
 }
 
 // Runs `run` on each item, at most `limit` at a time. Returns one settled result per item, in order.
@@ -602,8 +705,9 @@ async function runPool(items, limit, run) {
 async function motion(cli) {
   const clips = readMotionClips(fs.readFileSync(cli.clipsFile, 'utf8'))
   const manifest = readManifest(cli.out)
-  const rigTaskId = taskIdFrom(cli, manifest, 'rigTaskId', 'rig')
-  const isQuadruped = !cli.task && manifest.rig?.modelOptions?.animation_type === 'quadruped'
+  const rigTaskId = stepParent(manifest, cli)
+  checkNewTakes(manifest, { names: clips.map((clip) => clip.name) })
+  const isQuadruped = rigTaskId === manifest.rigTaskId && manifest.rig?.modelOptions?.animation_type === 'quadruped'
   if (isQuadruped) throw new Error('Meshy text to motion needs a biped rig. This rig is a quadruped.')
   fs.mkdirSync(cli.out, { recursive: true })
   const results = await runPool(clips, MOTION_JOBS_AT_ONCE, (clip) => runClip(clip, rigTaskId, cli))

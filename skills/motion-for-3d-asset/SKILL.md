@@ -29,6 +29,10 @@ The prompt decides the quality. Most of this skill is how to write it.
 
    Keep the `characterId`. Uploading the same file again gives the same character. If `autoRigConfidence` is under 0.5, tell the user that the rig can be poor.
 
+   - Uthana rigs the character only when the file has no skeleton.
+   - If the file already has the rig that the project uses (for example a Meshy Mixamo rig), add `--no-auto-rig`. Then a file that lost its skeleton fails at upload, and Uthana never puts the clips on a new skeleton.
+   - Check the first clip: `skeleton` in its QA report must show the bone count and the root bone of your rig.
+
 2. **Write `clips.json`** with the prompt recipe below. Use 4 seconds for each clip:
 
    ```json
@@ -46,11 +50,12 @@ The prompt decides the quality. Most of this skill is how to write it.
 
    - The script runs 4 jobs at a time, because Uthana refuses a 5th. A job takes about 2 to 3 minutes.
    - When Uthana fails a job on its side ("failed during stage 1"), the script tries the clip one more time.
-   - Each clip gives `<name>.fbx`, `<name>.glb`, and an entry in `<dir>/manifest.json` with the prompt and the job id. Stdout has one JSON line for each clip.
-   - To make some clips again, add `--only name1,name2`. The manifest keeps the other entries.
+   - Each clip gives `<name>.fbx`, `<name>.glb`, and an entry in `<dir>/manifest.json` with the prompt, the job id, and the SHA-256 of each file. Stdout has one JSON line for each clip.
+   - `--only name1,name2` runs only those clips. The manifest keeps the other entries.
+   - Use `--only` only for a clip that failed and has no files. It writes over the files and the manifest entry of a clip with the same name.
 
 4. **Measure each clip** with Blender (see QA below).
-5. **Make a second take only of the clips that fail QA.** Change the words, because Uthana has no seed. Do not order several takes of every clip.
+5. **Make a second take only of the clips that fail QA.** Change the words, because Uthana has no seed. Give the new take a new name, for example `orc_idle_2`, so that the first take keeps its files. Do not order several takes of every clip.
 6. **Deliver** (see Deliver below).
 
 ## The prompt recipe
@@ -97,17 +102,30 @@ blender --background --factory-startup --python <skill-dir>/scripts/qa/compare.p
 - `analyze.py` writes the measurements and a contact sheet: 8 frames from a game camera on top and a side view below. Look at every contact sheet.
 - `loopfind.py` prints the best loop window. Set `<min-frames>` to about one cycle: 15 for a run, 30 for a walk, 45 for an idle.
 - The clips are 30 fps. Give `--fps 24` or `--fps 60` to `generate` for a different rate.
-- `compare.py` renders clips side by side into one MP4, all scaled to the same height.
+- `compare.py` renders clips side by side into one MP4, all scaled to the same height. It also writes `<out.mp4>.json` with the identity of each clip. All clips in one video need the same frame rate.
+
+**Native first.** `analyze.py` starts the report with `identity`: the SHA-256 and size of the file, and the take (action name, frame rate, first and last frame). Measure the provider file first. Its SHA-256 must be `files.fbx.sha256` of the clip in `<dir>/manifest.json`. Judge the clip only on this native report.
+
+A corrected copy is a converted, retargeted, or hand-fixed file. Give it its own report, bound to the native report:
+
+```bash
+blender --background --factory-startup --python <skill-dir>/scripts/qa/analyze.py -- <copy.fbx> <copy.qa.json> <copy.preview.png> --native <clip.qa.json>
+```
+
+- `identity.native` names the native report and file. `changeFromNative` gives the change of each main measure, with distances as a share of the figure height.
+- A large change of the wrist gap means that the correction holds the weapon, and the clip does not. Choose another clip, or make a new take.
+- The script refuses to write over the native report, or over the report of another file.
 
 Read the measurements against `figureHeightM`, because the distances are in the units of the character:
 
 | Clip | Pass | Fail |
 |---|---|---|
 | Jump | `airborne.frames` 15 or more, `maxFootClearanceM` near half of the height | under 10 frames: a hop |
-| Two-hand weapon | `wristGapM.median` under 0.2 of the height | larger: a hand left the handle. For a one-hand prop, use the contact sheet. |
+| Two-hand weapon | native `wristGapM.median` under 0.2 of the height, and both hands on the handle at `wristGapM.maxFrame` | larger: a one-hand clip. Do not use it for a two-hand weapon. A correction cannot make it pass. For a one-hand prop, use the contact sheet. |
 | Idle | `liveliness.meanJointSpeedDegPerSec` 30 or more | about 14: frozen |
 | Loop | `loopfind.py` seam under 4 degrees | more: choose a different window |
 | Any | upright on every contact sheet tile, except during a flip that you asked for | a flip that you did not ask for |
+| Corrected copy | each `changeFromNative` value inside the correction budget of the project | outside the budget, or no budget: choose another clip |
 
 Do not compare joint speeds across different rigs. A rig with finger bones gives higher numbers. Ignore `torsoTwistRangeDeg`, because it has an Euler wrap artifact.
 
@@ -122,7 +140,13 @@ Do not compare joint speeds across different rigs. A rig with finger bones gives
 
 - An uploaded character that Uthana rigged gets Mixamo bone names (`mixamorig:Hips`).
 - The default character has Unreal mannequin bone names (`pelvis`, `thigh_l`, `hand_l`).
-- `analyze.py` reads both. In Unity, set the rig to Humanoid. Both name sets map without edits.
+- `analyze.py` reads both.
+
+Equal bone names do not prove that a clip fits a rig. In Unity, use the rig type that the project declares for the character. With no declaration, use Generic: it plays the native bones as they are. Use Humanoid only when all of these are true:
+
+1. The project uses Humanoid for this character.
+2. The rest pose and the bind pose of the clip rig match the rig of the character.
+3. The native clip and the Humanoid import, compared at the same frames, show no change of the hands, feet, or facing that you did not ask for.
 
 ## Deliver
 
@@ -130,7 +154,17 @@ Do not compare joint speeds across different rigs. A rig with finger bones gives
 2. Give the cost and the balance that is left.
 3. Show the contact sheets and the comparison MP4 when the harness can show images or video.
 4. Open the output folder for the user.
-5. For Unity: import the FBX, set the rig to Humanoid, and set Loop Time on the loop window. Add animation events at the measured impact frames. A run clip moves the root forward, so use root motion or bake it into the pose.
+5. For Unity: import the FBX with the rig type from [Bones](#bones), and set Loop Time on the loop window. Add animation events at the measured impact frames. A run clip moves the root forward, so use root motion or bake it into the pose.
+6. If the clips go into a game repo with production gates, follow [Game project gates](#game-project-gates).
+
+## Game project gates
+
+If the game repo has `scripts/character-production.ps1`, clips enter the game only through its production gates. [image-to-3d-asset Game project gates](../image-to-3d-asset/SKILL.md#game-project-gates) has the commands. For a clip, these rules hold:
+
+- Keep the provider folder unchanged. Give it to the wrapper as a source root, for example `-SourceRoot uthana=C:/out/orc-clips`.
+- Copy the `jobId`, the `characterId`, the file hashes, and the take (`identity.take` of the native QA report) into the production record. Do not invent a value.
+- A correction (a hand seat, a wrist turn, a reach) has a budget in the record. Report the native value, each correction, and the final value. A small final error does not accept a large correction.
+- `Promote` runs only after the owner accepts the review receipt.
 
 ## Errors
 

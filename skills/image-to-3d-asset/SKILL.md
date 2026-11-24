@@ -5,13 +5,15 @@ description: Use when the user wants a 3D model, mesh, or GLB made from one or m
 
 # Image to 3D Asset
 
-Turn concept art into a game character: a textured mesh, a Mixamo skeleton, and animation clips. A prop gets a mesh only. The script `scripts/meshy.mjs` calls Meshy through TanStack AI (`@tanstack/ai` and `@tanstack/ai-meshy`). Each step writes its Meshy task id to `<out>/manifest.json`, so the next step finds it. Each step downloads its files at once, because Meshy deletes task files after 3 days.
+Turn concept art into a game character: a textured mesh, a Mixamo skeleton, and animation clips. A prop gets a mesh only. The script `scripts/meshy.mjs` calls Meshy through TanStack AI (`@tanstack/ai` and `@tanstack/ai-meshy`). Each step writes its Meshy task id, the id of its parent task, and the SHA-256 of each file to `<out>/manifest.json`. The next step finds them there. Each step downloads its files at once, because Meshy deletes task files after 3 days.
+
+The Meshy files are the source of the character. The script never writes over a downloaded file or an earlier task. Before it spends credits, it stops a step that replaces a task, uses a stale parent, or mixes in a task of another folder.
 
 In the commands below:
 
 - `<skill-dir>` is the folder of this skill.
 - `<motion-dir>` is the sibling skill folder `<skill-dir>/../motion-for-3d-asset`.
-- `<out>` is one output folder for one character. Use the same `<out>` for every step.
+- `<out>` is one output folder for one mesh and the tasks made from it. Use the same `<out>` for every step of that mesh. A new mesh needs a new `<out>`.
 - `blender` is Blender 5.x (5.3 is tested), run headless.
 
 ## Input rules
@@ -59,6 +61,7 @@ node <skill-dir>/scripts/meshy.mjs mesh <out>/views/view-1.png <out>/views/view-
 - 1 image uses `image-to-3d` with 4k geometry. 2 to 4 images use `multi-image-to-3d` with 2k geometry. Both use `meshy-7.1`.
 - The character preset: A-pose, triangles, 300,000 triangles after the Meshy remesh, 4k PBR textures, no baked light. 300,000 is the Meshy maximum. It is below the rig limit of 380,000.
 - The JSON line has `glb`, `triangles`, `sizeMB`, and `seconds`.
+- The script refuses an `<out>` that already has a `manifest.json`. A new mesh starts a new folder, so the earlier mesh, rig, and clips stay together and unchanged.
 
 ### 3. Check the mesh, and look at it
 
@@ -81,6 +84,7 @@ node <skill-dir>/scripts/meshy.mjs remesh --out <out>
 - The default is 60,000 triangles. Set `--polycount` for a different budget.
 - It writes `samurai.remesh.glb`. Run step 3 on it.
 - The rig step uses the remeshed copy when the manifest has one.
+- A folder takes one remesh, before the rig. The script refuses a second remesh, and a remesh after the rig.
 - For game LODs, use step 6, not this step.
 
 ### 5. Rig
@@ -92,6 +96,8 @@ node <skill-dir>/scripts/meshy.mjs rig --height 1.8 --out <out>
 - The defaults: biped, Mixamo skeleton, finger bones.
 - It writes `samurai.rig.glb`, `samurai.rig.fbx`, and a basic walk and run clip (`samurai.rig.basic-*`).
 - Run step 3 on `samurai.rig.glb`. Check the armature numbers in the QA table.
+- A folder takes one rig. The script refuses a second rig. It also refuses a stale parent: a remesh of an earlier mesh.
+- In Unity, use the rig type that the project declares for this character. With no declaration, use Generic. Use Humanoid only when the conditions in [motion-for-3d-asset Bones](../motion-for-3d-asset/SKILL.md#bones) are true. Equal bone names do not prove that a clip fits.
 
 ### 6. LODs for games (optional)
 
@@ -105,14 +111,17 @@ The 300,000-triangle rig is LOD0. Use it for close-up screens. Use lower LODs fo
    ```
 
    - Each LOD costs 5 credits. The files are `model.remesh.glb` and `model.remesh.fbx`, because the manifest of a new folder has no name.
-   - Do not run these in `<out>`. There, `remesh` replaces `remeshTaskId`, so a later `rig` uses the LOD mesh. The second LOD also writes over the files of the first LOD.
+   - Run each LOD in its own folder. In `<out>`, the script refuses a remesh after the rig, and a second remesh.
    - Run step 3 on each LOD.
 2. Bind each LOD to the LOD0 skeleton in Blender, so that all LODs share one rig and one set of clips:
    1. Import `<out>/samurai.rig.glb` and `<out>/lod1/model.remesh.glb`. If the LOD mesh does not lie on the LOD0 mesh, scale and move it to match, then apply the transform.
-   2. In Object mode, select the LOD0 mesh, then the LOD mesh last.
+   2. In Object mode, click the LOD mesh first. Then Shift-click the LOD0 mesh last, so that the LOD0 mesh is the active object. Blender copies data from the active object to the other selected objects. The LOD0 mesh has the weights, so it must be the active object.
    3. Run Object > Link/Transfer Data > Transfer Mesh Data. Set Vertex Data, Vertex Group(s), source layers All Layers, and destination By Name.
    4. Add an Armature modifier to the LOD mesh, and set its object to the LOD0 armature. Then parent the LOD mesh to that armature.
-   5. Export the LOD mesh with the LOD0 armature. Do the same for `lod2`.
+   5. Export the LOD mesh with the LOD0 armature to a GLB. Save it outside the Meshy folders, for example `C:/work/samurai/samurai.lod1.glb`.
+   6. Run step 3 on that GLB. `unweightedVertices` must be 0. `armature.bones` and `armature.rootBones` must be the same as in the check of `samurai.rig.glb`.
+   7. Play one clip on LOD0 and on the LOD. Compare the same frames, close up and at battle distance. The LOD must bend at the same joints as LOD0, with no part left behind.
+   8. Do the same for `lod2`.
 3. In the engine, put LOD0, LOD1, and LOD2 in one LOD group (Unity: `LOD Group`. Unreal: the LOD slots of the Skeletal Mesh). The engine switches the LOD by distance or by a quality setting. The clips play on all LODs, because the skeleton is the same.
 
 ### 7. Library clips
@@ -132,6 +141,7 @@ The 300,000-triangle rig is LOD0. Use it for close-up screens. Use lower LODs fo
 
    - It writes `samurai.actions-0.glb` and `samurai.actions-0.fbx`.
    - One call with several ids (`--actions 0,21,14`, up to 10) gives one file with all the clips in that order. `analyze.py` measures one clip for each file, so use one id for each call when you want QA numbers.
+   - An id list runs one time on a rig. The script refuses a list that is already on the rig, so the earlier files stay unchanged.
 
 Use library clips for idle, walk, run, and hit reactions. In the test, the library idle was better than the text-to-motion idle.
 
@@ -158,8 +168,11 @@ Use these for signature attacks that the library does not have. Text-to-motion n
 
    - The script runs 4 clips at a time in one process.
    - Each clip gives `<clip>.glb`, `<clip>.fbx` (on the rig), and `<clip>.motion.fbx` (the raw motion).
+   - A clip name has one take in a folder. For a new take, use a new name, for example `katana_cleave_2`. The script refuses a name that is in the manifest, so an earlier take keeps its files and its task ids.
 
 ### 9. Check the clips
+
+Measure the native Meshy file first:
 
 ```bash
 blender --background --factory-startup --python <motion-dir>/scripts/qa/analyze.py -- <out>/katana_cleave.fbx <out>/katana_cleave.qa.json <out>/katana_cleave.qa.png
@@ -167,8 +180,20 @@ blender --background --factory-startup --python <motion-dir>/scripts/qa/compare.
 ```
 
 - Look at every contact sheet (`.qa.png`). Read the numbers with the QA table.
+- The report starts with `identity`: the SHA-256 and size of the file, and the take (action name, frame rate, first and last frame). The SHA-256 must be the hash of the file in `manifest.json`.
+- `compare.py` also writes `clips.mp4.json` with the identity of each clip. All clips in one video need the same frame rate.
 - For loop windows and impact frames, use the QA section of [motion-for-3d-asset SKILL.md](../motion-for-3d-asset/SKILL.md#qa-with-blender).
-- If a text clip fails, write a new prompt. Put only that clip in a new clips file, and run `motion` on it.
+- If a text clip fails, write a new prompt. Put only that clip, with a new name, in a new clips file, and run `motion` on it.
+
+Judge a clip only on its native report. A corrected copy is a converted, retargeted, or hand-fixed file. Give it its own report, bound to the native report:
+
+```bash
+blender --background --factory-startup --python <motion-dir>/scripts/qa/analyze.py -- C:/work/samurai/katana_cleave.game.fbx C:/work/samurai/katana_cleave.game.qa.json C:/work/samurai/katana_cleave.game.qa.png --native <out>/katana_cleave.qa.json
+```
+
+- The corrected report names the native report and file in `identity.native`. `changeFromNative` gives the change of each main measure, with distances as a share of the figure height.
+- A large change of the wrist gap means that the correction holds the weapon, and the clip does not. Choose another clip, or make a new take.
+- The script refuses to write over the native report, or over the report of another file.
 
 ### 10. Deliver
 
@@ -177,6 +202,44 @@ blender --background --factory-startup --python <motion-dir>/scripts/qa/compare.
 3. Give the credits spent and the balance left (`balance`).
 4. Show the renders, the contact sheets, and the MP4 when the harness can show them.
 5. Open `<out>` for the user.
+6. If the files go into a game repo with production gates, follow [Game project gates](#game-project-gates).
+
+## Game project gates
+
+If the game repo has `scripts/character-production.ps1`, Meshy files enter the game only through its production gates. Never copy a Meshy file into `client/Assets` by hand. The repo has these tools:
+
+| Tool | Job |
+|---|---|
+| `scripts/character-production.ps1` | The wrapper for the operations `Plan`, `Build`, `Check`, `Capture`, and `Promote`. It starts no engine. |
+| `art/appearance-baseline/characters/production_manifest.py` | The schema of a production record, and the metadata and source checks. |
+| `art/appearance-baseline/characters/check_production.py` | The stage measurements, `record-unavailable`, and `validate-samples`. |
+| `Game.Client.Appearance.ActorProduction` (Unity editor) | The Unity part of the five operations. `Promote` needs a review receipt that the owner accepted. |
+| `Game.Client.Appearance.Validation.AppearanceAcceptance.CheckProduction(<report path>)` and `.CheckAuthoring(<report path>)` | Selected Unity checks of the measurement and authoring cases. |
+
+1. Keep `<out>` unchanged. Give it to the wrapper as a source root, for example `-SourceRoot meshy=C:/out/samurai`.
+2. Write the record `art/appearance-baseline/characters/manifests/<recordId>.json`. Give each source stage its Meshy `taskId` and `rigTaskId` from `<out>/manifest.json`.
+3. Link each stage to its parent stages (`parentIds`) as the parent task ids in `manifest.json` show, for example `rig.meshTaskId`.
+4. Copy the `path`, `sha256`, and `bytes` of each source file from `manifest.json` too.
+5. For each motion, copy the take from `identity.take` of its native QA report.
+6. Do not invent a task id, a hash, a take, or a license. If a value is missing, the record says that it is missing.
+7. Run the wrapper from the repo root. Use a new scratch folder outside the workspace and outside each source root:
+
+   ```powershell
+   scripts/character-production.ps1 -Operation Plan -Manifest <record.json> -OutputDirectory <scratch> -SourceRoot meshy=<out>
+   ```
+
+8. Then run the phases of the plan in order: `Build`, `Check` with its `-Stage`, and `Capture`. Keep the same `-Manifest`, `-OutputDirectory`, and `-SourceRoot`.
+9. Exit code 4 means that the run waits for an engine step or for evidence. Read the message. Run that engine step through the Unity MCP or the Blender MCP. Then run the same wrapper command again.
+10. If an engine is not available, close its attempt with `check_production.py record-unavailable`. Unavailable is never passed.
+11. Run `-Operation Promote` with no `-ReviewReceipt`. It writes a draft receipt and stops.
+12. The owner reviews the evidence and accepts the receipt. Then run `Promote` again with `-ReviewReceipt <receipt.json>`. Never write the acceptance yourself.
+
+Rules for the gates:
+
+- Exit code 3 is a failure, for example a changed source hash, a stale descendant, or a wrong take. Correct the input. Never widen a budget to pass.
+- A correction (a hand seat, a wrist turn, a reach) has a budget in the record. Report the native value, each correction, and the final value. A small final error does not accept a large correction.
+- A Blender step that turns a joint is a correction too. Measure the joint before and after that step.
+- The wrapper never starts Blender or Unity. The gates run Blender only through the Blender MCP. The QA scripts of this skill only read files.
 
 ## Prop mode
 
@@ -209,7 +272,7 @@ node <skill-dir>/scripts/meshy.mjs mesh katana.png --mode prop --out <out>/props
 | `rig` | `--quadruped` | biped | A four-legged animal. No skeleton template, no fingers, no text-to-motion. |
 | `actions` | `--category <category>` | all 805 | Filter the free list. |
 | `animate` | `--actions <id,id,...>` | (required) | 1 to 10 library ids. |
-| `remesh`, `rig`, `animate`, `motion` | `--task <id>` | the id in the manifest | Only when the manifest does not have the id. |
+| `remesh`, `rig`, `animate`, `motion` | `--task <id>` | the id in the manifest | In a new folder, to name the parent task. In a folder that has the parent, `--task` must name that same task. |
 
 Quads: Meshy refuses finger bones on a quad mesh. For quads, run `mesh --opt topology=quad` (or `remesh --topology quad`), then `rig --no-fingers`.
 
@@ -224,8 +287,9 @@ Mesh (`mesh-check.py` JSON):
 | `textures` | 4096 px for a character | A smaller texture: tell the user. |
 | `looseParts` | 1 in the test | Many large islands: a part is cut off. Look at the renders. |
 | `nonManifoldEdges` | Information only | The rigged test mesh had 219 and rigged with no problem. |
+| `sha256` | The hash of the file in `manifest.json` | Another hash: the file is not the Meshy file. |
 
-Rig (`mesh-check.py` on `<name>.rig.glb`):
+Rig (`mesh-check.py` on `<name>.rig.glb`, and on each LOD export of step 6):
 
 | Field | Pass |
 |---|---|
@@ -233,15 +297,18 @@ Rig (`mesh-check.py` on `<name>.rig.glb`):
 | `armature.rootBones` | `["mixamorig:Hips"]` for the Mixamo skeleton |
 | `armature.hasFingers` | `true` when you asked for fingers |
 | `height` | the `--height` you gave |
+| `unweightedVertices` | 0. More: those vertices stay behind when the rig moves. |
 
-Clips (`analyze.py` JSON):
+Clips (`analyze.py` JSON). Judge a clip on its native report:
 
 | Measure | Pass | Fail |
 |---|---|---|
 | `liveliness.meanJointSpeedDegPerSec` | 30 or more for an action | Under 10: a held pose, not a motion. About 14: a frozen idle. |
-| Grip, two-hand weapon: `wristGapM.median` / `figureHeightM` | Under 0.2 | More: a hand left the handle. |
+| Grip, two-hand weapon: native `wristGapM.median` / `figureHeightM` | Under 0.2 | More: a one-hand clip. Do not use it for a two-hand weapon. A correction cannot make it pass. |
+| Worst grip frame: `wristGapM.maxFrame` | Both hands stay on the handle at this frame (look in Blender or the engine) | A hand leaves the handle. |
 | `pelvis.horizontalTravelM` for a clip in place | About 1 m or less (one step) | 2.3 m in the test: the clip drifts. |
 | Contact sheet | Upright on every tile | A fall or a flip that you did not ask for. |
+| `changeFromNative` (corrected report only) | Each change is inside the correction budget of the project | A change outside the budget, or no budget. Choose another clip. |
 
 ## Costs
 
@@ -269,7 +336,7 @@ The Meshy docs give no USD price for a credit. Example: mesh, rig, 6 library cli
 | katana_cleave | text | 50.2 | 0.15 | Good. Big wind-up, whole-body swing, hands stay on the handle. |
 | heavy_hit | text | 44.3 | 0.30 | Strong, but the hands come apart and it drifts 2.3 m. |
 | combat_idle | text | 14.1 | 0.21 | Frozen. Use a library idle. |
-| 242 Charged Slash | library | 40.0 | 0.72 | Good. One-hand swing. |
+| 242 Charged Slash | library | 40.0 | 0.72 | Good one-hand swing. Not for a two-hand weapon. |
 | 147 Sword Parry | library | 5.3 | - | A held pose, not a motion. |
 | 178 Hit Reaction | library | 48.6 | - | Good. |
 | 0 Idle | library | 15.0 | - | Calm, a little stiff. Usable. |
@@ -280,7 +347,7 @@ The Meshy docs give no USD price for a credit. Example: mesh, rig, 6 library cli
 
 All files go to `<out>`. `<name>` is the `--name` of the mesh.
 
-- `manifest.json`: the task ids and options of each step.
+- `manifest.json`: the task id, the parent task id, and the options of each step. Each file has `path` (relative to `<out>`), `role`, `sha256`, and `bytes`. A text clip also has `motionTaskId`, `animationTaskId`, and `rigTaskId`.
 - `<name>.glb`, `.fbx`, `.usdz`, `.obj`, `.stl`: the mesh. `<name>.tex-*`: textures. `<name>.thumb-preview.png`: the Meshy preview. `<name>.pre-remesh.glb`: the full-detail mesh, when Meshy returns it.
 - `<name>.remesh.glb`, `.fbx`: the remeshed copy.
 - `lod1/model.remesh.glb`, `lod2/model.remesh.glb` (and `.fbx`): the LOD meshes of step 6.
@@ -289,6 +356,11 @@ All files go to `<out>`. `<name>` is the `--name` of the mesh.
 - `<clip>.glb`, `<clip>.fbx`: text clips on the rig. `<clip>.motion.fbx`: the raw motion.
 
 Run `animate` and `motion` with the same `--out` as `rig`. In a new `--out`, the manifest has no name, so the files are named `model.*`. Run one process at a time for each `<out>`, because two processes that write one manifest can lose a write.
+
+Rules for these files:
+
+- Do not edit, rename, re-export, or save over a Meshy file. Save each changed file (a LOD export, a converted clip, a Blender file) outside the Meshy folders. QA reports can stay next to the file that they measure.
+- When a download has the name of a file that is already in `<out>`, the new file gets `-2`, `-3`, and so on. The manifest has the real name.
 
 ## Blender
 
@@ -307,6 +379,11 @@ Run `animate` and `motion` with the same `--out` as `rig`. In a new `--out`, the
 | Timeout (30 min for a 3D task, 15 min for a motion) | The Meshy queue is slow | Meshy still finishes and bills the task. Do not run it again at once. Get the task id from the Meshy web app, and give it to the next step with `--task <id>`. |
 | A step fails on a task that is more than 3 days old | Meshy deleted the task files | Run the earlier step again. |
 | `No meshTaskId in <out>/manifest.json` (or `rigTaskId`) | A different `--out`, or the earlier step did not run | Use the same `--out`, or give `--task <id>`. |
+| `<out>/manifest.json already exists`, or `<out> already has ... task` | The step already ran in this folder. A step never replaces a task. | Use a new `--out`. Give the parent with `--task <id>`. |
+| `Clip <name> already has a take`, or `Library clips <ids> are already on this rig` | The take is in the manifest | Give a new text take a new name. For a library clip, use the files that you have. |
+| `Stale remesh` or `Stale rig` | The folder has a task of an earlier mesh. An older version of the script let a new mesh or rig replace the old one. | Use a new `--out`. Run the steps again from the current mesh with `--task <meshTaskId>`. |
+| `Mixed takes` | The folder has clips of two rigs | Keep the clips of each rig in their own `--out`. |
+| `--task <id> is not a ... task of <out>` | The task belongs to another generation | Use a new `--out` for that task. |
 | `Set the MESHY_API_KEY env var` | No key | See Before you run, item 1. |
 
 To test the script: `node --test <skill-dir>/scripts/meshy.test.mjs`.
