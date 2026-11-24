@@ -1,0 +1,102 @@
+import React, { useEffect, useRef } from "react";
+import { useCurrentFrame, useVideoConfig } from "remotion";
+
+/**
+ * Reactbits adapter — frame-locks reactbits backgrounds for Remotion render.
+ *
+ * THE PROBLEM
+ * Reactbits backgrounds animate via requestAnimationFrame + performance.now().
+ * Remotion renders by stepping a headless Chromium frame-by-frame, freezing
+ * wall-clock time per frame. Dropped in raw, every captured frame would show
+ * the same uTime — the background is FROZEN in the rendered mp4 even though
+ * it animates fine in Studio preview.
+ *
+ * THE FIX
+ * Wrap a reactbits background in <ReactbitsHost> (or use the useFrameTime hook
+ * directly inside a forked component) so the shader's uTime / animation
+ * variables are driven by Remotion's useCurrentFrame() instead of
+ * performance.now().
+ *
+ * Most reactbits OGL components own their own renderer and rAF loop. Patching
+ * them is small but unavoidable. See `references/reactbits-catalog.md` for the
+ * per-component patch recipe and the master "Frame-locking" section.
+ */
+
+/**
+ * Returns the current composition time in seconds, derived from Remotion's
+ * frame counter. Use this anywhere a reactbits component reads
+ * `performance.now()` or maintains its own elapsed-time accumulator.
+ *
+ *   const time = useFrameTime();
+ *   program.uniforms.uTime.value = time;
+ */
+export function useFrameTime(): number {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  return frame / fps;
+}
+
+/**
+ * Per-frame effect callback. Use inside a patched reactbits component to
+ * replace its rAF loop:
+ *
+ *   useFrameEffect((time) => {
+ *     program.uniforms.uTime.value = time;
+ *     renderer.render({ scene: mesh });
+ *   }, [program, renderer, mesh]);
+ */
+export function useFrameEffect(
+  effect: (time: number) => void,
+  deps: React.DependencyList,
+): void {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    effect(frame / fps);
+  }, [frame, fps, ...deps]);
+}
+
+/**
+ * <ReactbitsHost> — wraps a reactbits background that already accepts a
+ * `time` prop (after patching) and feeds it the frame-derived time.
+ *
+ * Use when the patch was localized to "accept `time` as a prop instead of
+ * computing it from performance.now()". Cleaner than threading useFrameTime
+ * through the parent.
+ *
+ *   <ReactbitsHost component={Aurora} props={{ colorStops: [...] }} />
+ */
+export function ReactbitsHost<P extends { time?: number }>({
+  component: Component,
+  props,
+}: {
+  component: React.ComponentType<P>;
+  props: Omit<P, "time">;
+}): React.ReactElement {
+  const time = useFrameTime();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <Component {...(props as any)} time={time} />;
+}
+
+/**
+ * Mouse-position freezer for components that read mouse position internally.
+ * Render this once near the root of your composition; it overrides the
+ * global mouse position so cursor-reactive components see a stable center
+ * point during render.
+ *
+ * Most reactbits components also accept a `mouseInteraction={false}` prop —
+ * prefer that when available. This freezer is a fallback for components that
+ * read mouse position from window/document directly.
+ */
+export function FrozenCursor(): null {
+  const ref = useRef(false);
+  useEffect(() => {
+    if (ref.current) return;
+    ref.current = true;
+    // Override pointer events globally — cursor reads always return canvas center.
+    Object.defineProperty(window, "innerWidth", { value: 1920, configurable: true });
+    Object.defineProperty(window, "innerHeight", { value: 1080, configurable: true });
+  }, []);
+  return null;
+}
