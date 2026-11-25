@@ -17,8 +17,8 @@ Skip if a failure is already in play. That job is `fix-bug`. Skip typos, comment
 
 ## Hard Gates
 
-1. **No production code until plan 2 is approved.** Spec and DAG first.
-2. **Two blocks.** Plan 1 (design spec) must be approved. Plan 2 (implementation plan + DAG) must be approved. Silence is not approval. `approved`, `go`, `yes`, or `looks good` counts.
+1. **No production code before the spec and the DAG exist.** Write plan 1 and plan 2 first.
+2. **No approval stops after the grill.** `grill-me` is the last place where the driver waits for the user. Write plan 1 and plan 2, show their paths, and continue in the same turn. Do not ask "approve?". The user interrupts if a plan is wrong.
 3. **`grill-me` is the only interview.** Do not run Superpowers `brainstorming` questions.
 4. **Do not commit** the spec file or the plan file.
 5. **Start each node as soon as it is ready.** A node is ready when all its `depends` are `done`. Do not wait for the rest of its layer. Do not wait for in-progress nodes that it does not depend on. Example: `b2` is still running, and `c1` depends only on `a1` and `b1`, which are `done`. Start `c1` now. Do not use Superpowers `subagent-driven-development` as the dispatcher (that loop is one task, then review, then the next).
@@ -33,11 +33,11 @@ Skip if a failure is already in play. That job is `fix-bug`. Skip typos, comment
 ```text
 grill-me (or skip if design is already settled)
   → docs Phase 1: pick readers, show them, continue (no stop)
-  → write spec, open, wait for approved          [block 1]
+  → write spec, show the path, continue
   → touch-map
   → reuse-first (once, on files-to-touch)
   → lego-plan
-  → writing-plans file from the DAG, open, wait  [block 2]
+  → writing-plans file from the DAG, show the path, continue
   → pick tone if any node writes docs pages, show it, continue (no stop)
   → implement: start each node when its depends are done; driver paints DAG after each change
   → optional prove-it
@@ -89,7 +89,7 @@ Keep every node and the same edges. Do not drop finished nodes. `:::done` is gre
 
 1. If this conversation already has a settled design (grill already done, or they pasted a spec): do not run `grill-me`. Write or copy it to the plan-1 path if that file is missing. Then Procedure 3.
 2. Else load `grill-me` and follow it until the design is shared. Then Procedure 3.
-3. If the spec file already exists **and** they already approved it in this conversation **and** readers are already shown: Procedure 5.
+3. If the spec file already exists **and** readers are already shown: Procedure 5.
 
 ### Procedure 3: Docs readers (no stop)
 
@@ -99,13 +99,14 @@ Keep every node and the same edges. Do not drop finished nodes. `:::done` is gre
 4. Do not stop. Do not ask for permission. Do not end the turn. Go to Procedure 4 in the same turn.
 5. If the user changes the readers later: update the spec and the worker prompts that did not start yet. If a node already wrote pages for an old reader list, fix those pages.
 
-### Procedure 4: Write spec (plan 1) and block
+### Procedure 4: Write spec (plan 1), no stop
 
 1. Path: `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` (today’s date, kebab topic). New file. Create parent dirs if needed.
 2. Write a short **design spec**: what we build, choices from the grill, the chosen readers, doc-impact pages. Not a task list. Not full source.
 3. Open the file. Do not `git add` it. Do not commit it.
-4. Wait until they approve. If they want changes: edit, open, wait again.
-5. Procedure 5.
+4. Show both paths of the spec (relative and absolute) in chat. Do not ask for approval. Do not end the turn.
+5. If the user asks for changes later: edit the spec, and pass the change to the nodes that did not start yet.
+6. Procedure 5.
 
 ### Procedure 5: Map, reuse, lego
 
@@ -114,15 +115,16 @@ Keep every node and the same edges. Do not drop finished nodes. `:::done` is gre
 3. Load `lego-plan` and follow it (chat DAG + `.agent/scratch/lego-plan.json`).
 4. Procedure 6.
 
-### Procedure 6: Implementation plan (plan 2) and block
+### Procedure 6: Implementation plan (plan 2), no stop
 
 1. Announce that `writing-plans` is in use, with **node grain** (not 2-minute steps).
 2. Load Superpowers `writing-plans` for header and file path only.
 3. Path: `docs/superpowers/plans/YYYY-MM-DD-<topic>.md`. New file.
 4. Tasks are the lego **nodes**. Each task has id, name, depends, files, parts, done-when. Embed the Mermaid DAG (same ids). Point at `.agent/scratch/lego-plan.json`. **No full production source.** Do not ask which execution mode. This skill is the driver.
 5. Open the file. Do not commit it.
-6. Wait until they approve. If they want changes: edit the plan and the live board together (keep ids stable). Open. Wait again.
-7. Procedure 7.
+6. Show both paths of the plan in chat. Do not ask for approval. Do not end the turn.
+7. If the user asks for changes later: edit the plan and the live board together (keep ids stable).
+8. Procedure 7.
 
 ### Procedure 7: Tone, then implement
 
@@ -146,10 +148,9 @@ Keep every node and the same edges. Do not drop finished nodes. `:::done` is gre
 
 ### Procedure 8: Optional prove-it
 
-1. Ask once: load `prove-it`, or skip. Default **skip**.
-2. Wait.
-3. If skip: say the feature is **not proved** as a user path. Procedure 9.
-4. If they pick it, or already asked to prove in this conversation: load `prove-it` and follow it. Then Procedure 9.
+1. Do not ask. Default **skip**.
+2. If the user asked to prove in this conversation: load `prove-it` and follow it. Then Procedure 9.
+3. Else say that the feature is **not proved** as a user path, and that the user can ask for `prove-it`. Procedure 9.
 
 ### Procedure 9: Stop
 
@@ -162,7 +163,6 @@ Stop. Do not start unrelated work.
 - Design already settled → skip `grill-me` (Procedure 2 step 1).
 - Readers or tone not chosen yet → pick them, show them, continue (no stop).
 - User changes readers or tone → apply it; do not restart the flow.
-- Spec already approved in this conversation → skip plan-1 wait.
 - No docs pages in the DAG → skip tone.
 - 2+ ready nodes → parallel (Hard gate 5).
 - A node is ready while an unrelated node still runs → start it now (Hard gate 5).
@@ -175,7 +175,7 @@ Stop. Do not start unrelated work.
 
 | Signal                                           | What it means                        | Do instead                                      |
 | ------------------------------------------------ | ------------------------------------ | ----------------------------------------------- |
-| Coding during grill or before plan-2 approval    | Skipped the blocks                   | Hard gates 1–2.                                 |
+| Coding during grill or before plan 2 exists      | Skipped the plans                    | Hard gate 1.                                    |
 | Superpowers `brainstorming` questions            | Second interview                     | `grill-me` only.                                |
 | Committing the spec or plan file                 | Generated artifact in git            | Hard gate 4.                                    |
 | One node, then review, then the next             | Sequential dispatcher                | Hard gate 5. Parallel ready nodes.              |
@@ -203,9 +203,9 @@ Stop. Do not start unrelated work.
 - **`writing-plans` missing:** still write plan 2 at the Superpowers plan path with the node contract. Say the skill file was not found.
 - **`docs` missing:** stop. Do not skip docs. Tell the user.
 - **Cannot spawn parallel subagents:** run the ready nodes one at a time. Say that in chat. Keep the same prompts and skills.
-- **User rejects spec or plan:** edit, open, wait. Do not start the next procedure.
+- **User rejects spec or plan:** stop dispatch of new nodes. Edit the file and the live board. Then continue.
 - **User stops the run while nodes run:** stop dispatch. Leave the live board as it is. Do not mark skipped nodes `done`.
-- **`prove-it` missing:** say so. Offer skip. Do not invent a second prove procedure.
+- **`prove-it` missing:** say so. Do not invent a second prove procedure.
 - **They pick `prove-it`, then skip inside it:** not proved. Procedure 9.
 - **Paint omitted from a completion message:** emit the painted DAG immediately. Do not start new nodes until that fence is in chat.
 - **Harness wakes once for several finished workers:** update every returned node, then paint once. Do not skip because the wake was a batch.
