@@ -11,8 +11,8 @@
 # start of a take "front" shows the face:
 #   front: from -Y. side: from -X (the right side of the character).
 #   threeQuarter: from (-1, -1, 0.6), above the front right.
-# The camera follows the body across the ground and keeps one scale for the
-# whole take, so the frames compare. The ground plane stays at the lowest point
+# The camera follows the body across the ground. Each angle keeps one scale
+# for the whole take, so the frames compare, and the body fills the tile. The ground plane stays at the lowest point
 # of the take, so a jump or a float shows a gap under the feet.
 # --take renders one take. --frames renders a frame range. Use them to keep one
 # MCP call inside its time limit.
@@ -48,6 +48,7 @@ if '--frames' in options:
     frame_window = (int(match[1]), int(match[2]))
 
 sc = bpy.context.scene
+actions_before = set(bpy.data.actions)
 extension = os.path.splitext(clip)[1].lower()
 if extension == '.fbx':
     bpy.ops.import_scene.fbx(filepath=clip)
@@ -59,13 +60,29 @@ arm = next((o for o in sc.objects if o.type == 'ARMATURE'), None)
 if arm is None or arm.animation_data is None:
     raise ValueError(f'{clip} has no animated armature')
 
-# The takes: the active action and the actions in the NLA tracks. Mute the
-# tracks, so that each take plays alone.
+
+
+def animates_bones(action):
+    """True when the action has keys on pose bones."""
+    if hasattr(action, 'layers'):  # Blender 4.4 and later: layered actions
+        curves = [curve for layer in action.layers for strip in layer.strips
+                  for bag in strip.channelbags for curve in bag.fcurves]
+    else:
+        curves = list(action.fcurves)
+    return any(curve.data_path.startswith('pose.bones') for curve in curves)
+
+
+# The takes: the active action, the actions in the NLA tracks, and the other
+# bone actions of the file. The FBX import makes one action for each take of a
+# multi-take file, but it plays only the first one. Mute the tracks, so that
+# each take plays alone.
 anim = arm.animation_data
 takes = [anim.action] if anim.action else []
 for track in anim.nla_tracks:
     track.mute = True
     takes += [strip.action for strip in track.strips if strip.action and strip.action not in takes]
+takes += [action for action in bpy.data.actions
+          if action not in actions_before and action not in takes and animates_bones(action)]
 if '--take' in options:
     names = [take.name for take in takes]
     takes = [take for take in takes if take.name == options['--take']]
@@ -86,6 +103,14 @@ for obj in sc.objects:
 
 
 def use_take(action):
+    # Start each take from the rest pose, so that bones that the take does
+    # not key do not keep the pose of the take before.
+    for bone in arm.pose.bones:
+        bone.location = (0, 0, 0)
+        bone.rotation_quaternion = (1, 0, 0, 0)
+        bone.rotation_euler = (0, 0, 0)
+        bone.rotation_axis_angle = (0, 0, 1, 0)
+        bone.scale = (1, 1, 1)
     anim.action = action
     # Blender 4.4 and later play an action through a slot.
     slots = getattr(action, 'slots', None)
@@ -189,7 +214,20 @@ for take in takes:
     ground = float(min(low[2] for low, _ in bounds))
     top = float(max(high[2] for _, high in bounds))
     span = max(float(np.linalg.norm([high[0] - low[0], high[1] - low[1], top - ground])) for low, high in bounds)
-    cam_data.ortho_scale = span * 1.1
+    targets = [np.array((center[0], center[1], (ground + top) / 2)) for center in centers]
+    # The size of each view: the largest extent of the body on the image
+    # plane of that view, over the whole take, plus a small margin. Then the
+    # body fills the tile in each view, and keeps one scale for the take.
+    view_scale = {}
+    for view, direction in VIEWS.items():
+        rotation = (-direction.normalized()).to_track_quat('-Z', 'Y').to_matrix()
+        axes = np.array([rotation.col[0], rotation.col[1]])  # image right and up
+        extent = 0.0
+        for (low, high), target in zip(bounds, targets):
+            corners = np.array([[x, y, z] for x in (low[0], high[0]) for y in (low[1], high[1])
+                                for z in (low[2], high[2])]) - target
+            extent = max(extent, float(np.abs(corners @ axes.T).max()) * 2)
+        view_scale[view] = extent * 1.08
     cam_data.clip_start = span * 0.01
     cam_data.clip_end = span * 100
     middle = np.mean(centers, axis=0)
@@ -203,10 +241,10 @@ for take in takes:
         tiles = {view: [] for view in VIEWS}
         for frame in block:
             sc.frame_set(frame)
-            center = centers[frame - first]
-            target = Vector((float(center[0]), float(center[1]), (ground + top) / 2))
+            target = Vector(targets[frame - first])
             for view, direction in VIEWS.items():
                 direction = direction.normalized()
+                cam_data.ortho_scale = view_scale[view]
                 cam.location = target + direction * span * 10
                 cam.rotation_euler = (-direction).to_track_quat('-Z', 'Y').to_euler()
                 tiles[view].append(render_tile())
