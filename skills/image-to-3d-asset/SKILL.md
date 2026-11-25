@@ -14,7 +14,8 @@ In the commands below:
 - `<skill-dir>` is the folder of this skill.
 - `<motion-dir>` is the sibling skill folder `<skill-dir>/../motion-for-3d-asset`.
 - `<out>` is one output folder for one mesh and the tasks made from it. Use the same `<out>` for every step of that mesh. A new mesh needs a new `<out>`.
-- `blender` is Blender 5.x (5.3 is tested), run headless.
+- `<qa-dir>` is `<skill-dir>/scripts/qa`, and `<motion-qa-dir>` is `<motion-dir>/scripts/qa`.
+- Blender is Blender 5.x (5.3 is tested), open with a UI and the Blender MCP add-on. See [Live Blender](#live-blender).
 
 ## Input rules
 
@@ -35,8 +36,35 @@ The input decides the quality. Check the image before you spend credits. If an i
 2. **Install the packages.** If `<skill-dir>/scripts/node_modules` does not exist, run `npm install --prefix <skill-dir>/scripts`. The versions are pinned in `scripts/package.json`.
 3. **Check the balance.** Run `node <skill-dir>/scripts/meshy.mjs balance`. This call is free.
 4. **Tell the user the cost** before the first paid step. Use the Costs table. Ask the user for the height of the character in meters (for the rig).
+5. **Connect to Blender** before the first Blender step. See [Live Blender](#live-blender).
 
 Every paid command prints one JSON line for each result to stdout and progress to stderr. Run it in the background and wait for the process to end. Do not poll with sleep. The exit code is 1 when a result failed.
+
+## Live Blender
+
+All Blender work runs in the live Blender (with a UI) through the Blender MCP tool `execute_blender_code`. Never run Blender headless.
+
+Connect first:
+
+1. Make one real call: `execute_blender_code` with `import bpy; print(bpy.app.version_string, bpy.data.filepath)`.
+2. If the call fails, start Blender with a UI and the MCP add-on listener, the way this project documents it. Then make the call again.
+3. If it still fails, stop. Report what failed and the error text. Do not go on.
+4. If the project uses a game engine (for example Unity), do the same with the MCP of the engine before the first engine step.
+
+Run a QA script:
+
+1. If the open Blender file has unsaved changes, save it (`bpy.ops.wm.save_mainfile()`).
+2. Run the script with `execute_blender_code`. Give absolute Windows paths. In Git Bash, `pwd -W` gives the Windows path.
+
+   ```python
+   import sys; sys.path.insert(0, r'<qa-dir>'); import qa_live
+   qa_live.run(r'<qa-dir>/mesh-check.py', r'<out>/samurai.glb', r'<out>/samurai.check.json', r'<out>/samurai.renders.png')
+   ```
+
+- Start each call with the `import` line. The commands below show only the `qa_live.run` line.
+- `qa_live.run` gives the script a new empty scene. Then it removes that scene and all data that the run made. The open file stays as it was. Blender stays open.
+- The output of the script comes back in the MCP result. A script error comes back as the error of the call.
+- One MCP call has a time limit. Run one file in each call.
 
 ## Steps (character)
 
@@ -44,8 +72,8 @@ Every paid command prints one JSON line for each result to stdout and progress t
 
 Skip this step when the user gives separate views or one image.
 
-```bash
-blender --background --factory-startup --python <skill-dir>/scripts/qa/split-sheet.py -- <sheet.png> 3 <out>/views
+```python
+qa_live.run(r'<qa-dir>/split-sheet.py', r'<sheet.png>', 3, r'<out>/views')
 ```
 
 - `3` is the number of views on the sheet. The script puts the cuts in the widest empty gaps, so an A-pose hand is not cut.
@@ -65,13 +93,14 @@ node <skill-dir>/scripts/meshy.mjs mesh <out>/views/view-1.png <out>/views/view-
 
 ### 3. Check the mesh, and look at it
 
-```bash
-blender --background --factory-startup --python <skill-dir>/scripts/qa/mesh-check.py -- <out>/samurai.glb <out>/samurai.check.json <out>/samurai.renders.png
+```python
+qa_live.run(r'<qa-dir>/mesh-check.py', r'<out>/samurai.glb', r'<out>/samurai.check.json', r'<out>/samurai.renders.png')
 ```
 
 - Look at `samurai.renders.png` (front, right side, back, 3/4). Show it to the user.
+- Also look at a close-up and at the gameplay camera distance: import the GLB in the live Blender and take viewport screenshots through the Blender MCP. If the project uses a game engine, look at the model there too.
 - **Stop if an arm or a leg joins the body, a hand joins the hip, or a part is missing.** Do not pay for a rig on a bad mesh. Ask for a better image (see Input rules).
-- Read the numbers with the QA table below.
+- Read the numbers with the QA table below. The numbers point to parts to look at. Only what you see passes the mesh.
 
 ### 4. Remesh (only when needed)
 
@@ -172,23 +201,25 @@ Use these for signature attacks that the library does not have. Text-to-motion n
 
 ### 9. Check the clips
 
-Measure the native Meshy file first:
+Measure the native Meshy file first, and render every frame. Run one script in each MCP call:
 
-```bash
-blender --background --factory-startup --python <motion-dir>/scripts/qa/analyze.py -- <out>/katana_cleave.fbx <out>/katana_cleave.qa.json <out>/katana_cleave.qa.png
-blender --background --factory-startup --python <motion-dir>/scripts/qa/compare.py -- <out>/clips.mp4 <out>/katana_cleave.fbx <out>/samurai.actions-0.fbx
+```python
+qa_live.run(r'<motion-qa-dir>/analyze.py', r'<out>/katana_cleave.fbx', r'<out>/katana_cleave.qa.json', r'<out>/katana_cleave.qa.png')
+qa_live.run(r'<motion-qa-dir>/frame-sheets.py', r'<out>/katana_cleave.fbx', r'<out>/sheets')
+qa_live.run(r'<motion-qa-dir>/compare.py', r'<out>/clips.mp4', r'<out>/katana_cleave.fbx', r'<out>/samurai.actions-0.fbx')
 ```
 
-- Look at every contact sheet (`.qa.png`). Read the numbers with the QA table.
+- Look at every frame sheet and every contact sheet (`.qa.png`). Then do the [check by sight](../motion-for-3d-asset/SKILL.md#check-by-sight) for each clip, in Blender and in the engine.
+- Read the numbers with the QA table. The numbers point to frames to look at. They never pass a clip.
 - The report starts with `identity`: the SHA-256 and size of the file, and the take (action name, frame rate, first and last frame). The SHA-256 must be the hash of the file in `manifest.json`.
 - `compare.py` also writes `clips.mp4.json` with the identity of each clip. All clips in one video need the same frame rate.
 - For loop windows and impact frames, use the QA section of [motion-for-3d-asset SKILL.md](../motion-for-3d-asset/SKILL.md#qa-with-blender).
 - If a text clip fails, write a new prompt. Put only that clip, with a new name, in a new clips file, and run `motion` on it.
 
-Judge a clip only on its native report. A corrected copy is a converted, retargeted, or hand-fixed file. Give it its own report, bound to the native report:
+Read the numbers of a clip only from its native report. A corrected copy is a converted, retargeted, or hand-fixed file. Give it its own report, bound to the native report:
 
-```bash
-blender --background --factory-startup --python <motion-dir>/scripts/qa/analyze.py -- C:/work/samurai/katana_cleave.game.fbx C:/work/samurai/katana_cleave.game.qa.json C:/work/samurai/katana_cleave.game.qa.png --native <out>/katana_cleave.qa.json
+```python
+qa_live.run(r'<motion-qa-dir>/analyze.py', r'C:/work/samurai/katana_cleave.game.fbx', r'C:/work/samurai/katana_cleave.game.qa.json', r'C:/work/samurai/katana_cleave.game.qa.png', '--native', r'<out>/katana_cleave.qa.json')
 ```
 
 - The corrected report names the native report and file in `identity.native`. `changeFromNative` gives the change of each main measure, with distances as a share of the figure height.
@@ -197,12 +228,20 @@ blender --background --factory-startup --python <motion-dir>/scripts/qa/analyze.
 
 ### 10. Deliver
 
+Say "done" only after the check by sight passes in Blender and in the engine (see [Done and stop rules](#done-and-stop-rules)).
+
 1. Give the user the path, the triangle count, and the size of the rigged GLB and of each LOD.
-2. Give each clip path with its length and its QA result.
+2. Give each clip path with its length, its QA numbers, and what you saw in the check by sight.
 3. Give the credits spent and the balance left (`balance`).
-4. Show the renders, the contact sheets, and the MP4 when the harness can show them.
+4. Attach the renders, the frame sheets, the engine captures, the contact sheets, and the MP4.
 5. Open `<out>` for the user.
 6. If the files go into a game repo with production gates, follow [Game project gates](#game-project-gates).
+
+## Done and stop rules
+
+- **Done:** Say "done" only after the check by sight passes in Blender and in the engine. For each mesh and each clip, write what you saw, for example "no twist, no deformation, no clipping, no floating weapon". Attach the renders, the sheets, and the captures.
+- **No looser checks:** Do not make a check less strict without the approval of the user.
+- **Stop:** If the same defect fails 2 rounds in a row, stop. Find out how shipped games solve that defect. Report to the user with 2 or 3 options. Do not start round 3.
 
 ## Game project gates
 
@@ -278,9 +317,11 @@ Quads: Meshy refuses finger bones on a quad mesh. For quads, run `mesh --opt top
 
 ## QA
 
+The numbers point to parts and frames to look at. A number can stop a step. A number never passes a mesh or a clip. Only the check by sight passes it (see [Done and stop rules](#done-and-stop-rules)).
+
 Mesh (`mesh-check.py` JSON):
 
-| Field | Pass | Fail |
+| Field | Expected | If not |
 |---|---|---|
 | The renders | Arms, legs, and hands are apart from the body. Nothing is missing. No shadows painted in the texture. | A limb joins the body. Stop. |
 | `triangles` | 380,000 or less | More: run `remesh` before `rig`. |
@@ -291,7 +332,7 @@ Mesh (`mesh-check.py` JSON):
 
 Rig (`mesh-check.py` on `<name>.rig.glb`, and on each LOD export of step 6):
 
-| Field | Pass |
+| Field | Expected |
 |---|---|
 | `armature.present` | `true` |
 | `armature.rootBones` | `["mixamorig:Hips"]` for the Mixamo skeleton |
@@ -299,9 +340,9 @@ Rig (`mesh-check.py` on `<name>.rig.glb`, and on each LOD export of step 6):
 | `height` | the `--height` you gave |
 | `unweightedVertices` | 0. More: those vertices stay behind when the rig moves. |
 
-Clips (`analyze.py` JSON). Judge a clip on its native report:
+Clips (`analyze.py` JSON). Read the numbers from the native report:
 
-| Measure | Pass | Fail |
+| Measure | Expected | If not |
 |---|---|---|
 | `liveliness.meanJointSpeedDegPerSec` | 30 or more for an action | Under 10: a held pose, not a motion. About 14: a frozen idle. |
 | Grip, two-hand weapon: native `wristGapM.median` / `figureHeightM` | Under 0.2 | More: a one-hand clip. Do not use it for a two-hand weapon. A correction cannot make it pass. |
@@ -362,11 +403,6 @@ Rules for these files:
 - Do not edit, rename, re-export, or save over a Meshy file. Save each changed file (a LOD export, a converted clip, a Blender file) outside the Meshy folders. QA reports can stay next to the file that they measure.
 - When a download has the name of a file that is already in `<out>`, the new file gets `-2`, `-3`, and so on. The manifest has the real name.
 
-## Blender
-
-- Give Blender absolute Windows paths. In Git Bash, `pwd -W` gives the Windows path.
-- Run at most 3 Blender processes at a time.
-
 ## Errors
 
 | Error | Cause | Fix |
@@ -385,5 +421,8 @@ Rules for these files:
 | `Mixed takes` | The folder has clips of two rigs | Keep the clips of each rig in their own `--out`. |
 | `--task <id> is not a ... task of <out>` | The task belongs to another generation | Use a new `--out` for that task. |
 | `Set the MESHY_API_KEY env var` | No key | See Before you run, item 1. |
+| The Blender MCP call fails | Blender or its MCP add-on listener is not running | Start them (see [Live Blender](#live-blender)). If the call still fails, stop and report. |
+| `Run this script with qa_live.run` | The script ran without `qa_live.run` | Run it with `qa_live.run` in the live Blender. |
+| `... is in EDIT mode` | An object of the open scene is not in Object mode | Switch to Object mode, save, and run again. |
 
 To test the script: `node --test <skill-dir>/scripts/meshy.test.mjs`.

@@ -7,13 +7,13 @@ You have concept art of a game character, and you need a model that moves in the
 - A mesh of about 300,000 triangles (the Meshy maximum) with 4k PBR textures (GLB, FBX, USDZ, OBJ, STL).
 - A rigged GLB and FBX: 44 Mixamo bones, root `mixamorig:Hips`. In Unity, use the rig type that the project declares. With no declaration, use Generic. Humanoid needs the checks in [motion-for-3d-asset Bones](../motion-for-3d-asset/SKILL.md#bones).
 - Library clips (805 motion capture clips) and text-to-motion clips, as GLB and FBX.
-- Blender checks: 4 renders of the mesh, and a contact sheet and numbers for each clip. Each report starts with the SHA-256 of the file that it measured.
+- Blender checks in your open Blender: 4 renders of the mesh, numbers and a contact sheet for each clip, and sheets of every frame from 3 angles. Each report starts with the SHA-256 of the file that it measured. The numbers point to frames to look at. A mesh or a clip passes only when you look at it in Blender and in the engine and see no defect.
 - Optional LODs of 80,000 and 25,000 triangles for battle views.
 - A `manifest.json` that keeps the source history: each Meshy task id, its parent task, and the SHA-256 of each file.
 
 ## Quick start
 
-Ask the agent: `/image-to-3d-asset make a rigged character from samurai-turnaround.png`. Or run it by hand from the skill folder. You need Node 20 or newer, Blender 5.x, and a Meshy API key in `MESHY_API_KEY`.
+Ask the agent: `/image-to-3d-asset make a rigged character from samurai-turnaround.png`. Or run it by hand from the skill folder. You need Node 20 or newer, Blender 5.x open with a UI, and a Meshy API key in `MESHY_API_KEY`. The agent runs the Blender steps in your open Blender through the Blender MCP. By hand, run them in the Python console of Blender. `<skill-dir>` is the folder of this skill.
 
 1. Install the packages once:
 
@@ -22,18 +22,24 @@ Ask the agent: `/image-to-3d-asset make a rigged character from samurai-turnarou
    node scripts/meshy.mjs balance
    ```
 
-2. Split the turnaround sheet into 3 views:
+2. Save your open Blender file. Then split the turnaround sheet into 3 views. In the Python console of Blender:
 
-   ```bash
-   blender --background --factory-startup --python scripts/qa/split-sheet.py -- C:/art/samurai-sheet.png 3 C:/out/samurai/views
+   ```python
+   import sys; sys.path.insert(0, r'<skill-dir>/scripts/qa'); import qa_live
+   qa_live.run(r'<skill-dir>/scripts/qa/split-sheet.py', r'C:/art/samurai-sheet.png', 3, r'C:/out/samurai/views')
    ```
 
 3. Make the mesh, then check it. Look at `samurai.renders.png` before you rig:
 
    ```bash
    node scripts/meshy.mjs mesh C:/out/samurai/views/view-1.png C:/out/samurai/views/view-2.png C:/out/samurai/views/view-3.png --name samurai --out C:/out/samurai
-   blender --background --factory-startup --python scripts/qa/mesh-check.py -- C:/out/samurai/samurai.glb C:/out/samurai/samurai.check.json C:/out/samurai/samurai.renders.png
    ```
+
+   ```python
+   qa_live.run(r'<skill-dir>/scripts/qa/mesh-check.py', r'C:/out/samurai/samurai.glb', r'C:/out/samurai/samurai.check.json', r'C:/out/samurai/samurai.renders.png')
+   ```
+
+   `qa_live.run` works in a new empty scene, and removes that scene when it is done. Your open file stays as it was.
 
 4. Rig it. Give the height in meters:
 

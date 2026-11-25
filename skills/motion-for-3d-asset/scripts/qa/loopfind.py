@@ -1,10 +1,16 @@
 # Find the frame pair (a, b) whose local poses match best: a loop window.
+# Run it in the live Blender through the Blender MCP (see qa_live.py):
+#   qa_live.run(r'<qa-dir>/loopfind.py', <clip.fbx>, <min-frames>)
 import bpy, sys, math, json
+if not bpy.context.scene.get('qa_live'):
+    raise RuntimeError('Run this script with qa_live.run in the live Blender. See SKILL.md.')
 args = sys.argv[sys.argv.index('--') + 1:]
-bpy.ops.wm.read_factory_settings(use_empty=True)
+if len(args) != 2:
+    raise ValueError("usage: qa_live.run(r'<qa-dir>/loopfind.py', <clip.fbx>, <min-frames>)")
+# qa_live.run gives this script a new empty scene, so the scene holds only the import.
 bpy.ops.import_scene.fbx(filepath=args[0])
 sc = bpy.context.scene
-arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
+arm = next(o for o in sc.objects if o.type == 'ARMATURE')
 f0, f1 = (int(round(v)) for v in arm.animation_data.action.frame_range)
 skip = {'Pelvis'}  # pelvis rotation carries heading, compare the body pose
 poses = []

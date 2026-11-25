@@ -1,5 +1,6 @@
 # Cut a character turnaround sheet into one square image per view.
-#   blender --background --factory-startup --python split-sheet.py -- <sheet.png> <columns> <outDir>
+# Run it in the live Blender through the Blender MCP (see qa_live.py):
+#   qa_live.run(r'<qa-dir>/split-sheet.py', <sheet.png>, <columns>, <outDir>)
 # Writes view-1.png ... view-N.png (left to right) into outDir and prints one
 # JSON line with the paths and the boxes.
 #
@@ -16,14 +17,14 @@
 import bpy, sys, os, json
 import numpy as np
 
+if not bpy.context.scene.get('qa_live'):
+    raise RuntimeError('Run this script with qa_live.run in the live Blender. See SKILL.md.')
 args = sys.argv[sys.argv.index('--') + 1:]
 if len(args) != 3:
-    print('usage: blender --background --factory-startup --python split-sheet.py -- <sheet.png> <columns> <outDir>')
-    sys.exit(2)
+    raise ValueError("usage: qa_live.run(r'<qa-dir>/split-sheet.py', <sheet.png>, <columns>, <outDir>)")
 sheet_path, columns, out_dir = args[0], int(args[1]), args[2]
 if columns < 1:
-    print('ERROR: <columns> must be 1 or more')
-    sys.exit(2)
+    raise ValueError('<columns> must be 1 or more')
 
 # The smallest color difference (0..1, any channel) that counts as character.
 MIN_TOLERANCE = 0.08
@@ -76,8 +77,7 @@ for i, (x0, x1) in enumerate(bounds, start=1):
     rows = np.flatnonzero(part.sum(axis=1) > NOISE_PIXELS)
     cols = np.flatnonzero(part.sum(axis=0) > NOISE_PIXELS)
     if rows.size == 0 or cols.size == 0:
-        print(f'ERROR: column {i} (x {x0}..{x1}) has no character. Check <columns>.')
-        sys.exit(1)
+        raise ValueError(f'column {i} (x {x0}..{x1}) has no character. Check <columns>.')
     r0, r1 = int(rows[0]), int(rows[-1]) + 1
     c0, c1 = x0 + int(cols[0]), x0 + int(cols[-1]) + 1
     crop = px[r0:r1, c0:c1]

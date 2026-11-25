@@ -1,6 +1,7 @@
 # Render several motion FBX files side by side into one MP4, from an
 # elevated 3/4 game camera.
-#   blender --background --factory-startup --python compare.py -- <out.mp4> <a.fbx> <b.fbx> ...
+# Run it in the live Blender through the Blender MCP (see qa_live.py):
+#   qa_live.run(r'<qa-dir>/compare.py', <out.mp4>, <a.fbx>, <b.fbx>, ...)
 # Writes <out.mp4>.json with the identity of each clip, left to right: the
 # SHA-256, size, take (action name, frame rate, frames), and display scale.
 # The scale is for this render only. The input files stay unchanged.
@@ -8,7 +9,11 @@
 import bpy, sys, json, hashlib, os
 from mathutils import Vector
 
+if not bpy.context.scene.get('qa_live'):
+    raise RuntimeError('Run this script with qa_live.run in the live Blender. See SKILL.md.')
 args = sys.argv[sys.argv.index('--') + 1:]
+if len(args) < 2:
+    raise ValueError("usage: qa_live.run(r'<qa-dir>/compare.py', <out.mp4>, <a.fbx>, <b.fbx>, ...)")
 out, files = args[0], args[1:]
 
 
@@ -21,7 +26,7 @@ def file_identity(path):
     return {'file': os.path.abspath(path), 'sha256': digest.hexdigest(), 'bytes': os.path.getsize(path)}
 
 
-bpy.ops.wm.read_factory_settings(use_empty=True)
+# qa_live.run gives this script a new empty scene.
 sc = bpy.context.scene
 gap = 2.6
 # Lay clips out along the camera's screen-horizontal axis on the ground.
@@ -61,8 +66,7 @@ for i, path in enumerate(files):
 # A clip with another frame rate plays too fast or too slow next to the others.
 rates = sorted({round(clip['take']['sourceFps'], 3) for clip in clips})
 if len(rates) > 1:
-    print(f'ERROR: the clips have different frame rates {rates}. Compare clips of one frame rate.')
-    sys.exit(2)
+    raise ValueError(f'the clips have different frame rates {rates}. Compare clips of one frame rate.')
 sc.frame_start, sc.frame_end = 1, end
 sc.render.engine = 'BLENDER_WORKBENCH'
 sc.display.shading.light = 'STUDIO'

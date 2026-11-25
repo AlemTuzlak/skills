@@ -1,5 +1,6 @@
-# Headless Blender QA for one generated GLB, before we pay for a rig.
-#   blender --background --factory-startup --python mesh-check.py -- <model.glb> <out.json> <renders.png>
+# Blender QA for one generated GLB, before we pay for a rig.
+# Run it in the live Blender through the Blender MCP (see qa_live.py):
+#   qa_live.run(r'<qa-dir>/mesh-check.py', <model.glb>, <out.json>, <renders.png>)
 # Writes the SHA-256 and size of the file, the triangle and vertex counts, the
 # loose parts (mesh islands), the non-manifold edges, the bounding box, the
 # materials and texture sizes, the skeleton facts, and the vertices with no
@@ -17,10 +18,11 @@ import bpy, bmesh, sys, os, json, hashlib
 import numpy as np
 from mathutils import Vector
 
+if not bpy.context.scene.get('qa_live'):
+    raise RuntimeError('Run this script with qa_live.run in the live Blender. See SKILL.md.')
 args = sys.argv[sys.argv.index('--') + 1:]
 if len(args) != 3:
-    print('usage: blender --background --factory-startup --python mesh-check.py -- <model.glb> <out.json> <renders.png>')
-    sys.exit(2)
+    raise ValueError("usage: qa_live.run(r'<qa-dir>/mesh-check.py', <model.glb>, <out.json>, <renders.png>)")
 glb, out_json, renders_png = args[0], args[1], args[2]
 
 TILE = 512
@@ -29,7 +31,7 @@ FINGER_WORDS = ('index', 'thumb', 'finger')
 # At most this many island sizes are listed for each object.
 MAX_ISLANDS_LISTED = 20
 
-bpy.ops.wm.read_factory_settings(use_empty=True)
+# qa_live.run gives this script a new empty scene, so the scene holds only the import.
 bpy.ops.import_scene.gltf(filepath=glb)
 sc = bpy.context.scene
 armatures = [o for o in sc.objects if o.type == 'ARMATURE']
@@ -37,8 +39,7 @@ armatures = [o for o in sc.objects if o.type == 'ARMATURE']
 bone_shapes = {pb.custom_shape for arm in armatures for pb in arm.pose.bones if pb.custom_shape}
 meshes = [o for o in sc.objects if o.type == 'MESH' and o not in bone_shapes]
 if not meshes:
-    print(f'ERROR: {glb} has no mesh objects')
-    sys.exit(1)
+    raise ValueError(f'{glb} has no mesh objects')
 
 for arm in armatures:
     arm.data.pose_position = 'REST'

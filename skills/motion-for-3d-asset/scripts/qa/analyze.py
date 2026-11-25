@@ -1,5 +1,6 @@
-# Headless Blender QA for one motion FBX.
-#   blender --background --factory-startup --python analyze.py -- <fbx> <out.json> <sheet.png> [--native <native.qa.json>]
+# Blender QA for one motion FBX.
+# Run it in the live Blender through the Blender MCP (see qa_live.py):
+#   qa_live.run(r'<qa-dir>/analyze.py', <fbx>, <out.json>, <sheet.png>[, '--native', <native.qa.json>])
 # Measures root drift, airborne frames, foot sliding, loop seam, hand speed
 # peaks, and renders an isometric contact sheet of the skinned mannequin.
 # "identity" names what was measured: the SHA-256 and size of the file, and the
@@ -12,10 +13,11 @@ import bpy, sys, json, math, hashlib, os
 import numpy as np
 from mathutils import Vector
 
+if not bpy.context.scene.get('qa_live'):
+    raise RuntimeError('Run this script with qa_live.run in the live Blender. See SKILL.md.')
 args = sys.argv[sys.argv.index('--') + 1:]
 if len(args) not in (3, 5) or (len(args) == 5 and args[3] != '--native'):
-    print('usage: blender --background --factory-startup --python analyze.py -- <fbx> <out.json> <sheet.png> [--native <native.qa.json>]')
-    sys.exit(2)
+    raise ValueError("usage: qa_live.run(r'<qa-dir>/analyze.py', <fbx>, <out.json>, <sheet.png>[, '--native', <native.qa.json>])")
 fbx, out_json, sheet_png = args[0], args[1], args[2]
 native_json = args[4] if len(args) == 5 else None
 
@@ -69,25 +71,21 @@ def change_from_native(report, native):
             for key in before}
 
 
-# Check the target files before the slow import.
+# Check the target files before the slow import. A problem stops the run with its message.
 measured = file_identity(fbx)
 native = native_ref = None
-try:
-    if native_json:
-        with open(native_json) as fh:
-            native = json.load(fh)
-        native_ref = native_reference(native, native_json, measured)
-    problem = report_target_problem(out_json, measured, native_json)
-    if problem:
-        raise ValueError(problem)
-except (OSError, ValueError) as error:
-    print(f'ERROR: {error}')
-    sys.exit(2)
+if native_json:
+    with open(native_json) as fh:
+        native = json.load(fh)
+    native_ref = native_reference(native, native_json, measured)
+problem = report_target_problem(out_json, measured, native_json)
+if problem:
+    raise ValueError(problem)
 
-bpy.ops.wm.read_factory_settings(use_empty=True)
+# qa_live.run gives this script a new empty scene, so the scene holds only the import.
 bpy.ops.import_scene.fbx(filepath=fbx)
 sc = bpy.context.scene
-arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
+arm = next(o for o in sc.objects if o.type == 'ARMATURE')
 action = arm.animation_data.action
 f0, f1 = (int(round(v)) for v in action.frame_range)
 fps = sc.render.fps / sc.render.fps_base

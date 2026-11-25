@@ -5,7 +5,7 @@ description: Use when the user wants skeletal animation clips (FBX or GLB) for a
 
 # Motion for 3D Asset
 
-Make real skeletal animation clips for a humanoid character with Uthana text-to-motion. The bundled script uses TanStack AI (`generateMotion` and `createUthanaCharacter` from `@tanstack/ai-uthana`). It uploads the character, sends the prompts, and saves an FBX and a GLB for each clip. The Blender scripts measure each clip, so you report facts, not guesses.
+Make real skeletal animation clips for a humanoid character with Uthana text-to-motion. The bundled script uses TanStack AI (`generateMotion` and `createUthanaCharacter` from `@tanstack/ai-uthana`). It uploads the character, sends the prompts, and saves an FBX and a GLB for each clip. The QA scripts run in the live Blender. They measure each clip and render every frame. A clip passes only on what you see.
 
 The prompt decides the quality. Most of this skill is how to write it.
 
@@ -18,6 +18,32 @@ The prompt decides the quality. Most of this skill is how to write it.
 2. **Install the packages.** If `<skill-dir>/scripts/node_modules` does not exist, run `npm install --prefix <skill-dir>/scripts`. The versions are pinned in `scripts/package.json`.
 3. **Check the balance.** Run `node <skill-dir>/scripts/uthana.mjs balance`. A 4-second clip costs about $0.40. Tell the user the total cost before you start.
 4. **Get the character.** A humanoid `.glb` or `.fbx` gives clips on the real body and proportions. Without one, the clips use the default Uthana character.
+5. **Connect to Blender** before the first Blender step. See [Live Blender](#live-blender).
+
+## Live Blender
+
+All Blender work runs in the live Blender (with a UI) through the Blender MCP tool `execute_blender_code`. Never run Blender headless.
+
+Connect first:
+
+1. Make one real call: `execute_blender_code` with `import bpy; print(bpy.app.version_string, bpy.data.filepath)`.
+2. If the call fails, start Blender with a UI and the MCP add-on listener, the way this project documents it. Then make the call again.
+3. If it still fails, stop. Report what failed and the error text. Do not go on.
+4. If the project uses a game engine (for example Unity), do the same with the MCP of the engine before the first engine step.
+
+Run a QA script:
+
+1. If the open Blender file has unsaved changes, save it (`bpy.ops.wm.save_mainfile()`).
+2. Run the script with `execute_blender_code`. Give absolute paths. On Git Bash, `pwd -W` gives a Windows path.
+
+   ```python
+   import sys; sys.path.insert(0, r'<skill-dir>/scripts/qa'); import qa_live
+   qa_live.run(r'<skill-dir>/scripts/qa/analyze.py', r'<clip.fbx>', r'<clip.qa.json>', r'<clip.qa.png>')
+   ```
+
+- `qa_live.run` gives the script a new empty scene. Then it removes that scene and all data that the run made. The open file stays as it was. Blender stays open.
+- The output of the script comes back in the MCP result. A script error comes back as the error of the call.
+- One MCP call has a time limit. Run one clip in each call. For a long clip, give `frame-sheets.py` a `--take` or a `--frames` range.
 
 ## Workflow
 
@@ -54,8 +80,8 @@ The prompt decides the quality. Most of this skill is how to write it.
    - `--only name1,name2` runs only those clips. The manifest keeps the other entries.
    - Use `--only` only for a clip that failed and has no files. It writes over the files and the manifest entry of a clip with the same name.
 
-4. **Measure each clip** with Blender (see QA below).
-5. **Make a second take only of the clips that fail QA.** Change the words, because Uthana has no seed. Give the new take a new name, for example `orc_idle_2`, so that the first take keeps its files. Do not order several takes of every clip.
+4. **Measure each clip, and look at every frame** (see [QA in the live Blender](#qa-in-the-live-blender) and [Check by sight](#check-by-sight)).
+5. **Make a second take only of the clips that fail QA.** Change the words, because Uthana has no seed. Give the new take a new name, for example `orc_idle_2`, so that the first take keeps its files. Do not order several takes of every clip. Obey the [stop rule](#done-and-stop-rules).
 6. **Deliver** (see Deliver below).
 
 ## The prompt recipe
@@ -87,38 +113,39 @@ Rules that change the result:
 
 Full prompts that passed QA, with their measured results, are in [references/prompt-library.md](references/prompt-library.md). Start from the closest one.
 
-## QA with Blender
+## QA in the live Blender
 
-The scripts run in headless Blender (tested on 5.3) and need no add-ons.
+The scripts run in the live Blender (tested on 5.3) through `qa_live.run` (see [Live Blender](#live-blender)). They need no other add-ons. The numbers point to frames to look at. A number can stop a clip. A number never passes a clip. Only the [check by sight](#check-by-sight) passes it.
 
-```bash
-blender --background --factory-startup --python <skill-dir>/scripts/qa/analyze.py -- <clip.fbx> <clip.qa.json> <clip.preview.png>
-blender --background --factory-startup --python <skill-dir>/scripts/qa/loopfind.py -- <clip.fbx> <min-frames>
-blender --background --factory-startup --python <skill-dir>/scripts/qa/compare.py -- <out.mp4> <a.fbx> <b.fbx> ...
+```python
+import sys; sys.path.insert(0, r'<skill-dir>/scripts/qa'); import qa_live
+qa_live.run(r'<skill-dir>/scripts/qa/analyze.py', r'<clip.fbx>', r'<clip.qa.json>', r'<clip.qa.png>')
+qa_live.run(r'<skill-dir>/scripts/qa/frame-sheets.py', r'<clip.fbx>', r'<sheets-dir>')
+qa_live.run(r'<skill-dir>/scripts/qa/loopfind.py', r'<clip.fbx>', 30)
+qa_live.run(r'<skill-dir>/scripts/qa/compare.py', r'<out.mp4>', r'<a.fbx>', r'<b.fbx>')
 ```
 
-- Give Blender absolute paths. On Git Bash, `pwd -W` gives a Windows path.
-- Run up to 6 Blender processes at a time.
-- `analyze.py` writes the measurements and a contact sheet: 8 frames from a game camera on top and a side view below. Look at every contact sheet.
-- `loopfind.py` prints the best loop window. Set `<min-frames>` to about one cycle: 15 for a run, 30 for a walk, 45 for an idle.
+- `analyze.py` writes the measurements and a contact sheet: 8 frames from a game camera on top and a side view below.
+- `frame-sheets.py` renders every frame of every take from 3 fixed angles: front, side, and 3/4. Each sheet has 16 frames (4 x 4, left to right, then top to bottom). `<sheets-dir>/<clip>.sheets.json` gives the frames of each sheet. Give `'--take', '<name>'` or `'--frames', '1-48'` to split a long clip.
+- `loopfind.py` prints the best loop window. Set the last value to about one cycle in frames: 15 for a run, 30 for a walk, 45 for an idle.
 - The clips are 30 fps. Give `--fps 24` or `--fps 60` to `generate` for a different rate.
 - `compare.py` renders clips side by side into one MP4, all scaled to the same height. It also writes `<out.mp4>.json` with the identity of each clip. All clips in one video need the same frame rate.
 
-**Native first.** `analyze.py` starts the report with `identity`: the SHA-256 and size of the file, and the take (action name, frame rate, first and last frame). Measure the provider file first. Its SHA-256 must be `files.fbx.sha256` of the clip in `<dir>/manifest.json`. Judge the clip only on this native report.
+**Native first.** `analyze.py` starts the report with `identity`: the SHA-256 and size of the file, and the take (action name, frame rate, first and last frame). Measure the provider file first. Its SHA-256 must be `files.fbx.sha256` of the clip in `<dir>/manifest.json`. Read the numbers of the clip only from this native report.
 
 A corrected copy is a converted, retargeted, or hand-fixed file. Give it its own report, bound to the native report:
 
-```bash
-blender --background --factory-startup --python <skill-dir>/scripts/qa/analyze.py -- <copy.fbx> <copy.qa.json> <copy.preview.png> --native <clip.qa.json>
+```python
+qa_live.run(r'<skill-dir>/scripts/qa/analyze.py', r'<copy.fbx>', r'<copy.qa.json>', r'<copy.qa.png>', '--native', r'<clip.qa.json>')
 ```
 
 - `identity.native` names the native report and file. `changeFromNative` gives the change of each main measure, with distances as a share of the figure height.
 - A large change of the wrist gap means that the correction holds the weapon, and the clip does not. Choose another clip, or make a new take.
 - The script refuses to write over the native report, or over the report of another file.
 
-Read the measurements against `figureHeightM`, because the distances are in the units of the character:
+Read the measurements against `figureHeightM`, because the distances are in the units of the character. A clip that meets the expected value still needs the check by sight.
 
-| Clip | Pass | Fail |
+| Clip | Expected | If not |
 |---|---|---|
 | Jump | `airborne.frames` 15 or more, `maxFootClearanceM` near half of the height | under 10 frames: a hop |
 | Two-hand weapon | native `wristGapM.median` under 0.2 of the height, and both hands on the handle at `wristGapM.maxFrame` | larger: a one-hand clip. Do not use it for a two-hand weapon. A correction cannot make it pass. For a one-hand prop, use the contact sheet. |
@@ -136,6 +163,22 @@ Do not compare joint speeds across different rigs. A rig with finger bones gives
 - For a fall: `pelvis.lowestFrame`.
 - Write the basis next to each frame, for example "frame 52 (1.73 s), measured: wrist speed peak".
 
+## Check by sight
+
+A script cannot see a twist or a hand that goes through the body. Look at every frame of every clip.
+
+1. Run `frame-sheets.py` on each clip in the live Blender. Look at every sheet: each frame from the front, the side, and the 3/4 angle.
+2. If the project uses a game engine, play each clip on the character in the engine, at the gameplay camera distance. Capture it and look at the capture.
+3. For each clip, write what you saw, for example "no twist, no deformation, no clipping, no floating weapon". Give the frame of each defect that you find.
+4. A clip passes only when its list of defects is empty, in Blender and in the engine.
+
+Do not make a check less strict without the approval of the user.
+
+## Done and stop rules
+
+- **Done:** Say "done" only after the check by sight passes in Blender and in the engine. Attach the frame sheets and the engine captures.
+- **Stop:** If the same defect fails 2 rounds in a row, stop. Find out how shipped games solve that defect. Report to the user with 2 or 3 options. Do not start round 3.
+
 ## Bones
 
 - An uploaded character that Uthana rigged gets Mixamo bone names (`mixamorig:Hips`).
@@ -150,9 +193,9 @@ Equal bone names do not prove that a clip fits a rig. In Unity, use the rig type
 
 ## Deliver
 
-1. Give each FBX and GLB path, with its length, loop window, and impact frame.
+1. Give each FBX and GLB path, with its length, loop window, impact frame, and what you saw in the check by sight.
 2. Give the cost and the balance that is left.
-3. Show the contact sheets and the comparison MP4 when the harness can show images or video.
+3. Attach the frame sheets, the engine captures, the contact sheets, and the comparison MP4.
 4. Open the output folder for the user.
 5. For Unity: import the FBX with the rig type from [Bones](#bones), and set Loop Time on the loop window. Add animation events at the measured impact frames. A run clip moves the root forward, so use root motion or bake it into the pose.
 6. If the clips go into a game repo with production gates, follow [Game project gates](#game-project-gates).
@@ -174,5 +217,8 @@ If the game repo has `scripts/character-production.ps1`, clips enter the game on
 | `failed during stage 1` | An error on the Uthana side | The script tries again once. If it fails again, run it with `--only`. |
 | `Insufficient balance` | No money left | Tell the user to add money to the Uthana account. |
 | A download returns 401 or 403 | The key is wrong | Ask the user for the key again. |
+| The Blender MCP call fails | Blender or its MCP add-on listener is not running | Start them (see [Live Blender](#live-blender)). If the call still fails, stop and report. |
+| `Run this script with qa_live.run` | The script ran without `qa_live.run` | Run it with `qa_live.run` in the live Blender. |
+| `... is in EDIT mode` | An object of the open scene is not in Object mode | Switch to Object mode, save, and run again. |
 
 To test the script: `node --test <skill-dir>/scripts/uthana.test.mjs`.
