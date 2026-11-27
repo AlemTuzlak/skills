@@ -19,7 +19,7 @@ Read the request of the user:
 |---|---|---|
 | Key | `MESHY_API_KEY` | `TRIPO_API_KEY`: the secret key `tsk_...` from [developers.tripo3d.ai/en/keys](https://developers.tripo3d.ai/en/keys) > **API Keys** > **Create Key** (shown once). Not the client id `tcli_...`. `FAL_KEY` for `mesh --via fal` only. |
 | Mesh | 1 to 4 views, `meshy-7.1` | 1 to 4 views (`front`, `left`, `back`, `right`), `v3.5`, or `h3.1` through fal |
-| Rig | Mixamo, fingers (thumb and middle only) | `v1.0` rig, Mixamo naming. Finger bones are not documented. |
+| Rig | Mixamo, fingers (thumb and middle only), 50 bones | `v1.0` rig: 23 bones, Mixamo names under a `Root` bone, no fingers, no neck twist. |
 | Clips | 805 library clips and text-to-motion | Preset clips only, up to 5 in one call. No text-to-motion. |
 
 The Meshy script calls Meshy through TanStack AI (`@tanstack/ai` and `@tanstack/ai-meshy`). Each step writes its Meshy task id, the id of its parent task, and the SHA-256 of each file to `<out>/manifest.json`. The next step finds them there. Each step downloads its files at once, because Meshy deletes task files after 3 days.
@@ -313,9 +313,10 @@ Do the steps of [Before you run](#before-you-run) with `TRIPO_API_KEY`. Then:
    - `pbr` is `false` and `texture` is `true` by default. `--opt key=value` sends any Tripo field, for example `--opt texture_quality=detailed`.
    - `--via fal` makes the mesh with `tripo3d/h3.1/multiview-to-3d` on fal.ai, with `FAL_KEY`. Use it when there is no Tripo key. The rig still needs `TRIPO_API_KEY`. It takes the public URL of the fal mesh.
 3. **Check the mesh** (step 3). The same stop rules apply.
-4. **Rig.** `node <skill-dir>/scripts/tripo.mjs rig --out <out>`. It runs the free `rig-check` first. Then it rigs with `v1.0-20240301` (the rig model with the 90+ biped presets) and `--spec mixamo`.
+4. **Rig.** `node <skill-dir>/scripts/tripo.mjs rig --out <out>`. Do not rig a Tripo mesh with Meshy: in the test, the Meshy auto-rig did not find the left arm and leg of the Tripo mesh, and the leg tore in motion. It runs the free `rig-check` first. Then it rigs with `v1.0-20240301` (the rig model with the 90+ biped presets) and `--spec mixamo`.
 5. **Clips.** `node <skill-dir>/scripts/tripo.mjs animate --presets idle,cast_a_spell,slash --out <out>`.
-   - Up to 5 presets in one call. They come back in one GLB, in place.
+   - Up to 5 presets in one call. They come back in one GLB, one action for each preset. Each preset costs 10 credits.
+   - The GLB is 1 m tall and faces +X. Scale it to the character height and turn it -90 degrees on Z (Blender) before you compare it with a Meshy file.
    - The biped presets of the v1.0 rig include `idle`, `walk`, `run`, `slash`, `cast_a_spell`, `chop`, `hurt`, `fall`, `bow`, `cheer`, `standing_relax`, `victory_celebration`, and `wait`. The full list is in the [Tripo retarget docs](https://developers.tripo3d.com/en/docs/animations-retarget.md).
    - Tripo has no text-to-motion. When no preset fits (for example a kneeling revive), say so. Offer the closest preset, or a Meshy text clip on the Tripo mesh.
 6. **Check the clips** (step 9) and **deliver** (step 10). Give the credits from the manifest (`credits` of each step) and `node <skill-dir>/scripts/tripo.mjs balance`.
@@ -411,11 +412,11 @@ Tripo (from the Tripo docs, 2026-11). Failed tasks are not billed.
 
 | Step | Credits |
 |---|---|
-| `mesh`, `v3.5`, standard texture | 40 (50 detailed, 60 8K). `geometry_quality=detailed` adds 15. |
+| `mesh`, `v3.5`, standard texture | 40 (measured: 3 views, 89 s). 50 detailed, 60 8K. `geometry_quality=detailed` adds 15. |
 | `mesh --via fal` | billed by fal in USD. fal lists Tripo at $0.01 per Tripo credit. |
 | `rig-check` | 0 |
-| `rig` | about 25 |
-| `animate`, each call (1 to 5 presets) | about 10 |
+| `rig` | 25 |
+| `animate` | 10 for each preset (5 presets in one call cost 50) |
 
 ## Measured results (samurai, 2026-11-20)
 
