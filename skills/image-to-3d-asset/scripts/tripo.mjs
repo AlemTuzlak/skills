@@ -18,8 +18,10 @@ const FAL_QUEUE = 'https://queue.fal.run'
 const FAL_MULTIVIEW = 'tripo3d/h3.1/multiview-to-3d'
 const FAL_SINGLE = 'tripo3d/h3.1/image-to-3d'
 const MESH_MODEL = 'v3.5-20261108'
-// v1.0 is the rig model with the 90+ biped presets (cast_a_spell, slash, idle, ...). v3.0 has 11 presets only.
-const RIG_MODEL = 'v1.0-20240301'
+// v1.0 has the 90+ biped presets (cast_a_spell, slash, idle, ...) but a small skeleton.
+// v3.0 is the rig Tripo recommends for humanoids, with more skeleton layouts, but only 11 presets.
+const RIG_MODELS = { v1: 'v1.0-20240301', v3: 'v3.0-20260909' }
+const RIG_SPECS = { v1: ['mixamo', 'tripo'], v3: ['mixamo', 'tripo', 'actorcore', 'unity', 'unreal', 'vrm'] }
 const POLL_MS = 3_000
 const TIMEOUT_MS = 30 * 60_000
 const MAX_ANIMATIONS = 5
@@ -31,14 +33,14 @@ const VIEW_KEYS = ['front', 'left', 'back', 'right']
 export const USAGE = `Usage: node tripo.mjs <command> [flags]
   balance
   mesh <front> [<view> ...] [--views front,right,back] [--name <name>] [--polycount <n>] [--via tripo|fal] [--out <dir>] [--opt key=value]
-  rig [--spec mixamo|tripo] [--task <meshTaskId>] [--out <dir>] [--opt key=value]
+  rig [--model v1|v3] [--spec mixamo|tripo|actorcore|unity|unreal|vrm] [--task <meshTaskId>] [--out <dir>] [--opt key=value]
   animate --presets <name,name,...> [--task <rigTaskId>] [--out <dir>] [--opt key=value]`
 
 const SHARED = { out: { type: 'string' }, opt: { type: 'string', multiple: true }, task: { type: 'string' } }
 const COMMANDS = {
   balance: {},
   mesh: { out: SHARED.out, opt: SHARED.opt, views: { type: 'string' }, name: { type: 'string' }, polycount: { type: 'string' }, via: { type: 'string', default: 'tripo' } },
-  rig: { ...SHARED, spec: { type: 'string', default: 'mixamo' } },
+  rig: { ...SHARED, model: { type: 'string', default: 'v1' }, spec: { type: 'string', default: 'mixamo' } },
   animate: { ...SHARED, presets: { type: 'string' } },
 }
 
@@ -88,9 +90,12 @@ export function parseCli(argv) {
       if (polycount !== undefined && !(Number.isInteger(polycount) && polycount >= 1000)) throw new Error('--polycount must be a whole number of 1000 or more.')
       return { ...base, images: positionals, keys: viewKeys(positionals.length, values.views), name: values.name, polycount, via: values.via }
     }
-    case 'rig':
-      if (!['mixamo', 'tripo'].includes(values.spec)) throw new Error('--spec must be mixamo or tripo for the v1.0 rig.')
-      return { ...base, spec: values.spec }
+    case 'rig': {
+      const specs = RIG_SPECS[values.model]
+      if (!specs) throw new Error('--model must be v1 or v3.')
+      if (!specs.includes(values.spec)) throw new Error(`--spec must be one of ${specs.join(', ')} for the ${values.model} rig.`)
+      return { ...base, model: RIG_MODELS[values.model], spec: values.spec }
+    }
     case 'animate': {
       if (!values.presets) throw new Error('animate needs --presets, for example --presets idle,cast_a_spell.')
       const presets = values.presets.split(',').map(presetName)
@@ -255,7 +260,7 @@ async function rig(flags) {
   const check = await tripo('POST', '/animations/rig-check', { input })
   const checked = await waitTask(check.task_id)
   if (checked.output?.riggable === false) throw new Error(`Tripo says the mesh cannot be rigged (rig_type ${checked.output.rig_type}).`)
-  const options = { model: RIG_MODEL, rig_type: 'biped', spec: flags.spec, out_format: 'glb', ...flags.opt }
+  const options = { model: flags.model, rig_type: 'biped', spec: flags.spec, out_format: 'glb', ...flags.opt }
   const { task_id: taskId } = await tripo('POST', '/animations/rig', { input, ...options })
   const task = await waitTask(taskId)
   const file = await download(task.output.model_url, flags.out, `${manifest.name}.rig${modelExt(task.output.model_url)}`)

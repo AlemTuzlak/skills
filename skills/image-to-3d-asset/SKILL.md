@@ -19,8 +19,8 @@ Read the request of the user:
 |---|---|---|
 | Key | `MESHY_API_KEY` | `TRIPO_API_KEY`: the secret key `tsk_...` from [developers.tripo3d.ai/en/keys](https://developers.tripo3d.ai/en/keys) > **API Keys** > **Create Key** (shown once). Not the client id `tcli_...`. `FAL_KEY` for `mesh --via fal` only. |
 | Mesh | 1 to 4 views, `meshy-7.1` | 1 to 4 views (`front`, `left`, `back`, `right`), `v3.5`, or `h3.1` through fal |
-| Rig | Mixamo, fingers (thumb and middle only), 50 bones | `v1.0` rig: 23 bones, Mixamo names under a `Root` bone, no fingers, no neck twist. |
-| Clips | 805 library clips and text-to-motion | Preset clips only, up to 5 in one call. No text-to-motion. |
+| Rig | Mixamo, fingers (thumb and middle only), 50 bones | `--model v3 --spec unity`: 67 bones, 5 fingers with 3 joints, eyes, neck twist, toes, Unity Humanoid names. `--model v1`: 23 bones, no fingers. |
+| Clips | 805 library clips and text-to-motion | Preset clips only, up to 5 in one call. No text-to-motion. The v3 rig has 11 presets, the v1 rig 90+. |
 
 The Meshy script calls Meshy through TanStack AI (`@tanstack/ai` and `@tanstack/ai-meshy`). Each step writes its Meshy task id, the id of its parent task, and the SHA-256 of each file to `<out>/manifest.json`. The next step finds them there. Each step downloads its files at once, because Meshy deletes task files after 3 days.
 
@@ -310,11 +310,12 @@ Do the steps of [Before you run](#before-you-run) with `TRIPO_API_KEY`. Then:
    node <skill-dir>/scripts/tripo.mjs mesh <out>/views/view-1.png <out>/views/view-2.png <out>/views/view-3.png --views front,right,back --name druid --polycount 300000 --out <out>
    ```
 
-   - `pbr` is `false` and `texture` is `true` by default. `--opt key=value` sends any Tripo field, for example `--opt texture_quality=detailed`.
+   - `pbr` is `false` and `texture` is `true` by default. `--opt key=value` sends any Tripo field.
+   - The default texture is 2048 px. For more detail, add `--opt texture_quality=extreme` (8192 px, measured) and `--opt geometry_quality=detailed`. In the test, this cost 75 credits instead of 40 and took 200 s instead of 89 s. Shrink the texture for the game camera.
    - `--via fal` makes the mesh with `tripo3d/h3.1/multiview-to-3d` on fal.ai, with `FAL_KEY`. Use it when there is no Tripo key. The rig still needs `TRIPO_API_KEY`. It takes the public URL of the fal mesh.
 3. **Check the mesh** (step 3). The same stop rules apply.
-4. **Rig.** `node <skill-dir>/scripts/tripo.mjs rig --out <out>`. Do not rig a Tripo mesh with Meshy: in the test, the Meshy auto-rig did not find the left arm and leg of the Tripo mesh, and the leg tore in motion. It runs the free `rig-check` first. Then it rigs with `v1.0-20240301` (the rig model with the 90+ biped presets) and `--spec mixamo`.
-5. **Clips.** `node <skill-dir>/scripts/tripo.mjs animate --presets idle,cast_a_spell,slash --out <out>`.
+4. **Rig.** `node <skill-dir>/scripts/tripo.mjs rig --model v3 --spec unity --out <out>`. Use `v3` for a game character: in the test it gave 67 bones with real finger joints, and the hand closed into a clean fist on the weapon. Use `--model v1` only for a preset that v3 does not have, such as `cast_a_spell`. The two rigs do not share presets. Do not rig a Tripo mesh with Meshy: in the test, the Meshy auto-rig did not find the left arm and leg of the Tripo mesh, and the leg tore in motion. It runs the free `rig-check` first. Then it rigs with `v1.0-20240301` (the rig model with the 90+ biped presets) and `--spec mixamo`.
+5. **Clips.** On a v3 rig: `--presets preset:idle,preset:slash`. On a v1 rig: `--presets idle,cast_a_spell,slash` (the script adds `preset:biped:`).
    - Up to 5 presets in one call. They come back in one GLB, one action for each preset. Each preset costs 10 credits.
    - The GLB is 1 m tall and faces +X. Scale it to the character height and turn it -90 degrees on Z (Blender) before you compare it with a Meshy file.
    - The biped presets of the v1.0 rig include `idle`, `walk`, `run`, `slash`, `cast_a_spell`, `chop`, `hurt`, `fall`, `bow`, `cheer`, `standing_relax`, `victory_celebration`, and `wait`. The full list is in the [Tripo retarget docs](https://developers.tripo3d.com/en/docs/animations-retarget.md).
