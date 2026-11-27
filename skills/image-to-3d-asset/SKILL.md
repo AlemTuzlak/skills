@@ -1,11 +1,28 @@
 ---
 name: image-to-3d-asset
-description: Use when the user wants a 3D model, mesh, or GLB made from one or more images, for example a game character from concept art or a turnaround sheet, or a game prop. It also rigs the character and animates it with Meshy library clips and text-to-motion clips. Triggers on "image to 3D", "make a mesh from this image", "GLB from this picture", "game character from concept art", "rig this character", "animate with Meshy", or /image-to-3d-asset. Don't use for 3D work inside Blender scenes, or for text-to-3D with no image.
+description: Use when the user wants a 3D model, mesh, or GLB made from one or more images, for example a game character from concept art or a turnaround sheet, or a game prop. It makes the mesh with Meshy or Tripo, rigs the character, and animates it with Meshy library and text-to-motion clips or Tripo preset clips. Triggers on "image to 3D", "make a mesh from this image", "GLB from this picture", "game character from concept art", "rig this character", "animate with Meshy", "make it with Tripo", "Tripo vs Meshy", or /image-to-3d-asset. Don't use for 3D work inside Blender scenes, or for text-to-3D with no image.
 ---
 
 # Image to 3D Asset
 
-Turn concept art into a game character: a textured mesh, a Mixamo skeleton, and animation clips. A prop gets a mesh only. The script `scripts/meshy.mjs` calls Meshy through TanStack AI (`@tanstack/ai` and `@tanstack/ai-meshy`). Each step writes its Meshy task id, the id of its parent task, and the SHA-256 of each file to `<out>/manifest.json`. The next step finds them there. Each step downloads its files at once, because Meshy deletes task files after 3 days.
+Turn concept art into a game character: a textured mesh, a Mixamo skeleton, and animation clips. A prop gets a mesh only.
+
+## Choose the provider
+
+Read the request of the user:
+
+- The request names **Tripo**: use `scripts/tripo.mjs`. Follow [Tripo](#tripo).
+- The request names **both**, or asks to compare them: run the same views through both, each in its own `<out>`. Give both the same options where they exist (no PBR, the same triangle budget, the same rig height). Show the results side by side, with the cost of each.
+- Else, or the request names **Meshy**: use `scripts/meshy.mjs` and the steps below.
+
+| | Meshy (`meshy.mjs`) | Tripo (`tripo.mjs`) |
+|---|---|---|
+| Key | `MESHY_API_KEY` | `TRIPO_API_KEY` (the secret key `tsk_...`, not the client id `tcli_...`). `FAL_KEY` for `mesh --via fal` only. |
+| Mesh | 1 to 4 views, `meshy-7.1` | 1 to 4 views (`front`, `left`, `back`, `right`), `v3.5`, or `h3.1` through fal |
+| Rig | Mixamo, fingers (thumb and middle only) | `v1.0` rig, Mixamo naming. Finger bones are not documented. |
+| Clips | 805 library clips and text-to-motion | Preset clips only, up to 5 in one call. No text-to-motion. |
+
+The Meshy script calls Meshy through TanStack AI (`@tanstack/ai` and `@tanstack/ai-meshy`). Each step writes its Meshy task id, the id of its parent task, and the SHA-256 of each file to `<out>/manifest.json`. The next step finds them there. Each step downloads its files at once, because Meshy deletes task files after 3 days.
 
 The Meshy files are the source of the character. The script never writes over a downloaded file or an earlier task. Before it spends credits, it stops a step that replaces a task, uses a stale parent, or mixes in a task of another folder.
 
@@ -280,6 +297,31 @@ Rules for the gates:
 - A Blender step that turns a joint is a correction too. Measure the joint before and after that step.
 - The wrapper never starts Blender or Unity. The gates run Blender only through the Blender MCP. The QA scripts of this skill only read files.
 
+## Tripo
+
+`scripts/tripo.mjs` calls the Tripo v3 API (`https://openapi.tripo3d.com/v3`) with `fetch`. It needs no packages. It keeps `<out>/manifest.json` with the same rules as `meshy.mjs`: one mesh for each `<out>`, a SHA-256 for each file, no file written over, and one rig for each folder.
+
+Do the steps of [Before you run](#before-you-run) with `TRIPO_API_KEY`. Then:
+
+1. **Split the sheet** (step 1). Name the views with `--views` in the order of the images. A sheet with front, right side, and back is `--views front,right,back` (the default for 3 images).
+2. **Mesh.**
+
+   ```bash
+   node <skill-dir>/scripts/tripo.mjs mesh <out>/views/view-1.png <out>/views/view-2.png <out>/views/view-3.png --views front,right,back --name druid --polycount 300000 --out <out>
+   ```
+
+   - `pbr` is `false` and `texture` is `true` by default. `--opt key=value` sends any Tripo field, for example `--opt texture_quality=detailed`.
+   - `--via fal` makes the mesh with `tripo3d/h3.1/multiview-to-3d` on fal.ai, with `FAL_KEY`. Use it when there is no Tripo key. The rig still needs `TRIPO_API_KEY`. It takes the public URL of the fal mesh.
+3. **Check the mesh** (step 3). The same stop rules apply.
+4. **Rig.** `node <skill-dir>/scripts/tripo.mjs rig --out <out>`. It runs the free `rig-check` first. Then it rigs with `v1.0-20240301` (the rig model with the 90+ biped presets) and `--spec mixamo`.
+5. **Clips.** `node <skill-dir>/scripts/tripo.mjs animate --presets idle,cast_a_spell,slash --out <out>`.
+   - Up to 5 presets in one call. They come back in one GLB, in place.
+   - The biped presets of the v1.0 rig include `idle`, `walk`, `run`, `slash`, `cast_a_spell`, `chop`, `hurt`, `fall`, `bow`, `cheer`, `standing_relax`, `victory_celebration`, and `wait`. The full list is in the [Tripo retarget docs](https://developers.tripo3d.com/en/docs/animations-retarget.md).
+   - Tripo has no text-to-motion. When no preset fits (for example a kneeling revive), say so. Offer the closest preset, or a Meshy text clip on the Tripo mesh.
+6. **Check the clips** (step 9) and **deliver** (step 10). Give the credits from the manifest (`credits` of each step) and `node <skill-dir>/scripts/tripo.mjs balance`.
+
+To test the script: `node --test <skill-dir>/scripts/tripo.test.mjs`.
+
 ## Prop mode
 
 Use prop mode for a chest, a barrel, or the weapon of a character.
@@ -364,6 +406,16 @@ Clips (`analyze.py` JSON). Read the numbers from the native report:
 | `motion`, each text clip | about 11 (3 clips cost 34) | about 1 min |
 
 The Meshy docs give no USD price for a credit. Example: mesh, rig, 6 library clips, and 3 text clips cost about 97 credits. Two LODs add 10 credits.
+
+Tripo (from the Tripo docs, 2026-11). Failed tasks are not billed.
+
+| Step | Credits |
+|---|---|
+| `mesh`, `v3.5`, standard texture | 40 (50 detailed, 60 8K). `geometry_quality=detailed` adds 15. |
+| `mesh --via fal` | billed by fal in USD. fal lists Tripo at $0.01 per Tripo credit. |
+| `rig-check` | 0 |
+| `rig` | about 25 |
+| `animate`, each call (1 to 5 presets) | about 10 |
 
 ## Measured results (samurai, 2026-11-20)
 
