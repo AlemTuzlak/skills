@@ -17,7 +17,7 @@ Read the request of the user:
 
 | | Meshy (`meshy.mjs`) | Tripo (`tripo.mjs`) |
 |---|---|---|
-| Key | `MESHY_API_KEY` | `TRIPO_API_KEY` (the secret key `tsk_...`, not the client id `tcli_...`). `FAL_KEY` for `mesh --via fal` only. |
+| Key | `MESHY_API_KEY` | `TRIPO_API_KEY`: the secret key `tsk_...` from [developers.tripo3d.ai/en/keys](https://developers.tripo3d.ai/en/keys) > **API Keys** > **Create Key** (shown once). Not the client id `tcli_...`. `FAL_KEY` for `mesh --via fal` only. |
 | Mesh | 1 to 4 views, `meshy-7.1` | 1 to 4 views (`front`, `left`, `back`, `right`), `v3.5`, or `h3.1` through fal |
 | Rig | Mixamo, fingers (thumb and middle only) | `v1.0` rig, Mixamo naming. Finger bones are not documented. |
 | Clips | 805 library clips and text-to-motion | Preset clips only, up to 5 in one call. No text-to-motion. |
@@ -299,7 +299,7 @@ Rules for the gates:
 
 ## Tripo
 
-`scripts/tripo.mjs` calls the Tripo v3 API (`https://openapi.tripo3d.com/v3`) with `fetch`. It needs no packages. It keeps `<out>/manifest.json` with the same rules as `meshy.mjs`: one mesh for each `<out>`, a SHA-256 for each file, no file written over, and one rig for each folder.
+`scripts/tripo.mjs` calls the Tripo v3 API with `fetch`. The host is `https://openapi.tripo3d.ai/v3` for a key of the international console. For a key of the China console (`developers.tripo3d.com`), set `TRIPO_API_BASE=https://openapi.tripo3d.com/v3`. A key on the wrong host gets a 401 `Invalid API key`. It needs no packages. It keeps `<out>/manifest.json` with the same rules as `meshy.mjs`: one mesh for each `<out>`, a SHA-256 for each file, no file written over, and one rig for each folder.
 
 Do the steps of [Before you run](#before-you-run) with `TRIPO_API_KEY`. Then:
 

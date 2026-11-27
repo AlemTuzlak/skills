@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Turns concept art into a 3D character or prop with Tripo: mesh, rig and preset animations.
-// It calls the Tripo v3 API (https://openapi.tripo3d.com/v3) with fetch. Node 20+. No packages.
+// It calls the Tripo v3 API (https://openapi.tripo3d.ai/v3, or TRIPO_API_BASE) with fetch. Node 20+. No packages.
 // The key comes from the TRIPO_API_KEY env var (a secret key that starts with tsk_).
 // `mesh --via fal` makes the mesh through fal.ai (FAL_KEY) instead. The rig and the animations always need TRIPO_API_KEY.
 // Each step writes its task id, its parent task id and the SHA-256 of each file to <out>/manifest.json, the same way as
@@ -11,7 +11,9 @@ import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { pathToFileURL } from 'node:url'
 
-const API = 'https://openapi.tripo3d.com/v3'
+// International keys (developers.tripo3d.ai) use the .ai host. A China-site key (developers.tripo3d.com) gets a 401 there:
+// set TRIPO_API_BASE=https://openapi.tripo3d.com/v3 for it.
+const API = process.env.TRIPO_API_BASE ?? 'https://openapi.tripo3d.ai/v3'
 const FAL_QUEUE = 'https://queue.fal.run'
 const FAL_MULTIVIEW = 'tripo3d/h3.1/multiview-to-3d'
 const FAL_SINGLE = 'tripo3d/h3.1/image-to-3d'
